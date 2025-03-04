@@ -42,13 +42,13 @@ export class ApiService {
   }
 
   updateMatch(matchId: number, matchDaata: any): Observable<any> {
-    const url = `${this.apiUrl}${matchId}/`;
+    const url = `${this.apiUrl}/matches/${matchId}/`;
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Token ${this.authToken}`
     });
 
-    return this.http.put(url, matchDaata, { headers });
+    return this.http.patch(url, matchDaata, { headers });
   }
 }

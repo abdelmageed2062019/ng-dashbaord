@@ -1,41 +1,72 @@
 <div class="container">
     <div class="row">
         <div class="col-12">
+
+            <div *ngIf="notification" class="alert alert-dismissible fade show" [ngClass]="{
+                     'alert-success': notification.type === 'success',
+                     'alert-danger': notification.type === 'error'
+                 }">
+                {{ notification.message }}
+                <button type="button" class="btn-close" (click)="notification = null"></button>
+            </div>
+
             <div class="card p-2">
                 <form [formGroup]="matchForm" (ngSubmit)="onSubmit()">
+
                     <h1>Update Match</h1>
+
+                    <div *ngIf="matchForm.invalid && matchForm.touched" class="alert alert-danger">
+                        Please fill in all required fields correctly.
+                    </div>
+
                     <div class="row mb-2">
                         <div class="col-sm-12 col-md-6 col-lg-6">
                             <label for="score_team1">Score Team 1:</label>
-                            <input id="score_team1" class="form-control" formControlName="score_team1" type="number">
+                            <input id="score_team1" class="form-control" formControlName="score_team1" type="number" [class.is-invalid]="score_team1.invalid && (score_team1.dirty || score_team1.touched)">
+                            <div *ngIf="score_team1.invalid && (score_team1.dirty || score_team1.touched)" class="invalid-feedback">
+                                Score for team 1 is required
+                            </div>
                         </div>
                         <div class="col-sm-12 col-md-6 col-lg-6">
                             <label for="score_team2">Score Team 2:</label>
-                            <input id="score_team2" class="form-control" formControlName="score_team2" type="number">
+                            <input id="score_team2" class="form-control" formControlName="score_team2" type="number" [class.is-invalid]="score_team2.invalid && (score_team2.dirty || score_team2.touched)">
+                            <div *ngIf="score_team2.invalid && (score_team2.dirty || score_team2.touched)" class="invalid-feedback">
+                                Score for team 2 is required
+                            </div>
                         </div>
                     </div>
+
                     <div class="row mb-2">
                         <div class="col-sm-12 col-md-6 col-lg-6">
                             <label for="status">Status:</label>
-                            <input id="status" class="form-control" formControlName="status" type="text">
-                        </div>
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="status">Status:</label>
-                            <input id="status" class="form-control" formControlName="status" type="text">
+                            <select id="status" class="form-control" formControlName="status" [class.is-invalid]="status.invalid && (status.dirty || status.touched)">
+                                <option value="" disabled>Select status</option>
+                                <option value="finished">Finished</option>
+                                <option value="live">Live</option>
+                                <option value="upcoming">Upcoming</option>
+                                <option value="postponed">Postponed</option>
+                            </select>
+                            <div *ngIf="status.invalid && (status.dirty || status.touched)" class="invalid-feedback">
+                                Status is required
+                            </div>
                         </div>
                     </div>
+
                     <div class="row mb-2">
                         <div class="col-sm-12 col-md-6 col-lg-6">
                             <label for="yellow_cards">Yellow Cards:</label>
-                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number">
-                        </div>
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            
+                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
+                            <div *ngIf="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)" class="invalid-feedback">
+                                Yellow cards count is required
+                            </div>
                         </div>
                     </div>
+
                     <div class="row mb-2">
                         <div class="col-12">
-                            <button type="submit" class="btn btn-primary" [disabled]="!matchForm.valid">Update Match</button>
+                            <button type="submit" class="btn btn-primary" [disabled]="matchForm.invalid">
+                                Update Match
+                            </button>
                         </div>
                     </div>
                 </form>
