@@ -27,6 +27,7 @@ export class MatchListComponent implements OnInit {
       next: (data) => {
         this.matches = data;
         this.loading = false;
+        console.log('Live matches:', data); 
       },
       error: (error) => {
         console.error('Error fetching live matches:', error);

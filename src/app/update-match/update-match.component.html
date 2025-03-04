@@ -60,6 +60,85 @@
                                 Yellow cards count is required
                             </div>
                         </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="red_cards">Red Cards:</label>
+                            <input id="red_cards" class="form-control" formControlName="red_cards" type="number" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
+                            <div *ngIf="red_cards.invalid && (red_cards.dirty || red_cards.touched)" class="invalid-feedback">
+                                 Red cards count is required
+                            </div>
+                        </div>
+                    </div>
+                    <!-- <div class="row mb-2">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Team 1</h5>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-12 col-md-6 col-lg-6">
+                                            <label for="red_cards">Red Cards:</label>
+                                            <input id="red_cards" class="form-control" formControlName="red_cards" type="number" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
+                                            <div *ngIf="red_cards.invalid && (red_cards.dirty || red_cards.touched)" class="invalid-feedback">
+                                                Red cards count is required
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 col-md-6 col-lg-6">
+                                            <label for="yellow_cards">Yellow Cards:</label>
+                                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
+                                            <div *ngIf="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)" class="invalid-feedback">
+                                                Yellow cards count is required
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    <div class="row">
+                        <div class="col-12">
+                            <table class="table w-100">
+                                <thead>
+                                    <tr>
+                                        <th>Team 1</th>
+                                        <th>Team 2</th>
+                                        
+                                    </tr>
+                                </thead>
+                                <tr>
+                                    <th>
+                                        <form [formGroup]="teammatch1Form">
+                                            <div class="row mb-2">
+                                                <div class="col-12">
+                                                    <label for="">Red card</label>
+                                                    <input class="form-control" type="number" formControlName="red_cards" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-12">
+                                                    <label for="">Yellow card</label>
+                                                    <input class="form-control" type="number" formControlName="yellow_cards" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </th>
+                                    <th>
+                                        <form [formGroup]="teammatch2Form">
+                                            <div class="row mb-2">
+                                                <div class="col-12">
+                                                    <label for="">Red card</label>
+                                                    <input class="form-control" type="number" formControlName="red_cards" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
+                                                </div>
+                                            </div>
+                                            <div class="row mb-2">
+                                                <div class="col-12">
+                                                    <label for="">Yellow card</label>
+                                                    <input class="form-control" type="number" formControlName="yellow_cards" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </th>
+                                </tr>
+                            </table>
+                        </div>
                     </div>
 
                     <div class="row mb-2">

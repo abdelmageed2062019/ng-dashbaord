@@ -15,7 +15,11 @@ import { FormsModule } from '@angular/forms';
 export class UpdateMatchComponent implements OnInit {
   matchId!: number;
   matchForm!: FormGroup;
+  teammatch1Form!: FormGroup;
+  teammatch2Form!: FormGroup;
   notification: { message: string, type: 'success' | 'error' } | null = null;
+  team1id!:number;
+  team2id!:number;
 
   constructor(
     private fb: FormBuilder,
@@ -34,8 +38,20 @@ export class UpdateMatchComponent implements OnInit {
       score_team1: [0, [Validators.required, Validators.min(0)]],
       score_team2: [0, [Validators.required, Validators.min(0)]],
       status: ['', Validators.required],
-      yellow_cards: [0, [Validators.required, Validators.min(0)]]
+      yellow_cards: [0, [Validators.required, Validators.min(0)]],
+      red_cards: [0, [Validators.required, Validators.min(0)]],
     });
+    this.teammatch1Form = this.fb.group({
+      
+      yellow_cards: [0, [Validators.required, Validators.min(0)]],
+      red_cards: [0, [Validators.required, Validators.min(0)]],
+    });
+    this.teammatch2Form = this.fb.group({
+      
+      yellow_cards: [0, [Validators.required, Validators.min(0)]],
+      red_cards: [0, [Validators.required, Validators.min(0)]],
+    });
+
   }
 
   private loadMatchData(): void {
@@ -44,7 +60,12 @@ export class UpdateMatchComponent implements OnInit {
       if (id) {
         this.matchId = +id;
         this.apiService.getMatchDetails(this.matchId).subscribe({
-          next: (data) => this.patchFormValues(data),
+          next: (data) => {
+            this.patchFormValues(data);
+            this.team1id = data.matchteams[0].id;
+            this.team2id = data.matchteams[1].id;
+            // console.log('Match details:', data);
+          },
           error: (error) => console.error('Error fetching match details:', error)
         });
       }
@@ -58,12 +79,22 @@ export class UpdateMatchComponent implements OnInit {
       status: data.status,
       yellow_cards: data.yellow_cards
     });
+    this.teammatch1Form.patchValue({
+      yellow_cards: data.matchteams[0].yellow_cards,
+      red_cards: data.matchteams[0].red_cards
+    });
+    this.teammatch2Form.patchValue({
+      yellow_cards: data.matchteams[1].yellow_cards,
+      red_cards: data.matchteams[1].red_cards
+    });
   }
 
   onSubmit(): void {
     if (this.matchForm.valid) {
       this.apiService.updateMatch(this.matchId, this.matchForm.value).subscribe({
         next: (data) => {
+          this.apiService.updateMatchTeam(this.team1id, this.teammatch1Form.value).subscribe({});
+          this.apiService.updateMatchTeam(this.team2id, this.teammatch2Form.value).subscribe({});
           this.showNotification('Match updated successfully!', 'success');
           setTimeout(() => this.router.navigate(['/']), 2000);
         },
@@ -88,4 +119,5 @@ export class UpdateMatchComponent implements OnInit {
   get score_team2() { return this.matchForm.get('score_team2')!; }
   get status() { return this.matchForm.get('status')!; }
   get yellow_cards() { return this.matchForm.get('yellow_cards')!; }
+  get red_cards() { return this.matchForm.get('yellow_cards')!; }
 }
