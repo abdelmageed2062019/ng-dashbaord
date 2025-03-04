@@ -1,1 +1,45 @@
-<p>update-match works!</p>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card p-2">
+                <form [formGroup]="matchForm" (ngSubmit)="onSubmit()">
+                    <h1>Update Match</h1>
+                    <div class="row mb-2">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="score_team1">Score Team 1:</label>
+                            <input id="score_team1" class="form-control" formControlName="score_team1" type="number">
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="score_team2">Score Team 2:</label>
+                            <input id="score_team2" class="form-control" formControlName="score_team2" type="number">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="status">Status:</label>
+                            <input id="status" class="form-control" formControlName="status" type="text">
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="status">Status:</label>
+                            <input id="status" class="form-control" formControlName="status" type="text">
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <label for="yellow_cards">Yellow Cards:</label>
+                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number">
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary" [disabled]="!matchForm.valid">Update Match</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
