@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../service/api.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-update-match',
@@ -20,17 +21,40 @@ export class UpdateMatchComponent implements OnInit {
   notification: { message: string, type: 'success' | 'error' } | null = null;
   team1id!:number;
   team2id!:number;
+  team1players!:any;
+  team2players!:any;
 
   constructor(
     private fb: FormBuilder,
     private apiService: ApiService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     this.initializeForm();
     this.loadMatchData();
+    
+    
+  }
+  getTeamPlayers(team1id:number, team2id:number): void {  
+    this.apiService.getplayerlist(team1id).subscribe({
+      next: (data) => {
+        this.team1players = data;
+        console.log('Team 1 players:', data);
+        this.cdr.detectChanges();
+        
+      },
+      error: (error) => console.error('Error fetching team players:', error)
+    });
+    this.apiService.getplayerlist(team2id).subscribe({
+      next: (data) => {
+        this.team2players = data;
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error('Error fetching team players:', error)
+    });
   }
 
   private initializeForm(): void {
@@ -64,6 +88,7 @@ export class UpdateMatchComponent implements OnInit {
             this.patchFormValues(data);
             this.team1id = data.matchteams[0].id;
             this.team2id = data.matchteams[1].id;
+            this.getTeamPlayers(data.matchteams[0].team.id,data.matchteams[1].team.id);
             // console.log('Match details:', data);
           },
           error: (error) => console.error('Error fetching match details:', error)
@@ -113,6 +138,35 @@ export class UpdateMatchComponent implements OnInit {
   private showNotification(message: string, type: 'success' | 'error'): void {
     this.notification = { message, type };
     setTimeout(() => this.notification = null, 5000); // Clear after 5 seconds
+  }
+  updateCards(playerId: number, redCards: number, yellowCards: number, teamId: number): void {
+    
+    // alert('playerId: ' + playerId + ' teamId: ' + teamId);
+    // alert('yellowCards: ' + yellowCards + ' redCards: ' + redCards);
+    // if (redCards === null || yellowCards === null) {
+    //   alert('Please enter valid numbers for both red and yellow cards');
+    //   return;
+    // }
+
+    const updatePayload = {
+      
+      red_cards: 0,
+      yellow_cards: 0,
+      match: this.matchId, // Provide actual match ID if necessary
+      team: teamId, // Provide actual team ID if necessary
+      player: playerId,
+    };
+    this.apiService.updateplayer(updatePayload).subscribe({
+      next: (data) => {
+        this.showNotification('Player cards updated successfully!', 'success');
+      },
+      error: (error) => {
+        this.showNotification('Error updating player cards. Please try again.', 'error');
+        console.error('Error updating player cards:', error);
+      }
+    });
+
+    
   }
 
   get score_team1() { return this.matchForm.get('score_team1')!; }

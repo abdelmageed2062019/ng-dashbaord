@@ -61,4 +61,17 @@ export class ApiService {
 
     return this.http.patch(url, matchDaata, { headers });
   }
+  getplayerlist(matchId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/players/?team=${matchId}`);
+  }
+  updateplayer(data: any): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/`;
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${this.authToken}`
+    });
+
+    return this.http.post(url, data, { headers });
+  }
 }

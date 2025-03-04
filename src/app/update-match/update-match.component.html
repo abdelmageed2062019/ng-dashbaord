@@ -98,8 +98,8 @@
                             <table class="table w-100">
                                 <thead>
                                     <tr>
-                                        <th>Team 1</th>
-                                        <th>Team 2</th>
+                                        <th class="w-50">Team 1</th>
+                                        <th class="w-50">Team 2</th>
                                         
                                     </tr>
                                 </thead>
@@ -119,6 +119,7 @@
                                                 </div>
                                             </div>
                                         </form>
+                                        
                                     </th>
                                     <th>
                                         <form [formGroup]="teammatch2Form">
@@ -135,9 +136,86 @@
                                                 </div>
                                             </div>
                                         </form>
+                                        
                                     </th>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <div class="row">
+                                
+                                    <h5>Team 1 players</h5>
+                                <div class="col-12" *ngFor="let item of team1players">
+                                    <div class="card mb-2">
+                                        <label for="">{{ item.first_name }} {{ item.last_name }}</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="yellowCards">Yellow Cards:</label>
+                                            <input
+                                                id="yellowCards"
+                                                type="number"
+                                                [(ngModel)]="item.yellow_cards"
+                                                placeholder="Enter yellow cards"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="redCards">Red Cards:</label>
+                                            <input
+                                                id="redCards"
+                                                type="number"
+                                                [(ngModel)]="item.red_cards"
+                                                placeholder="Enter red cards"
+
+                                                class="form-control"
+                                            />
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <button class="btn btn-primary" (click)="updateCards(item.id,item.red_cards,item.yellow_cards,item.team)">Update</button>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-md-6 col-lg-6">
+                            <div class="row">
+                                
+                                    <h5>Team 2 players</h5>
+                                <div class="col-12" *ngFor="let item of team2players">
+                                    <div class="card mb-2">
+                                        <label for="">{{ item.first_name }} {{ item.last_name }}</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="yellowCards">Yellow Cards:</label>
+                                            <input
+                                                id="yellowCards"
+                                                type="number"
+                                                [(ngModel)]="item.yellow_cards"
+                                                placeholder="Enter yellow cards"
+                                                class="form-control"
+                                            />
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="redCards">Red Cards:</label>
+                                            <input
+                                                id="redCards"
+                                                type="number"
+                                                [(ngModel)]="item.red_cards"
+                                                placeholder="Enter red cards"
+                                                
+                                                class="form-control"
+                                            />
+                                        </div>
+                                        <div class="col-12 mt-2">
+                                            <button class="btn btn-primary" (click)="updateCards(item.id,item.red_cards,item.yellow_cards,item.team)">Update</button>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
