@@ -25,7 +25,7 @@
         <div class="card-body">
           <div class="row align-items-center">
             <div class="col-md-5 text-center">
-              <img [src]="match.matchteams[0]?.team?.logo || '/assets/default-team-logo.png'" class="img-fluid mb-2 team-logo" alt="Team 1 Logo">
+              <img [src]="match.matchteams[0]?.team?.logo || '/assets/mancity.png'" class="img-fluid mb-2 team-logo" alt="Team 1 Logo">
               <h4>{{ match.matchteams[0]?.team?.name || 'Team 1' }}</h4>
               <div class="display-4 text-primary">{{ match.score_team1 || 0 }}</div>
             </div>
@@ -38,7 +38,7 @@
             </div>
 
             <div class="col-md-5 text-center">
-              <img [src]="match.matchteams[1]?.team?.logo || '/assets/default-team-logo.png'" class="img-fluid mb-2 team-logo" alt="Team 2 Logo">
+              <img [src]="match.matchteams[1]?.team?.logo || '/assets/mancity.png'" class="img-fluid mb-2 team-logo" alt="Team 2 Logo">
               <h4>{{ match.matchteams[1]?.team?.name || 'Team 2' }}</h4>
               <div class="display-4 text-primary">{{ match.score_team2 || 0 }}</div>
             </div>
