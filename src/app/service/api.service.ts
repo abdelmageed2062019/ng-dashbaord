@@ -6,7 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+  // private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+  private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
   private authToken = "68dc9ccc69df375db9083d58a169d73dbcb5bd07";
 
   constructor(private http: HttpClient) { }
@@ -46,7 +47,7 @@ export class ApiService {
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Token ${this.authToken}`
+      // 'Authorization': `Token ${this.authToken}`
     });
 
     return this.http.patch(url, matchDaata, { headers });
@@ -56,7 +57,7 @@ export class ApiService {
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Token ${this.authToken}`
+      // 'Authorization': `Token ${this.authToken}`
     });
 
     return this.http.patch(url, matchDaata, { headers });
@@ -69,7 +70,7 @@ export class ApiService {
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Token ${this.authToken}`
+      // 'Authorization': `Token ${this.authToken}`
     });
 
     return this.http.post(url, data, { headers });

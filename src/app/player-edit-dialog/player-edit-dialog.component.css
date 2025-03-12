@@ -1,0 +1,39 @@
+.match-header {
+    margin-bottom: 20px;
+}
+
+.team-logo {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+.player-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+    /* Add some spacing */
+}
+
+.player-avatar {
+    width: 75px;
+    /* Adjust size as needed */
+    height: 75px;
+    border-radius: 50%;
+    /* Make it round */
+    object-fit: cover;
+    /* Ensure the image fills the circle */
+    margin-bottom: 5px;
+    /* Space between avatar and name */
+}
+
+.player-name {
+    text-align: center;
+    font-size: 0.8em;
+    color: #555;
+    /* Adjust color as needed */
+}
+
+.btn {
+    margin-top: 15px;
+}

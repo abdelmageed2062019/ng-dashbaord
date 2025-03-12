@@ -1,233 +1,254 @@
 <div class="container">
-    <div class="row">
-        <div class="col-12">
-
-            <div *ngIf="notification" class="alert alert-dismissible fade show" [ngClass]="{
-                     'alert-success': notification.type === 'success',
-                     'alert-danger': notification.type === 'error'
-                 }">
-                {{ notification.message }}
-                <button type="button" class="btn-close" (click)="notification = null"></button>
+  <!-- Match Score Header -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card match-header">
+        <div class="card-body">
+          <div class="d-flex justify-content-around align-items-center">
+            <div class="team-info text-center">
+              <img [src]="matchDetails?.matchteams[0].team.logo ?? 'https://placehold.co/300x300/ff999999/FFFFFF.png'" alt="Team 1 Logo" class="team-logo">
+              <h4>{{ matchDetails?.matchteams[0].team.name }}</h4>
             </div>
-
-            <div class="card p-2">
-                <form [formGroup]="matchForm" (ngSubmit)="onSubmit()">
-
-                    <h1>Update Match</h1>
-
-                    <div *ngIf="matchForm.invalid && matchForm.touched" class="alert alert-danger">
-                        Please fill in all required fields correctly.
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="score_team1">Score Team 1:</label>
-                            <input id="score_team1" class="form-control" formControlName="score_team1" type="number" [class.is-invalid]="score_team1.invalid && (score_team1.dirty || score_team1.touched)">
-                            <div *ngIf="score_team1.invalid && (score_team1.dirty || score_team1.touched)" class="invalid-feedback">
-                                Score for team 1 is required
-                            </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="score_team2">Score Team 2:</label>
-                            <input id="score_team2" class="form-control" formControlName="score_team2" type="number" [class.is-invalid]="score_team2.invalid && (score_team2.dirty || score_team2.touched)">
-                            <div *ngIf="score_team2.invalid && (score_team2.dirty || score_team2.touched)" class="invalid-feedback">
-                                Score for team 2 is required
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="status">Status:</label>
-                            <select id="status" class="form-control" formControlName="status" [class.is-invalid]="status.invalid && (status.dirty || status.touched)">
-                                <option value="" disabled>Select status</option>
-                                <option value="finished">Finished</option>
-                                <option value="live">Live</option>
-                                <option value="upcoming">Upcoming</option>
-                                <option value="postponed">Postponed</option>
-                            </select>
-                            <div *ngIf="status.invalid && (status.dirty || status.touched)" class="invalid-feedback">
-                                Status is required
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="yellow_cards">Yellow Cards:</label>
-                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
-                            <div *ngIf="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)" class="invalid-feedback">
-                                Yellow cards count is required
-                            </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <label for="red_cards">Red Cards:</label>
-                            <input id="red_cards" class="form-control" formControlName="red_cards" type="number" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
-                            <div *ngIf="red_cards.invalid && (red_cards.dirty || red_cards.touched)" class="invalid-feedback">
-                                 Red cards count is required
-                            </div>
-                        </div>
-                    </div>
-                    <!-- <div class="row mb-2">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h5>Team 1</h5>
-                                    <div class="row mb-2">
-                                        <div class="col-sm-12 col-md-6 col-lg-6">
-                                            <label for="red_cards">Red Cards:</label>
-                                            <input id="red_cards" class="form-control" formControlName="red_cards" type="number" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
-                                            <div *ngIf="red_cards.invalid && (red_cards.dirty || red_cards.touched)" class="invalid-feedback">
-                                                Red cards count is required
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-12 col-md-6 col-lg-6">
-                                            <label for="yellow_cards">Yellow Cards:</label>
-                                            <input id="yellow_cards" class="form-control" formControlName="yellow_cards" type="number" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
-                                            <div *ngIf="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)" class="invalid-feedback">
-                                                Yellow cards count is required
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div> -->
-                    <div class="row">
-                        <div class="col-12">
-                            <table class="table w-100">
-                                <thead>
-                                    <tr>
-                                        <th class="w-50">Team 1</th>
-                                        <th class="w-50">Team 2</th>
-                                        
-                                    </tr>
-                                </thead>
-                                <tr>
-                                    <th>
-                                        <form [formGroup]="teammatch1Form">
-                                            <div class="row mb-2">
-                                                <div class="col-12">
-                                                    <label for="">Red card</label>
-                                                    <input class="form-control" type="number" formControlName="red_cards" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
-                                                </div>
-                                            </div>
-                                            <div class="row mb-2">
-                                                <div class="col-12">
-                                                    <label for="">Yellow card</label>
-                                                    <input class="form-control" type="number" formControlName="yellow_cards" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
-                                                </div>
-                                            </div>
-                                        </form>
-                                        
-                                    </th>
-                                    <th>
-                                        <form [formGroup]="teammatch2Form">
-                                            <div class="row mb-2">
-                                                <div class="col-12">
-                                                    <label for="">Red card</label>
-                                                    <input class="form-control" type="number" formControlName="red_cards" [class.is-invalid]="red_cards.invalid && (red_cards.dirty || red_cards.touched)">
-                                                </div>
-                                            </div>
-                                            <div class="row mb-2">
-                                                <div class="col-12">
-                                                    <label for="">Yellow card</label>
-                                                    <input class="form-control" type="number" formControlName="yellow_cards" [class.is-invalid]="yellow_cards.invalid && (yellow_cards.dirty || yellow_cards.touched)">
-                                                </div>
-                                            </div>
-                                        </form>
-                                        
-                                    </th>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <div class="row">
-                                
-                                    <h5>Team 1 players</h5>
-                                <div class="col-12" *ngFor="let item of team1players">
-                                    <div class="card mb-2">
-                                        <label for="">{{ item.first_name }} {{ item.last_name }}</label>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <label for="yellowCards">Yellow Cards:</label>
-                                            <input
-                                                id="yellowCards"
-                                                type="number"
-                                                [(ngModel)]="item.yellow_cards"
-                                                placeholder="Enter yellow cards"
-                                                class="form-control"
-                                            />
-                                        </div>
-                                        <div class="col-6">
-                                            <label for="redCards">Red Cards:</label>
-                                            <input
-                                                id="redCards"
-                                                type="number"
-                                                [(ngModel)]="item.red_cards"
-                                                placeholder="Enter red cards"
-
-                                                class="form-control"
-                                            />
-                                        </div>
-                                        <div class="col-12 mt-2">
-                                            <button class="btn btn-primary" (click)="updateCards(item.id,item.red_cards,item.yellow_cards,item.team)">Update</button>
-                                        </div>
-                                    </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-12 col-md-6 col-lg-6">
-                            <div class="row">
-                                
-                                    <h5>Team 2 players</h5>
-                                <div class="col-12" *ngFor="let item of team2players">
-                                    <div class="card mb-2">
-                                        <label for="">{{ item.first_name }} {{ item.last_name }}</label>
-                                    <div class="row">
-                                        <div class="col-6">
-                                            <label for="yellowCards">Yellow Cards:</label>
-                                            <input
-                                                id="yellowCards"
-                                                type="number"
-                                                [(ngModel)]="item.yellow_cards"
-                                                placeholder="Enter yellow cards"
-                                                class="form-control"
-                                            />
-                                        </div>
-                                        <div class="col-6">
-                                            <label for="redCards">Red Cards:</label>
-                                            <input
-                                                id="redCards"
-                                                type="number"
-                                                [(ngModel)]="item.red_cards"
-                                                placeholder="Enter red cards"
-                                                
-                                                class="form-control"
-                                            />
-                                        </div>
-                                        <div class="col-12 mt-2">
-                                            <button class="btn btn-primary" (click)="updateCards(item.id,item.red_cards,item.yellow_cards,item.team)">Update</button>
-                                        </div>
-                                    </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mb-2">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary" [disabled]="matchForm.invalid">
-                                Update Match
-                            </button>
-                        </div>
-                    </div>
-                </form>
+            <div class="match-details text-center">
+              <div class="date">{{ matchDetails?.match_date | date: 'MMM d, y, h:mm a' }}</div>
+              <div class="score">
+                <span>{{ matchDetails?.score_team1 }}</span> - <span>{{ matchDetails?.score_team2 }}</span>
+              </div>
+              <div>VS</div>
             </div>
+            <div class="team-info text-center">
+              <img [src]="matchDetails?.matchteams[1].team.logo ?? 'https://placehold.co/300x300/ff999999/FFFFFF.png'" alt="Team 2 Logo" class="team-logo">
+              <h4>{{ matchDetails?.matchteams[1].team.name }}</h4>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+
+  <!-- Player Lists -->
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          {{ matchDetails?.matchteams[0].team.name }} Players
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            <ng-container *ngFor="let position of getPositions(team1players)">
+              <li class="font-weight-bold">{{ position }}</li>
+              <hr/>
+              <div class="row">
+                <div class="col-6 col-md-4 mb-3" *ngFor="let player of getPlayersByPosition(team1players, position)" (click)="openEditDialog(player)">
+                  <div class="player-container">
+                    <img
+                      [src]="player.avatar ? player.avatar : 'https://placehold.co/300x300/ff999999/FFFFFF.png'"
+                      alt="{{ player.first_name }} {{ player.last_name }}"
+                      class="player-avatar"
+                    />
+                    <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          {{ matchDetails?.matchteams[1].team.name }} Players
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            <ng-container *ngFor="let position of getPositions(team2players)">
+              <li class="font-weight-bold">{{ position }}</li>
+              <hr/>
+              <div class="row">
+                <div class="col-6 col-md-4 mb-3" *ngFor="let player of getPlayersByPosition(team2players, position)" (click)="openEditDialog(player)">
+                  <div class="player-container">
+                    <img
+                      [src]="player.avatar ? player.avatar : 'https://placehold.co/300x300/ff999999/FFFFFF.png'"
+                      alt="{{ player.first_name }} {{ player.last_name }}"
+                      class="player-avatar"
+                    />
+                    <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Bootstrap Modal for Player Edit -->
+    <!-- Bootstrap Modal for Player Edit -->
+  <div class="modal fade" [class.show]="showModal" tabindex="-1" role="dialog" [style.display]="showModal ? 'block' : 'none'">
+    <div class="modal-dialog modal-lg" role="document" *ngIf="selectedPlayer">
+      <div class="modal-content">
+        <div class="modal-header bg-light">
+          <div class="d-flex align-items-center">
+            <img [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
+            <h5 class="modal-title">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
+          </div>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="goals"><i class="fas fa-futbol mr-1"></i> Goals</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('goals')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="goals" [(ngModel)]="selectedPlayer.goals" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('goals')">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="assists"><i class="fas fa-hand-holding-heart mr-1"></i> Assists</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('assists')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="assists" [(ngModel)]="selectedPlayer.assists" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('assists')">+</button>
+                  </div>
+                </div>
+              </div>
+               <div class="form-group">
+                <label for="points"><i class="fas fa-star mr-1"></i> Points</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('points')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="points" [(ngModel)]="selectedPlayer.points" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('points')">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="rebounds"><i class="fas fa-arrows-alt-v mr-1"></i> Rebounds</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('rebounds')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="rebounds" [(ngModel)]="selectedPlayer.rebounds" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('rebounds')">+</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="col-md-6">
+                            <div class="form-group">
+                <label for="tackles"><i class="fas fa-shield-alt mr-1"></i> Tackles</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('tackles')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="tackles" [(ngModel)]="selectedPlayer.tackles" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('tackles')">+</button>
+                  </div>
+                </div>
+              </div>
+                                     <div class="form-group">
+                <label for="shots"><i class="fas fa-bullseye mr-1"></i> Shots</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="shots" [(ngModel)]="selectedPlayer.shots" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots')">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="shots_on_target"><i class="fas fa-crosshairs mr-1"></i> Shots on Target</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots_on_target')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="shots_on_target" [(ngModel)]="selectedPlayer.shots_on_target" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots_on_target')">+</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="red_cards"><i class="fas fa-square mr-1" style="color: red;"></i> Red Cards</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('red_cards')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="red_cards" [(ngModel)]="selectedPlayer.red_cards" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('red_cards')">+</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="yellow_cards"><i class="fas fa-square mr-1" style="color: yellow;"></i> Yellow Cards</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('yellow_cards')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="yellow_cards" [(ngModel)]="selectedPlayer.yellow_cards" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('yellow_cards')">+</button>
+                  </div>
+                </div>
+              </div>
+                <div class="form-group">
+                <label for="fouls"><i class="fas fa- whistle mr-1"></i> Fouls</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('fouls')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="fouls" [(ngModel)]="selectedPlayer.fouls" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('fouls')">+</button>
+                  </div>
+                </div>
+              </div>
+                <div class="form-group">
+                <label for="blocks"><i class="fas fa-hand-paper mr-1"></i> Blocks</label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('blocks')">-</button>
+                  </div>
+                  <input type="number" class="form-control text-center readonly-input" id="blocks" [(ngModel)]="selectedPlayer.blocks" readonly value="0">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('blocks')">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="closeModal()">Close</button>
+          <button type="button" class="btn btn-primary" (click)="saveChanges()">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'"></div>
+
+
 </div>

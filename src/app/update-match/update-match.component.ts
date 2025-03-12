@@ -15,14 +15,18 @@ import { ChangeDetectorRef } from '@angular/core';
 })
 export class UpdateMatchComponent implements OnInit {
   matchId!: number;
+  matchDetails: any;
   matchForm!: FormGroup;
   teammatch1Form!: FormGroup;
   teammatch2Form!: FormGroup;
   notification: { message: string, type: 'success' | 'error' } | null = null;
-  team1id!:number;
-  team2id!:number;
-  team1players!:any;
-  team2players!:any;
+  team1id!: number;
+  team2id!: number;
+  team1players: any[] = [];
+  team2players: any[] = [];
+
+  showModal: boolean = false;
+  selectedPlayer: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -35,16 +39,14 @@ export class UpdateMatchComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.loadMatchData();
-    
-    
   }
-  getTeamPlayers(team1id:number, team2id:number): void {  
+
+  getTeamPlayers(team1id: number, team2id: number): void {
     this.apiService.getplayerlist(team1id).subscribe({
       next: (data) => {
         this.team1players = data;
         console.log('Team 1 players:', data);
         this.cdr.detectChanges();
-        
       },
       error: (error) => console.error('Error fetching team players:', error)
     });
@@ -66,16 +68,13 @@ export class UpdateMatchComponent implements OnInit {
       red_cards: [0, [Validators.required, Validators.min(0)]],
     });
     this.teammatch1Form = this.fb.group({
-      
       yellow_cards: [0, [Validators.required, Validators.min(0)]],
       red_cards: [0, [Validators.required, Validators.min(0)]],
     });
     this.teammatch2Form = this.fb.group({
-      
       yellow_cards: [0, [Validators.required, Validators.min(0)]],
       red_cards: [0, [Validators.required, Validators.min(0)]],
     });
-
   }
 
   private loadMatchData(): void {
@@ -85,11 +84,11 @@ export class UpdateMatchComponent implements OnInit {
         this.matchId = +id;
         this.apiService.getMatchDetails(this.matchId).subscribe({
           next: (data) => {
+            this.matchDetails = data;
             this.patchFormValues(data);
             this.team1id = data.matchteams[0].id;
             this.team2id = data.matchteams[1].id;
-            this.getTeamPlayers(data.matchteams[0].team.id,data.matchteams[1].team.id);
-            // console.log('Match details:', data);
+            this.getTeamPlayers(data.matchteams[0].team.id, data.matchteams[1].team.id);
           },
           error: (error) => console.error('Error fetching match details:', error)
         });
@@ -102,24 +101,20 @@ export class UpdateMatchComponent implements OnInit {
       score_team1: data.score_team1,
       score_team2: data.score_team2,
       status: data.status,
-      yellow_cards: data.yellow_cards
+      yellow_cards: data.yellow_cards,
+      red_cards: data.red_cards
     });
-    this.teammatch1Form.patchValue({
-      yellow_cards: data.matchteams[0].yellow_cards,
-      red_cards: data.matchteams[0].red_cards
-    });
-    this.teammatch2Form.patchValue({
-      yellow_cards: data.matchteams[1].yellow_cards,
-      red_cards: data.matchteams[1].red_cards
-    });
+    // Patch Match Teams
   }
 
   onSubmit(): void {
+    this.matchDetails.score_team1 = parseInt(this.matchDetails.score_team1)
+    this.matchDetails.score_team2 = parseInt(this.matchDetails.score_team2)
+    this.matchDetails.red_cards = parseInt(this.matchDetails.red_cards)
+    this.matchDetails.yellow_cards = parseInt(this.matchDetails.yellow_cards)
     if (this.matchForm.valid) {
-      this.apiService.updateMatch(this.matchId, this.matchForm.value).subscribe({
+      this.apiService.updateMatch(this.matchId, this.matchDetails).subscribe({
         next: (data) => {
-          this.apiService.updateMatchTeam(this.team1id, this.teammatch1Form.value).subscribe({});
-          this.apiService.updateMatchTeam(this.team2id, this.teammatch2Form.value).subscribe({});
           this.showNotification('Match updated successfully!', 'success');
           setTimeout(() => this.router.navigate(['/']), 2000);
         },
@@ -137,41 +132,93 @@ export class UpdateMatchComponent implements OnInit {
 
   private showNotification(message: string, type: 'success' | 'error'): void {
     this.notification = { message, type };
-    setTimeout(() => this.notification = null, 5000); // Clear after 5 seconds
+    setTimeout(() => this.notification = null, 5000);
   }
-  updateCards(playerId: number, redCards: number, yellowCards: number, teamId: number): void {
-    
-    // alert('playerId: ' + playerId + ' teamId: ' + teamId);
-    // alert('yellowCards: ' + yellowCards + ' redCards: ' + redCards);
-    // if (redCards === null || yellowCards === null) {
-    //   alert('Please enter valid numbers for both red and yellow cards');
-    //   return;
-    // }
 
-    const updatePayload = {
-      
+  getPositions(players: any[]): string[] {
+    return [...new Set(players.map(player => player.position))];
+  }
+
+  getPlayersByPosition(players: any[], position: string): any[] {
+    return players.filter(player => player.position === position);
+  }
+
+  openEditDialog(player: any): void {
+    // Ensure default values are set
+    this.selectedPlayer = {
+      points: 0,
+      assists: 0,
+      rebounds: 0,
+      goals: 0,
       red_cards: 0,
       yellow_cards: 0,
-      match: this.matchId, // Provide actual match ID if necessary
-      team: teamId, // Provide actual team ID if necessary
-      player: playerId,
+      fouls: 0,
+      steals: 0,
+      blocks: 0,
+      tackles: 0,
+      shots: 0,
+      shots_on_target: 0,
+      ...player // Override with existing player data
     };
-    this.apiService.updateplayer(updatePayload).subscribe({
-      next: (data) => {
-        this.showNotification('Player cards updated successfully!', 'success');
-      },
-      error: (error) => {
-        this.showNotification('Error updating player cards. Please try again.', 'error');
-        console.error('Error updating player cards:', error);
-      }
-    });
-
-    
+    this.showModal = true;
   }
 
-  get score_team1() { return this.matchForm.get('score_team1')!; }
-  get score_team2() { return this.matchForm.get('score_team2')!; }
-  get status() { return this.matchForm.get('status')!; }
-  get yellow_cards() { return this.matchForm.get('yellow_cards')!; }
-  get red_cards() { return this.matchForm.get('yellow_cards')!; }
+  closeModal(): void {
+    this.showModal = false;
+    this.selectedPlayer = null;
+  }
+
+  saveChanges(): void {
+    if (this.selectedPlayer) {
+      const team = (this.selectedPlayer.team_obj.id === this.team1id) ? this.team1players : this.team2players;
+      const index = team.findIndex(p => p.id === this.selectedPlayer.id);
+      if (index > -1) {
+        team[index] = { ...this.selectedPlayer };
+      }
+      this.updatePlayerStats(this.selectedPlayer);
+    }
+    this.closeModal();
+  }
+
+  updatePlayerStats(player: any): void {
+    console.log(player);
+    const updatePayload = {
+      points: player.points,
+      assists: player.assists,
+      rebounds: player.rebounds,
+      goals: player.goals,
+      red_cards: player.red_cards,
+      yellow_cards: player.yellow_cards,
+      fouls: player.fouls,
+      steals: player.steals,
+      blocks: player.blocks,
+      tackles: player.tackles,
+      shots: player.shots,
+      shots_on_target: player.shots_on_target,
+      match: this.matchId,
+      team: player.team_obj.id,
+      player: player.id
+    };
+
+    this.apiService.updateplayer(updatePayload).subscribe({
+      next: (data) => {
+        this.showNotification('Player stats updated successfully!', 'success');
+      },
+      error: (error) => {
+        this.showNotification('Error updating player stats. Please try again.', 'error');
+        console.error('Error updating player stats:', error);
+      }
+    });
+  }
+  incrementValue(field: string): void {
+    if (this.selectedPlayer && typeof this.selectedPlayer[field] === 'number') {
+      this.selectedPlayer[field]++;
+    }
+  }
+
+  decrementValue(field: string): void {
+    if (this.selectedPlayer && typeof this.selectedPlayer[field] === 'number') {
+      this.selectedPlayer[field] = Math.max(0, this.selectedPlayer[field] - 1); // Prevent negative values
+    }
+  }
 }
