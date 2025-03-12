@@ -12,7 +12,7 @@
             <div class="match-details text-center">
               <div class="date">{{ matchDetails?.match_date | date: 'MMM d, y, h:mm a' }}</div>
               <div class="score">
-                <span>{{ matchDetails?.score_team1 }}</span> - <span>{{ matchDetails?.score_team2 }}</span>
+                <span>{{ matchDetails?.matchteams[0].score ?? '0'  }}</span> - <span>{{ matchDetails?.matchteams[1].score ?? '0'   }}</span>
               </div>
               <div>VS</div>
             </div>
