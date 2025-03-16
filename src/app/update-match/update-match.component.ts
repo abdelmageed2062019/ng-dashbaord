@@ -144,23 +144,54 @@ export class UpdateMatchComponent implements OnInit {
   }
 
   openEditDialog(player: any): void {
-    // Ensure default values are set
-    this.selectedPlayer = {
-      points: 0,
-      assists: 0,
-      rebounds: 0,
-      goals: 0,
-      red_cards: 0,
-      yellow_cards: 0,
-      fouls: 0,
-      steals: 0,
-      blocks: 0,
-      tackles: 0,
-      shots: 0,
-      shots_on_target: 0,
-      ...player // Override with existing player data
-    };
-    this.showModal = true;
+    console.log('Opening edit dialog for player:', player);
+    const teamId = player.team_obj.id; // Assuming team_obj.id holds the team ID
+    const playerId = player.id;
+
+    console.log('Opening edit dialog for player:', player);
+    console.log('Match ID:', this.matchId, 'Team ID:', teamId, 'Player ID:', playerId);
+    this.apiService.getPlayerStats(this.matchId, teamId, playerId).subscribe({
+      next: (stats) => {
+        // Ensure default values are set, populate with fetched stats
+        this.selectedPlayer = {
+          points: 0,
+          assists: 0,
+          rebounds: 0,
+          goals: 0,
+          red_cards: 0,
+          yellow_cards: 0,
+          fouls: 0,
+          steals: 0,
+          blocks: 0,
+          tackles: 0,
+          shots: 0,
+          shots_on_target: 0,
+          ...player, // Player base data
+          ...stats  // Override with fetched stats
+        };
+        this.showModal = true;
+      },
+      error: (error) => {
+        console.error('Error fetching player stats:', error);
+        // If getPlayerStats fails, still show the modal with default values and the player's base data
+        this.selectedPlayer = {
+          points: 0,
+          assists: 0,
+          rebounds: 0,
+          goals: 0,
+          red_cards: 0,
+          yellow_cards: 0,
+          fouls: 0,
+          steals: 0,
+          blocks: 0,
+          tackles: 0,
+          shots: 0,
+          shots_on_target: 0,
+          ...player
+        };
+        this.showModal = true;
+      }
+    });
   }
 
   closeModal(): void {
@@ -197,11 +228,12 @@ export class UpdateMatchComponent implements OnInit {
       shots_on_target: player.shots_on_target,
       match: this.matchId,
       team: player.team_obj.id,
-      player: player.id
+      player: player.player
     };
 
     this.apiService.updateplayer(updatePayload).subscribe({
       next: (data) => {
+        console.log('Received stats', data);
         this.showNotification('Player stats updated successfully!', 'success');
       },
       error: (error) => {

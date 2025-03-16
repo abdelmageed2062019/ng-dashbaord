@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  // private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
-  private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
+  private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+  // private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
   private authToken = "68dc9ccc69df375db9083d58a169d73dbcb5bd07";
 
   constructor(private http: HttpClient) { }
@@ -66,13 +66,26 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/players/?team=${matchId}`);
   }
   updateplayer(data: any): Observable<any> {
-    const url = `${this.apiUrl}/player-stats/`;
+    // const url = `${this.apiUrl}/player-stats/`;
+    const url = `${this.apiUrl}/player-stats/custom_update/`;
 
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       // 'Authorization': `Token ${this.authToken}`
     });
 
-    return this.http.post(url, data, { headers });
+    return this.http.put(url, data, { headers });
+  }
+
+  // New method to get player stats
+  getPlayerStats(match_id: number, team_id: number, player_id: number): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/get_or_create/`;
+    console.log('Fetching player stats with:', match_id, team_id, player_id); // Add this
+    let params = new HttpParams()
+      .set('match_id', match_id.toString())
+      .set('team_id', team_id.toString())
+      .set('player_id', player_id.toString());
+
+    return this.http.get(url, { params: params });
   }
 }
