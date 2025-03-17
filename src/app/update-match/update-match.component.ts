@@ -189,6 +189,8 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
           tackles: 0,
           shots: 0,
           shots_on_target: 0,
+          corners: 0,
+          offsides: 0,
           ...player, // Player base data
           ...stats  // Override with fetched stats
         };
@@ -210,6 +212,8 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
           tackles: 0,
           shots: 0,
           shots_on_target: 0,
+          corners: 0,
+          offsides: 0,
           ...player
         };
         this.showModal = true;
@@ -249,6 +253,8 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
       tackles: player.tackles,
       shots: player.shots,
       shots_on_target: player.shots_on_target,
+      offsides: player.offsides,
+      corners: player.corners,
       match: this.matchId,
       team: player.team_obj.id,
       player: player.player
@@ -257,7 +263,6 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
     this.apiService.updateplayer(updatePayload).subscribe({
       next: (data) => {
         console.log('Received stats', data);
-        this.updateStats();
         this.showNotification('Player stats updated successfully!', 'success');
       },
       error: (error) => {

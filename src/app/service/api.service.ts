@@ -9,6 +9,8 @@ import { CookieService } from 'ngx-cookie-service'; // Import CookieService
 export class ApiService {
   private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
   private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+  // private baseApiUrl = 'http://localhost:8000/apis/v1';
+  // private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
   private tokenEndpoint = `${this.baseApiUrl}/auth/login/`;
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();

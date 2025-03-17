@@ -127,167 +127,209 @@
     </div>
   </div>
 
-    <!-- Bootstrap Modal for Player Edit -->
-    <!-- Bootstrap Modal for Player Edit -->
+    <!-- Bootstrap Modal for Player Edit -->    
   <div class="modal fade" [class.show]="showModal" tabindex="-1" role="dialog" [style.display]="showModal ? 'block' : 'none'">
     <div class="modal-dialog modal-lg" role="document" *ngIf="selectedPlayer">
-      <div class="modal-content">
-        <div class="modal-header bg-light">
-          <div class="d-flex align-items-center">
-            <img [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
-            <h5 class="modal-title">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
-          </div>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="goals"><i class="fas fa-futbol mr-1"></i> Goals</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('goals')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="goals" [(ngModel)]="selectedPlayer.goals" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('goals')">+</button>
-                  </div>
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <div class="d-flex align-items-center">
+                    <img [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
+                    <h5 class="modal-title">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
                 </div>
-              </div>
-              <div class="form-group">
-                <label for="assists"><i class="fas fa-hand-holding-heart mr-1"></i> Assists</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('assists')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="assists" [(ngModel)]="selectedPlayer.assists" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('assists')">+</button>
-                  </div>
-                </div>
-              </div>
-               <div class="form-group">
-                <label for="points"><i class="fas fa-star mr-1"></i> Points</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('points')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="points" [(ngModel)]="selectedPlayer.points" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('points')">+</button>
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="rebounds"><i class="fas fa-arrows-alt-v mr-1"></i> Rebounds</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('rebounds')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="rebounds" [(ngModel)]="selectedPlayer.rebounds" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('rebounds')">+</button>
-                  </div>
-                </div>
-              </div>
-
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
+                    <span aria-hidden="true">×</span>
+                </button>
             </div>
-            <div class="col-md-6">
-                            <div class="form-group">
-                <label for="tackles"><i class="fas fa-shield-alt mr-1"></i> Tackles</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('tackles')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="tackles" [(ngModel)]="selectedPlayer.tackles" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('tackles')">+</button>
-                  </div>
-                </div>
-              </div>
-                                     <div class="form-group">
-                <label for="shots"><i class="fas fa-bullseye mr-1"></i> Shots</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="shots" [(ngModel)]="selectedPlayer.shots" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots')">+</button>
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="shots_on_target"><i class="fas fa-crosshairs mr-1"></i> Shots on Target</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots_on_target')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="shots_on_target" [(ngModel)]="selectedPlayer.shots_on_target" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots_on_target')">+</button>
-                  </div>
-                </div>
-              </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Scoring Stats -->
+                        <h6 class="mb-3">Scoring</h6>
+                        <div class="form-group">
+                            <label for="goals"><i class="fas fa-futbol mr-1"></i> Goals</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('goals')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="goals" [(ngModel)]="selectedPlayer.goals" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('goals')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="assists"><i class="fas fa-hand-holding-heart mr-1"></i> Assists</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('assists')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="assists" [(ngModel)]="selectedPlayer.assists" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('assists')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="shots"><i class="fas fa-bullseye mr-1"></i> Shots</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="shots" [(ngModel)]="selectedPlayer.shots" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="shots_on_target"><i class="fas fa-crosshairs mr-1"></i> Shots on Target</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('shots_on_target')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="shots_on_target" [(ngModel)]="selectedPlayer.shots_on_target" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('shots_on_target')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="points"><i class="fas fa-star mr-1"></i> Points</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('points')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="points" [(ngModel)]="selectedPlayer.points" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('points')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="rebounds"><i class="fas fa-arrows-alt-v mr-1"></i> Rebounds</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('rebounds')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="rebounds" [(ngModel)]="selectedPlayer.rebounds" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('rebounds')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-              <div class="form-group">
-                <label for="red_cards"><i class="fas fa-square mr-1" style="color: red;"></i> Red Cards</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('red_cards')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="red_cards" [(ngModel)]="selectedPlayer.red_cards" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('red_cards')">+</button>
-                  </div>
+                    <div class="col-md-6">
+                        <!-- Defensive Stats -->
+                        <h6 class="mb-3">Defensive</h6>
+                        <div class="form-group">
+                            <label for="tackles"><i class="fas fa-shield-alt mr-1"></i> Tackles</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('tackles')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="tackles" [(ngModel)]="selectedPlayer.tackles" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('tackles')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="blocks"><i class="fas fa-hand-paper mr-1"></i> Blocks</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('blocks')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="blocks" [(ngModel)]="selectedPlayer.blocks" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('blocks')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label for="steals"><i class="fas fa-thief mr-1"></i> Steals</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('steals')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="steals" [(ngModel)]="selectedPlayer.steals" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('steals')">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Penalties -->
+                        <h6 class="mb-3">Penalties</h6>
+                        <div class="form-group">
+                            <label for="fouls"><i class="fas fa- whistle mr-1"></i> Fouls</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('fouls')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="fouls" [(ngModel)]="selectedPlayer.fouls" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('fouls')">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="red_cards"><i class="fas fa-square mr-1" style="color: red;"></i> Red Cards</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('red_cards')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="red_cards" [(ngModel)]="selectedPlayer.red_cards" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('red_cards')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="yellow_cards"><i class="fas fa-square mr-1" style="color: yellow;"></i> Yellow Cards</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('yellow_cards')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="yellow_cards" [(ngModel)]="selectedPlayer.yellow_cards" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('yellow_cards')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label for="corners"><i class="fas fa-flag mr-1"></i> Corners</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('corners')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="corners" [(ngModel)]="selectedPlayer.corners" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('corners')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label for="offsides"><i class="fas fa-ruler mr-1"></i> Offsides</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('offsides')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="offsides" [(ngModel)]="selectedPlayer.offsides" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('offsides')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="form-group">
-                <label for="yellow_cards"><i class="fas fa-square mr-1" style="color: yellow;"></i> Yellow Cards</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('yellow_cards')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="yellow_cards" [(ngModel)]="selectedPlayer.yellow_cards" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('yellow_cards')">+</button>
-                  </div>
-                </div>
-              </div>
-                <div class="form-group">
-                <label for="fouls"><i class="fas fa- whistle mr-1"></i> Fouls</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('fouls')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="fouls" [(ngModel)]="selectedPlayer.fouls" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('fouls')">+</button>
-                  </div>
-                </div>
-              </div>
-                <div class="form-group">
-                <label for="blocks"><i class="fas fa-hand-paper mr-1"></i> Blocks</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('blocks')">-</button>
-                  </div>
-                  <input type="number" class="form-control text-center readonly-input" id="blocks" [(ngModel)]="selectedPlayer.blocks" readonly value="0">
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('blocks')">+</button>
-                  </div>
-                </div>
-              </div>
             </div>
-          </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="closeModal()">Close</button>
+                <button type="button" class="btn btn-primary" (click)="saveChanges()">Save changes</button>
+            </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="closeModal()">Close</button>
-          <button type="button" class="btn btn-primary" (click)="saveChanges()">Save changes</button>
-        </div>
-      </div>
     </div>
   </div>
   <div class="modal-backdrop fade" [class.show]="showModal" [style.display]="showModal ? 'block' : 'none'"></div>
