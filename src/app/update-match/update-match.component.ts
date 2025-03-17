@@ -1,19 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../service/api.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { ChangeDetectorRef } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-update-match',
   standalone: true,
-  imports: [FormsModule, CommonModule, ReactiveFormsModule],
+  imports: [FormsModule, CommonModule, ReactiveFormsModule, DatePipe],
   templateUrl: './update-match.component.html',
   styleUrls: ['./update-match.component.css']
 })
-export class UpdateMatchComponent implements OnInit {
+export class UpdateMatchComponent implements OnInit, OnDestroy {
   matchId!: number;
   matchDetails: any;
   matchForm!: FormGroup;
@@ -27,6 +27,8 @@ export class UpdateMatchComponent implements OnInit {
 
   showModal: boolean = false;
   selectedPlayer: any = null;
+  private ngUnsubscribe$ = new Subject<void>(); //Subject to unsubscribe on destroy
+  private getMatchDetailsInterval: any;
 
   constructor(
     private fb: FormBuilder,
@@ -39,6 +41,13 @@ export class UpdateMatchComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.loadMatchData();
+    this.startLiveUpdates(); // Start live updates
+  }
+
+  ngOnDestroy(): void {
+    clearInterval(this.getMatchDetailsInterval);
+    this.ngUnsubscribe$.next();
+    this.ngUnsubscribe$.complete();
   }
 
   getTeamPlayers(team1id: number, team2id: number): void {
@@ -76,7 +85,21 @@ export class UpdateMatchComponent implements OnInit {
       red_cards: [0, [Validators.required, Validators.min(0)]],
     });
   }
-
+  updateStats() {
+    this.apiService.getMatchDetails(this.matchId)
+      .pipe(takeUntil(this.ngUnsubscribe$))
+      .subscribe({
+        next: (data) => {
+          this.matchDetails = data;
+          console.log('Match details updated:', data);
+          this.cdr.detectChanges(); // Trigger change detection
+        },
+        error: (error) => console.error('Error fetching match details:', error)
+      });
+  }
+  startLiveUpdates(): void {
+    this.getMatchDetailsInterval = setInterval(this.updateStats.bind(this), 10000); // 10 seconds
+  }
   private loadMatchData(): void {
     this.route.paramMap.subscribe(params => {
       const id = params.get('matchId');
@@ -234,6 +257,7 @@ export class UpdateMatchComponent implements OnInit {
     this.apiService.updateplayer(updatePayload).subscribe({
       next: (data) => {
         console.log('Received stats', data);
+        this.updateStats();
         this.showNotification('Player stats updated successfully!', 'success');
       },
       error: (error) => {
@@ -252,5 +276,30 @@ export class UpdateMatchComponent implements OnInit {
     if (this.selectedPlayer && typeof this.selectedPlayer[field] === 'number') {
       this.selectedPlayer[field] = Math.max(0, this.selectedPlayer[field] - 1); // Prevent negative values
     }
+  }
+
+  confirmFinishMatch(): void {
+    if (confirm("Are you sure you want to finish this match? This action cannot be undone.")) {
+      this.finishMatch();
+    }
+  }
+
+  finishMatch(): void {
+    const updateData = { status: 'finished' }; // Prepare the update data
+
+    this.apiService.updateMatch(this.matchId, updateData).subscribe({
+      next: (data) => {
+        this.showNotification('Match finished successfully!', 'success');
+        // Optionally, navigate away or refresh the data
+        this.router.navigate(['/']); // Navigate back to the match list
+      },
+      error: (error) => {
+        this.showNotification('Error finishing match. Please try again.', 'error');
+        console.error('Error finishing match:', error);
+      }
+    });
+  }
+  goBack(): void {
+    this.router.navigate(['/']);
   }
 }

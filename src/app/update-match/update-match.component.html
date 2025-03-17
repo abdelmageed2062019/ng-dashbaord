@@ -1,23 +1,27 @@
 <div class="container">
   <!-- Match Score Header -->
   <div class="row">
+  <div class="col-12">
+    <button class="btn btn--outline-soft" (click)="goBack()"><i class="fas fa-arrow-left"></i> Back</button>
+  <div>
+
     <div class="col-12">
       <div class="card match-header">
         <div class="card-body">
           <div class="d-flex justify-content-around align-items-center">
             <div class="team-info text-center">
-              <img [src]="matchDetails?.matchteams[0].team.logo ?? 'https://placehold.co/300x300/ff999999/FFFFFF.png'" alt="Team 1 Logo" class="team-logo">
+              <img [src]="matchDetails?.matchteams[0].team.sport_obj.logo" alt="Team 1 Logo" class="team-logo">
               <h4>{{ matchDetails?.matchteams[0].team.name }}</h4>
             </div>
             <div class="match-details text-center">
               <div class="date">{{ matchDetails?.match_date | date: 'MMM d, y, h:mm a' }}</div>
               <div class="score">
-                <span>{{ matchDetails?.matchteams[0].score ?? '0'  }}</span> - <span>{{ matchDetails?.matchteams[1].score ?? '0'   }}</span>
+                <span>{{ matchDetails?.matchteams[0].score }}</span> - <span>{{ matchDetails?.matchteams[1].score }}</span>
               </div>
               <div>VS</div>
             </div>
             <div class="team-info text-center">
-              <img [src]="matchDetails?.matchteams[1].team.logo ?? 'https://placehold.co/300x300/ff999999/FFFFFF.png'" alt="Team 2 Logo" class="team-logo">
+              <img [src]="matchDetails?.matchteams[1].team.sport_obj.logo" alt="Team 2 Logo" class="team-logo">
               <h4>{{ matchDetails?.matchteams[1].team.name }}</h4>
             </div>
           </div>
@@ -26,6 +30,44 @@
     </div>
   </div>
 
+ <!-- Match Statistics -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card mb-3">
+        <div class="card-header">Match Statistics</div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <p><i class="fas fa-exclamation-triangle"></i> Fouls: {{ matchDetails?.fouls }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-flag"></i> Offsides: {{ matchDetails?.offsides }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-hockey-puck"></i> Corners: {{ matchDetails?.corners }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-bullseye"></i> Shots on Target: {{ matchDetails?.shots_on_target }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-fire"></i> Total Shots: {{ matchDetails?.total_shots }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-square" style="color: red;"></i> Red Cards: {{ matchDetails?.red_cards }}</p>
+            </div>
+            <div class="col-md-3">
+              <p><i class="fas fa-square" style="color: yellow;"></i> Yellow Cards: {{ matchDetails?.yellow_cards }}</p>
+            </div>
+            <div class="col-md-3 text-right"> <!-- Added a column for the button -->
+              <button class="btn btn-success" (click)="confirmFinishMatch()">Finish Match</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
   <!-- Player Lists -->
   <div class="row">
     <div class="col-md-6">

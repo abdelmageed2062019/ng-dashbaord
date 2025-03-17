@@ -1,17 +1,53 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { CookieService } from 'ngx-cookie-service'; // Import CookieService
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
+  private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
   private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
-  // private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
-  private authToken = "68dc9ccc69df375db9083d58a169d73dbcb5bd07";
+  private tokenEndpoint = `${this.baseApiUrl}/auth/login/`;
+  private tokenSubject = new BehaviorSubject<string | null>(null);
+  public token$ = this.tokenSubject.asObservable();
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private cookieService: CookieService) {
+    // Restore token from cookie on service construction, if available
+    const storedToken = this.cookieService.get('authToken');
+    if (storedToken) {
+      this.tokenSubject.next(storedToken);
+    }
+    // Fetch initial token (or refresh it)
+    this.getToken('newgiza', 'aA111111').subscribe();
+  }
 
+  private getToken(username: string, password: string): Observable<any> {
+    const body = { username: username, password: password };
+    return this.http.post<any>(this.tokenEndpoint, body).pipe(
+      tap(response => {
+        const token = response.token;
+        this.tokenSubject.next(token);
+        // Set refresh token in HttpOnly, Secure cookie (if applicable)
+        this.cookieService.set('refreshToken', response.refresh_token, { secure: true });
+        console.log('Token fetched successfully:', token);
+      })
+    );
+  }
+
+  private getHeaders(): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+    });
+    const token = this.tokenSubject.value;
+    if (token) {
+      headers = headers.set('Authorization', `Token ${token}`);
+    }
+    return headers;
+  }
+
+  // (Rest of your API service methods)
   getMatchList(params?: {
     league?: number,
     start_date?: string,
@@ -27,7 +63,7 @@ export class ApiService {
       });
     }
 
-    return this.http.get(`${this.apiUrl}/matches`, { params: httpParams });
+    return this.http.get(`${this.apiUrl}/matches`, { params: httpParams, headers: this.getHeaders() });
   }
 
   getLiveMatches(league?: number, start_date?: string): Observable<any> {
@@ -39,42 +75,24 @@ export class ApiService {
   }
 
   getMatchDetails(matchId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/matches/${matchId}/`);
+    return this.http.get(`${this.apiUrl}/matches/${matchId}/`, { headers: this.getHeaders() });
   }
 
   updateMatch(matchId: number, matchDaata: any): Observable<any> {
     const url = `${this.apiUrl}/matches/${matchId}/`;
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      // 'Authorization': `Token ${this.authToken}`
-    });
-
-    return this.http.patch(url, matchDaata, { headers });
+    return this.http.patch(url, matchDaata, { headers: this.getHeaders() });
   }
   updateMatchTeam(matchId: number, matchDaata: any): Observable<any> {
     const url = `${this.apiUrl}/match-teams/${matchId}/`;
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      // 'Authorization': `Token ${this.authToken}`
-    });
-
-    return this.http.patch(url, matchDaata, { headers });
+    return this.http.patch(url, matchDaata, { headers: this.getHeaders() });
   }
   getplayerlist(matchId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/players/?team=${matchId}`);
+    return this.http.get(`${this.apiUrl}/players/?team=${matchId}`, { headers: this.getHeaders() });
   }
   updateplayer(data: any): Observable<any> {
     // const url = `${this.apiUrl}/player-stats/`;
     const url = `${this.apiUrl}/player-stats/custom_update/`;
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      // 'Authorization': `Token ${this.authToken}`
-    });
-
-    return this.http.put(url, data, { headers });
+    return this.http.put(url, data, { headers: this.getHeaders() });
   }
 
   // New method to get player stats
@@ -86,6 +104,6 @@ export class ApiService {
       .set('team_id', team_id.toString())
       .set('player_id', player_id.toString());
 
-    return this.http.get(url, { params: params });
+    return this.http.get(url, { params: params, headers: this.getHeaders() });
   }
 }
