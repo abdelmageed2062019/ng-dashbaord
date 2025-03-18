@@ -142,7 +142,7 @@
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-6" style="display: none;">
                         <!-- Scoring Stats -->
                         <h6 class="mb-3">Scoring</h6>
                         <div class="form-group">
@@ -157,7 +157,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="assists"><i class="fas fa-hand-holding-heart mr-1"></i> Assists</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -169,7 +169,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="shots"><i class="fas fa-bullseye mr-1"></i> Shots</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -181,7 +181,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="shots_on_target"><i class="fas fa-crosshairs mr-1"></i> Shots on Target</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -193,7 +193,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="points"><i class="fas fa-star mr-1"></i> Points</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -205,7 +205,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="rebounds"><i class="fas fa-arrows-alt-v mr-1"></i> Rebounds</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -219,10 +219,10 @@
                         </div>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <!-- Defensive Stats -->
-                        <h6 class="mb-3">Defensive</h6>
-                        <div class="form-group">
+                        <h6 class="mb-3" style="display: none;">Defensive</h6>
+                        <div class="form-group" style="display: none;">
                             <label for="tackles"><i class="fas fa-shield-alt mr-1"></i> Tackles</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -234,7 +234,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display: none;">
                             <label for="blocks"><i class="fas fa-hand-paper mr-1"></i> Blocks</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -246,7 +246,7 @@
                                 </div>
                             </div>
                         </div>
-                         <div class="form-group">
+                         <div class="form-group" style="display: none;">
                             <label for="steals"><i class="fas fa-thief mr-1"></i> Steals</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -259,9 +259,21 @@
                             </div>
                         </div>
 
-                        <!-- Penalties -->
-                        <h6 class="mb-3">Penalties</h6>
+                        <!-- Penalties -->                        
+                        <h6 class="mb-3">Goals and Cards</h6>
                         <div class="form-group">
+                            <label for="goals"><i class="fas fa-futbol mr-1"></i> Goals</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="decrementValue('goals')">-</button>
+                                </div>
+                                <input type="number" class="form-control text-center readonly-input" id="goals" [(ngModel)]="selectedPlayer.goals" readonly value="0">
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary btn-lg increment-button" type="button" (click)="incrementValue('goals')">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="display: none;">
                             <label for="fouls"><i class="fas fa- whistle mr-1"></i> Fouls</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -298,7 +310,7 @@
                                 </div>
                             </div>
                         </div>
-                         <div class="form-group">
+                         <div class="form-group" style="display: none;">
                             <label for="corners"><i class="fas fa-flag mr-1"></i> Corners</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -310,7 +322,7 @@
                                 </div>
                             </div>
                         </div>
-                         <div class="form-group">
+                         <div class="form-group" style="display: none;">
                             <label for="offsides"><i class="fas fa-ruler mr-1"></i> Offsides</label>
                             <div class="input-group">
                                 <div class="input-group-prepend">

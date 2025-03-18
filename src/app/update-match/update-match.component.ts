@@ -263,6 +263,7 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
     this.apiService.updateplayer(updatePayload).subscribe({
       next: (data) => {
         console.log('Received stats', data);
+        this.updateStats();
         this.showNotification('Player stats updated successfully!', 'success');
       },
       error: (error) => {
