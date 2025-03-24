@@ -75,6 +75,9 @@ export class ApiService {
       start_date
     });
   }
+  get_halftime_live_matches(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/matches/?status=halftime&status=live`, { headers: this.getHeaders() });
+  }
 
   getMatchDetails(matchId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/matches/${matchId}/`, { headers: this.getHeaders() });

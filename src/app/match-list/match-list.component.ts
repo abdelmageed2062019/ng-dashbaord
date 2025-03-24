@@ -33,7 +33,7 @@ export class MatchListComponent implements OnInit, OnDestroy {
 
   loadInitialLiveMatches(): void {
     this.loading = true;
-    this.apiService.getLiveMatches().pipe(takeUntil(this.ngUnsubscribe$)).subscribe({
+    this.apiService.get_halftime_live_matches().pipe(takeUntil(this.ngUnsubscribe$)).subscribe({
       next: (data) => {
         this.matches = data;
         this.loading = false;
@@ -47,7 +47,7 @@ export class MatchListComponent implements OnInit, OnDestroy {
   }
   updateLiveMatches(): void {
 
-    this.apiService.getLiveMatches().pipe(takeUntil(this.ngUnsubscribe$)).subscribe({
+    this.apiService.get_halftime_live_matches().pipe(takeUntil(this.ngUnsubscribe$)).subscribe({
       next: (data) => {
         this.matches = data;
         console.log('Live matches updated:', data);

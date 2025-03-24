@@ -61,6 +61,11 @@
             <div class="col-md-3 text-right"> <!-- Added a column for the button -->
               <button class="btn btn-success" (click)="confirmFinishMatch()">Finish Match</button>
             </div>
+            <div class="col-md-3 text-right"> <!-- Added a column for the button -->
+              <button class="btn btn-danger" *ngIf="matchDetails.status=='live'" (click)="confirmHalfTimeMatch()">Pause Match</button>
+              <button class="btn btn-info" *ngIf="matchDetails.status=='halftime'" (click)="confirmResumeMatch()">Resume Match</button>
+            </div>
+            
           </div>
         </div>
       </div>

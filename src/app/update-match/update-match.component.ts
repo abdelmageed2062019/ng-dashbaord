@@ -289,6 +289,26 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
       this.finishMatch();
     }
   }
+  confirmHalfTimeMatch(): void {
+    if (confirm("Are you sure you want to pause this match? This action cannot be undone.")) {
+      this.HalfTimeMatch();
+    }
+  }
+  HalfTimeMatch(): void {
+    const updateData = { status: 'halftime' }; // Prepare the update data
+
+    this.apiService.updateMatch(this.matchId, updateData).subscribe({
+      next: (data) => {
+        this.showNotification('Match paused successfully!', 'success');
+        // Optionally, navigate away or refresh the data
+        this.router.navigate(['/']); // Navigate back to the match list
+      },
+      error: (error) => {
+        this.showNotification('Error finishing match. Please try again.', 'error');
+        console.error('Error finishing match:', error);
+      }
+    });
+  }
 
   finishMatch(): void {
     const updateData = { status: 'finished' }; // Prepare the update data
@@ -307,5 +327,25 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
   }
   goBack(): void {
     this.router.navigate(['/']);
+  }
+  confirmResumeMatch(): void {
+    if (confirm("Are you sure you want to resume this match? This action cannot be undone.")) {
+      this.ResumeMatch();
+    }
+  }
+  ResumeMatch(): void {
+    const updateData = { status: 'live' }; // Prepare the update data
+
+    this.apiService.updateMatch(this.matchId, updateData).subscribe({
+      next: (data) => {
+        this.showNotification('Match resumed successfully!', 'success');
+        // Optionally, navigate away or refresh the data
+        this.router.navigate(['/']); // Navigate back to the match list
+      },
+      error: (error) => {
+        this.showNotification('Error finishing match. Please try again.', 'error');
+        console.error('Error finishing match:', error);
+      }
+    });
   }
 }
