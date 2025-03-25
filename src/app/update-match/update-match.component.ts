@@ -214,6 +214,8 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
           shots_on_target: 0,
           corners: 0,
           offsides: 0,
+          penalties_shots: 0,
+          penalties_score: 0,
           ...player
         };
         this.showModal = true;
@@ -257,7 +259,9 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
       corners: player.corners,
       match: this.matchId,
       team: player.team_obj.id,
-      player: player.player
+      player: player.player,
+      penalties_score: player.penalties_score,
+      penalties_shots: player.penalties_shots
     };
 
     this.apiService.updateplayer(updatePayload).subscribe({
@@ -293,6 +297,26 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
     if (confirm("Are you sure you want to pause this match? This action cannot be undone.")) {
       this.HalfTimeMatch();
     }
+  }
+  confirmPalentiesMatch(): void {
+    if (confirm("Are you sure you want to start palenties? This action cannot be undone.")) {
+      this.PalentiesMatch();
+    }
+  }
+  PalentiesMatch(): void {
+    const updateData = { status: 'penalties' }; // Prepare the update data
+    this.apiService.updateMatch(this.matchId, updateData).subscribe({
+      next: (data) => {
+        this.showNotification('Palenties started successfully!', 'success');
+        // this.router.navigate(['/']);
+        // refresh the page
+        this.loadMatchData();
+      },
+      error: (error) => {
+        this.showNotification('Error starting penalties. Please try again.', 'error');
+        console.error('Error starting penalties:', error);
+      }
+    });
   }
   HalfTimeMatch(): void {
     const updateData = { status: 'halftime' }; // Prepare the update data
