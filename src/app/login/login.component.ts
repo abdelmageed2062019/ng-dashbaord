@@ -23,7 +23,7 @@ export class LoginComponent {
     if (token) {
       // If token exists, redirect to the main page or wherever you want
       this.cookieService.set('authToken', token, { secure: true });
-      window.location.href = ''; // Redirect to the main page
+      window.location.href = '/'; // Redirect to the main page
     }
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
