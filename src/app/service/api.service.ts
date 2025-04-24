@@ -22,17 +22,19 @@ export class ApiService {
       this.tokenSubject.next(storedToken);
     }
     // Fetch initial token (or refresh it)
-    this.getToken('newgiza', 'aA111111').subscribe();
+    // this.getToken('newgiza', 'aA111111').subscribe();
+    // window.location.href = '/login'; // Redirect to login page if token is not available
   }
 
-  private getToken(username: string, password: string): Observable<any> {
+  public getToken(username: string, password: string): Observable<any> {
     const body = { username: username, password: password };
     return this.http.post<any>(this.tokenEndpoint, body).pipe(
       tap(response => {
         const token = response.token;
         this.tokenSubject.next(token);
         // Set refresh token in HttpOnly, Secure cookie (if applicable)
-        this.cookieService.set('refreshToken', response.refresh_token, { secure: true });
+        this.cookieService.set('authToken', response.refresh_token, { secure: true });
+        localStorage.setItem('authToken', response.token);
         console.log('Token fetched successfully:', token);
       })
     );
