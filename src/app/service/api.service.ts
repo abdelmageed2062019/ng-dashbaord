@@ -23,7 +23,7 @@ export class ApiService {
     }
     // Fetch initial token (or refresh it)
     // this.getToken('newgiza', 'aA111111').subscribe();
-    // window.location.href = '/login'; // Redirect to login page if token is not available
+    //window.location.href = '/login'; // Redirect to login page if token is not available
   }
 
   public getToken(username: string, password: string): Observable<any> {
@@ -79,6 +79,9 @@ export class ApiService {
   }
   get_halftime_live_matches(): Observable<any> {
     return this.http.get(`${this.apiUrl}/matches/?status=halftime&status=live&status=penalties`, { headers: this.getHeaders() });
+  }
+  get_upcoming_matches(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/matches/?status=upcoming`, { headers: this.getHeaders() });
   }
 
   getMatchDetails(matchId: number): Observable<any> {

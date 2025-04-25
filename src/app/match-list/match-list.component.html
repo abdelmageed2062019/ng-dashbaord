@@ -1,7 +1,7 @@
 
 
 <div class="container mt-4">
-  <h2 class="mb-4">Live Matches 🔴</h2>
+  
   <div *ngIf="loading" class="text-center my-4">
     <div class="spinner-border text-danger" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -10,54 +10,121 @@
   </div>
 
   <div *ngIf="!loading">
-    <div *ngIf="matches.length === 0" class="alert alert-info">
-      No live matches currently available
-    </div>
-
-    <div *ngFor="let match of matches" class="card shadow-sm mb-4">
-      <a [routerLink]="'/update/' + match.id" class="text-decoration-none text-dark">
-        <div class="card-header bg-danger text-white">
-          <div class="d-flex justify-content-between align-items-center">
-            <span>Live Now</span>
-            <span>{{ match.match_date | date:'h:mm a':'UTC' }}</span>
-          </div>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="lhp-tab" data-bs-toggle="tab" data-bs-target="#lhp-tab-pane" type="button" role="tab" aria-controls="lhp-tab-pane" aria-selected="true">Live - halftime - penalties</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming-tab-pane" type="button" role="tab" aria-controls="upcoming-tab-pane" aria-selected="false">upcoming</button>
+      </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+      <div class="tab-pane fade show active" id="lhp-tab-pane" role="tabpanel" aria-labelledby="lhp-tab" tabindex="0">
+        <h2 class="mb-4">Live Matches 🔴</h2>
+        <div *ngIf="matches.length === 0" class="alert alert-info">
+          No live matches currently available
         </div>
-
-        <div class="card-body">
-          <div class="row align-items-center">
-            <div class="col-md-5 text-center">
-              <img [src]="match.matchteams[0]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 1 Logo">
-              <h4>{{ match.matchteams[0]?.team?.name || 'Team 1' }}</h4>
-              <div class="display-4 text-primary">{{ match.matchteams[0].score  || 0 }}</div>
-            </div>
-
-            <div class="col-md-2 text-center">
-              <div class="vs-circle bg-danger text-white mx-auto">VS</div>
-              <div class="mt-3">
-                <span class="badge bg-danger pulse-animation">{{match.status}}</span>
+    
+        <div *ngFor="let match of matches" class="card shadow-sm mb-4">
+          <a [routerLink]="'/update/' + match.id" class="text-decoration-none text-dark">
+            <div class="card-header bg-danger text-white">
+              <div class="d-flex justify-content-between align-items-center">
+                <span>Live Now</span>
+                <span>{{ match.match_date | date:'h:mm a':'UTC' }}</span>
               </div>
             </div>
-
-            <div class="col-md-5 text-center">
-              <img [src]="match.matchteams[1]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 2 Logo">
-              <h4>{{ match.matchteams[1]?.team?.name || 'Team 2' }}</h4>
-              <div class="display-4 text-primary">{{ match.matchteams[1].score  || 0 }}</div>
+    
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-5 text-center">
+                  <img [src]="match.matchteams[0]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 1 Logo">
+                  <h4>{{ match.matchteams[0]?.team?.name || 'Team 1' }}</h4>
+                  <div class="display-4 text-primary">{{ match.matchteams[0].score  || 0 }}</div>
+                </div>
+    
+                <div class="col-md-2 text-center">
+                  <div class="vs-circle bg-danger text-white mx-auto">VS</div>
+                  <div class="mt-3">
+                    <span class="badge bg-danger pulse-animation">{{match.status}}</span>
+                  </div>
+                </div>
+    
+                <div class="col-md-5 text-center">
+                  <img [src]="match.matchteams[1]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 2 Logo">
+                  <h4>{{ match.matchteams[1]?.team?.name || 'Team 2' }}</h4>
+                  <div class="display-4 text-primary">{{ match.matchteams[1].score  || 0 }}</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div class="card-footer bg-light">
-          <div class="row">
-            <div class="col">
-              <small class="text-muted">
-                Venue: {{ match.venue || 'Unknown' }} |
-                Predictions: {{ match.predict_total || 0 }} |
-                Cards: 🟡 {{ match.yellow_cards || 0 }} 🔴 {{ match.red_cards || 0 }}
-              </small>
+    
+            <div class="card-footer bg-light">
+              <div class="row">
+                <div class="col">
+                  <small class="text-muted">
+                    Venue: {{ match.venue || 'Unknown' }} |
+                    Predictions: {{ match.predict_total || 0 }} |
+                    Cards: 🟡 {{ match.yellow_cards || 0 }} 🔴 {{ match.red_cards || 0 }}
+                  </small>
+                </div>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
-      </a>
+      </div>
+      <div class="tab-pane fade" id="upcoming-tab-pane" role="tabpanel" aria-labelledby="upcoming-tab" tabindex="0">
+        <h2 class="mb-4">upcoming Matches 🟠 </h2>
+        <p>Click on the match to switch the status to live.</p>
+        <div *ngIf="matches.length === 0" class="alert alert-info">
+          No upcoming matches currently available
+        </div>
+    
+        <div *ngFor="let match of upcomingmatches" class="card shadow-sm mb-4">
+          <a (click)="updateMatchStatus(match.id)" class="text-decoration-none text-dark">
+            <div class="card-header bg-warning text-white">
+              <div class="d-flex justify-content-between align-items-center">
+                <span>upcoming</span>
+                <span>{{ match.match_date | date:'h:mm a':'UTC' }}</span>
+              </div>
+            </div>
+    
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-5 text-center">
+                  <img [src]="match.matchteams[0]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 1 Logo">
+                  <h4>{{ match.matchteams[0]?.team?.name || 'Team 1' }}</h4>
+                  <div class="display-4 text-primary">{{ match.matchteams[0].score  || 0 }}</div>
+                </div>
+    
+                <div class="col-md-2 text-center">
+                  <div class="vs-circle bg-warning text-white mx-auto">VS</div>
+                  <div class="mt-3">
+                    <span class="badge bg-warning pulse-animation">{{match.status}}</span>
+                  </div>
+                </div>
+    
+                <div class="col-md-5 text-center">
+                  <img [src]="match.matchteams[1]?.team?.logo || '/assets/mancity.png'" *ngIf="match.matchteams[1]?.team?.logo" class="img-fluid mb-2 team-logo" alt="Team 2 Logo">
+                  <h4>{{ match.matchteams[1]?.team?.name || 'Team 2' }}</h4>
+                  <div class="display-4 text-primary">{{ match.matchteams[1].score  || 0 }}</div>
+                </div>
+              </div>
+            </div>
+    
+            <div class="card-footer bg-light">
+              <div class="row">
+                <div class="col">
+                  <small class="text-muted">
+                    Venue: {{ match.venue || 'Unknown' }} |
+                    Predictions: {{ match.predict_total || 0 }} |
+                    Cards: 🟡 {{ match.yellow_cards || 0 }} 🔴 {{ match.red_cards || 0 }}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
     </div>
+    
   </div>
 </div>
