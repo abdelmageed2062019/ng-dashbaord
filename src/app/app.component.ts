@@ -16,7 +16,7 @@ import { CookieService } from 'ngx-cookie-service'; // Import CookieService
 export class AppComponent {
   
   constructor(private router: Router, private cookieService: CookieService) {}
-  title = 'sports-dashboard';
+  title = 'NGSC Admin Panel';
   isLoggedIn = !!localStorage.getItem('authToken'); // Check if token exists
   logout() {
     localStorage.clear();  // Clear local storage
