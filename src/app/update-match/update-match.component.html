@@ -10,7 +10,7 @@
         <div class="card-body">
           <div class="d-flex justify-content-around align-items-center">
             <div class="team-info text-center">
-              <img [src]="matchDetails?.matchteams[0].team.sport_obj.logo" alt="Team 1 Logo" class="team-logo">
+              <img [src]="matchDetails?.matchteams[0].team.logo" alt="Team 1 Logo" class="team-logo">
               <h4>{{ matchDetails?.matchteams[0].team.name }}</h4>
             </div>
             <div class="match-details text-center">
@@ -21,7 +21,7 @@
               <div>VS</div>
             </div>
             <div class="team-info text-center">
-              <img [src]="matchDetails?.matchteams[1].team.sport_obj.logo" alt="Team 2 Logo" class="team-logo">
+              <img [src]="matchDetails?.matchteams[1].team.logo" alt="Team 2 Logo" class="team-logo">
               <h4>{{ matchDetails?.matchteams[1].team.name }}</h4>
             </div>
           </div>
@@ -89,11 +89,14 @@
               <div class="row">
                 <div class="col-6 col-md-4 mb-3" *ngFor="let player of getPlayersByPosition(team1players, position)" (click)="openEditDialog(player)">
                   <div class="player-container">
-                    <img
+                    <img *ngIf="player.avatar"
                       [src]="player.avatar ? player.avatar : 'https://placehold.co/300x300/ff999999/FFFFFF.png'"
                       alt="{{ player.first_name }} {{ player.last_name }}"
                       class="player-avatar"
                     />
+                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                      {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
+                 </div>
                     <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
                   </div>
                 </div>
@@ -117,11 +120,14 @@
               <div class="row">
                 <div class="col-6 col-md-4 mb-3" *ngFor="let player of getPlayersByPosition(team2players, position)" (click)="openEditDialog(player)">
                   <div class="player-container">
-                    <img
+                    <img *ngIf="player.avatar "
                       [src]="player.avatar ? player.avatar : 'https://placehold.co/300x300/ff999999/FFFFFF.png'"
                       alt="{{ player.first_name }} {{ player.last_name }}"
                       class="player-avatar"
                     />
+                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                      {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
+                 </div>
                     <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
                   </div>
                 </div>
@@ -139,12 +145,15 @@
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <div class="d-flex align-items-center">
-                    <img [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
+                    <img *ngIf="selectedPlayer?.avatar" [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
+                    <div *ngIf="!selectedPlayer?.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                      {{ selectedPlayer.first_name.charAt(0) }}{{ selectedPlayer.last_name.charAt(0) }}
+                    </div>
                     <h5 class="modal-title">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
                 </div>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
+                <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
                     <span aria-hidden="true">×</span>
-                </button>
+                </button> -->
             </div>
             <div class="modal-body">
                 <div class="row">

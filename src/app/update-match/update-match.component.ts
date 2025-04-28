@@ -372,4 +372,6 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  
 }
