@@ -16,9 +16,14 @@ body {
 }
 .bg-blue{
     background-color: #53a4d9;
+    color: #fff;
 }
 .bg-dark{
     background-color: #282828;
+    color: #fff;
+}
+.bg-dark a{
+    color: #fff;
 }
 
 /* Or your chosen theme */

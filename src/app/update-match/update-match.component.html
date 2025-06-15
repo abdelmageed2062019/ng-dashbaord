@@ -34,7 +34,7 @@
   <div class="row">
     <div class="col-12">
       <div class="card mb-3">
-        <div class="card-header">Match Statistics</div>
+        <div class="card-header bg-blue">Match Statistics</div>
         <div class="card-body">
           <div class="row">
             <div class="col-md-3">
@@ -60,10 +60,10 @@
             </div>            
             <div class="col-md-12 text-center"> <!-- Added a column for the button -->            
               <div class="btn btn-group" role="group" aria-label="Basic example">              
-                <button class="btn btn-danger" *ngIf="matchDetails.status=='live'" (click)="confirmHalfTimeMatch()">Pause Match</button>
-                <button class="btn btn-info" *ngIf="matchDetails.status=='halftime'" (click)="confirmResumeMatch()">Resume Match</button>
-                <button class="btn btn-warning" *ngIf="matchDetails.status=='live' && matchDetails.break_counter >= 1"  (click)="confirmPalentiesMatch()">Palenties mode</button>              
-                <button class="btn btn-success" (click)="confirmFinishMatch()">Finish Match</button>
+                <button class="btn btn-danger me-2" *ngIf="matchDetails.status=='live'" (click)="confirmHalfTimeMatch()">Pause Match</button>
+                <button class="btn btn-info me-2" *ngIf="matchDetails.status=='halftime'" (click)="confirmResumeMatch()">Resume Match</button>
+                <button class="btn btn-warning me-2" *ngIf="matchDetails.status=='live' && matchDetails.break_counter >= 1"  (click)="confirmPalentiesMatch()">Palenties mode</button>              
+                <button class="btn btn-success me-2" (click)="confirmFinishMatch()">Finish Match</button>
               </div>
             </div>
             
@@ -78,7 +78,7 @@
   <div class="row">
     <div class="col-md-6">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header bg-blue">
           {{ matchDetails?.matchteams[0].team.name }} Players
         </div>
         <div class="card-body">
@@ -94,7 +94,7 @@
                       alt="{{ player.first_name }} {{ player.last_name }}"
                       class="player-avatar"
                     />
-                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-dark text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
                       {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
                  </div>
                     <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
@@ -109,7 +109,7 @@
 
     <div class="col-md-6">
       <div class="card">
-        <div class="card-header">
+        <div class="card-header bg-blue">
           {{ matchDetails?.matchteams[1].team.name }} Players
         </div>
         <div class="card-body">
@@ -125,7 +125,7 @@
                       alt="{{ player.first_name }} {{ player.last_name }}"
                       class="player-avatar"
                     />
-                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                    <div *ngIf="!player.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-dark text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
                       {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
                  </div>
                     <div class="player-name">{{ player.first_name }} {{ player.last_name }}</div>
@@ -143,13 +143,13 @@
   <div class="modal fade" [class.show]="showModal" tabindex="-1" role="dialog" [style.display]="showModal ? 'block' : 'none'">
     <div class="modal-dialog modal-lg" role="document" *ngIf="selectedPlayer">
         <div class="modal-content">
-            <div class="modal-header bg-light">
+            <div class="modal-header  bg-blue">
                 <div class="d-flex align-items-center">
                     <img *ngIf="selectedPlayer?.avatar" [src]="selectedPlayer?.avatar ? selectedPlayer?.avatar : 'assets/images/player-placeholder.png'" alt="{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}" class="player-avatar mr-3">
-                    <div *ngIf="!selectedPlayer?.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-warning text-white" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
+                    <div *ngIf="!selectedPlayer?.avatar" class="d-flex align-items-center justify-content-center rounded-circle bg-dark text-white me-2" style="width: 2rem; height: 2rem; font-size: 0.75rem;">
                       {{ selectedPlayer.first_name.charAt(0) }}{{ selectedPlayer.last_name.charAt(0) }}
                     </div>
-                    <h5 class="modal-title">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
+                    <h5 class="modal-title m-auto">{{ selectedPlayer?.first_name }} {{ selectedPlayer?.last_name }}</h5>
                 </div>
                 <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close" (click)="closeModal()">
                     <span aria-hidden="true">×</span>
@@ -383,7 +383,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="closeModal()">Close</button>
-                <button type="button" class="btn btn-primary" (click)="saveChanges()">Save changes</button>
+                <button type="button" class="btn btn-dark" (click)="saveChanges()">Save changes</button>
             </div>
         </div>
     </div>
