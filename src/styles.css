@@ -11,5 +11,14 @@ body {
     margin: 0;
     font-family: Roboto, "Helvetica Neue", sans-serif;
 }
+.btn-dark{
+    background-color: #282828;
+}
+.bg-blue{
+    background-color: #53a4d9;
+}
+.bg-dark{
+    background-color: #282828;
+}
 
 /* Or your chosen theme */
