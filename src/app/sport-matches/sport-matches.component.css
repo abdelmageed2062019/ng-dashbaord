@@ -1,0 +1,26 @@
+.container { max-width: 900px; }
+h2 { margin-bottom: 20px; }
+.card {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 8px;
+}
+.match-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.match-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  border: 1px solid #007bff;
+}
+.card-header {
+  background: #f8f9fa;
+  font-size: 1rem;
+}
+.card-footer {
+  background: #f8f9fa;
+  font-size: 0.95rem;
+}
+.badge {
+  font-size: 1rem;
+  padding: 0.5em 1em;
+}

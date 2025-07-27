@@ -1,0 +1,7 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div *ngFor="let field of dynamicFields" class="mb-3">
+    <label>{{ field.label }}</label>
+    <input [type]="field.type" class="form-control" [formControlName]="field.key">
+  </div>
+  <button class="btn btn-primary" type="submit">Update</button>
+</form>

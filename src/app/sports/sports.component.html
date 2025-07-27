@@ -1,0 +1,16 @@
+<div class="container mt-4">
+  <h2>Sports List</h2>
+  <div *ngIf="loading" class="alert alert-info">Loading sports...</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div class="row" *ngIf="!loading && !error">
+    <div class="col-md-4 mb-4" *ngFor="let sport of sports">
+      <div class="card sport-card h-100" (click)="goToSport(sport)" style="cursor:pointer;">
+        <img *ngIf="sport.logo" [src]="sport.logo" class="card-img-top sport-logo" alt="{{ sport.name }} logo">
+        <img *ngIf="!sport.logo" src="assets/player.jpg" class="card-img-top sport-logo" alt="Default logo">
+        <div class="card-body text-center">
+          <h5 class="card-title">{{ sport.name }}</h5>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -56,7 +56,8 @@ export class ApiService {
   getMatchList(params?: {
     league?: number,
     start_date?: string,
-    status?: 'finished' | 'live' | 'postponed' | 'upcoming'
+    status?: 'finished' | 'live' | 'postponed' | 'upcoming',
+    sport?: number | string
   }): Observable<any> {
     let httpParams = new HttpParams();
 
@@ -99,6 +100,10 @@ export class ApiService {
   }
   getplayerlist(matchId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/players/?team=${matchId}`, { headers: this.getHeaders() });
+  }
+
+  GetSports(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/sports/`, { headers: this.getHeaders() });
   }
   updateplayer(data: any): Observable<any> {
     // const url = `${this.apiUrl}/player-stats/`;

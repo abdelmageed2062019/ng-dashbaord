@@ -1,0 +1,40 @@
+<div class="container mt-4">
+  <h2>Matches</h2>
+  <div *ngIf="loading" class="alert alert-info">Loading matches...</div>
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+  <div class="row" *ngIf="!loading && !error">
+    <div class="col-md-6 mb-4" *ngFor="let match of matches">
+      <div class="card h-100 match-card" (click)="onMatchClick(match)">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><b>Status:</b> {{ match.status || 'N/A' }}</span>
+          <span *ngIf="match.match_date"><b>Date:</b> {{ match.match_date | date:'medium' }}</span>
+        </div>
+        <div class="card-body">
+          <div *ngIf="match.matchteams && match.matchteams.length > 0; else playerMatch">
+            <div class="d-flex justify-content-between align-items-center">
+              <div *ngFor="let team of match.matchteams" class="text-center flex-fill">
+                <img *ngIf="team.team_logo" [src]="team.team_logo" alt="Team Logo" width="50" height="50" class="mb-2">
+                <div><b>{{ team.team_name || 'Team' }}</b></div>
+              </div>
+            </div>
+          </div>
+          <ng-template #playerMatch>
+            <div *ngIf="match.players && match.players.length > 0">
+              <div class="d-flex flex-wrap">
+                <div *ngFor="let player of match.players" class="me-3 mb-2">
+                  <span class="badge bg-primary">{{ player.name }}</span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!match.players || match.players.length === 0">
+              <span class="text-muted">No teams or players info available.</span>
+            </div>
+          </ng-template>
+        </div>
+        <div class="card-footer">
+          <b>League:</b> {{ match.league_obj?.name || 'N/A' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

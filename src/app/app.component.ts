@@ -14,10 +14,23 @@ import { CookieService } from 'ngx-cookie-service'; // Import CookieService
 })
 
 export class AppComponent {
-  
-  constructor(private router: Router, private cookieService: CookieService) {}
+  showBackButton = false;
   title = 'NGSC Admin Panel';
   isLoggedIn = !!localStorage.getItem('authToken'); // Check if token exists
+
+  constructor(private router: Router, private cookieService: CookieService) {
+    // Listen to route changes to show/hide back button
+    this.router.events.subscribe(() => {
+      const currentUrl = this.router.url;
+      // Hide back button on home and login
+      this.showBackButton = !(currentUrl === '/' || currentUrl.startsWith('/login'));
+    });
+  }
+
+  goBack() {
+    window.history.back();
+  }
+
   logout() {
     localStorage.clear();  // Clear local storage
     this.cookieService.deleteAll();  // Clear all cookies
