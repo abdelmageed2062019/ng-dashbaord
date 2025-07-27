@@ -7,10 +7,10 @@ import { CookieService } from 'ngx-cookie-service'; // Import CookieService
   providedIn: 'root'
 })
 export class ApiService {
-  private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
-  private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
-  // private baseApiUrl = 'http://localhost:8000/apis/v1';
-  // private apiUrl = 'http://localhost:8000/apis/v1/sports-app';
+  // private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
+  // private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+   private baseApiUrl = 'http://127.0.0.1:8000/apis/v1';
+   private apiUrl = 'http://127.0.0.1:8000/apis/v1/sports-app';
   private tokenEndpoint = `${this.baseApiUrl}/auth/login/`;
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
@@ -82,7 +82,7 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/matches/?status=halftime&status=live&status=penalties`, { headers: this.getHeaders() });
   }
   get_upcoming_matches(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/matches/?status=upcoming`, { headers: this.getHeaders() });
+    return this.http.get(`${this.apiUrl}/matches/?sport=1&status=upcoming`, { headers: this.getHeaders() });
   }
 
   getMatchDetails(matchId: number): Observable<any> {
