@@ -1,40 +1,210 @@
-<div class="container mt-4">
-  <h2>Matches</h2>
-  <div *ngIf="loading" class="alert alert-info">Loading matches...</div>
-  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-  <div class="row" *ngIf="!loading && !error">
-    <div class="col-md-6 mb-4" *ngFor="let match of matches">
-      <div class="card h-100 match-card" (click)="onMatchClick(match)">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <span><b>Status:</b> {{ match.status || 'N/A' }}</span>
-          <span *ngIf="match.match_date"><b>Date:</b> {{ match.match_date | date:'medium' }}</span>
+<div class="container-fluid mt-4">
+  <!-- Header Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-trophy me-2"></i>
+            {{ sportConfig?.name || 'Sport' }} Matches
+          </h2>
+          <p class="text-muted mb-0">{{ filteredMatches.length }} matches found</p>
         </div>
-        <div class="card-body">
-          <div *ngIf="match.matchteams && match.matchteams.length > 0; else playerMatch">
-            <div class="d-flex justify-content-between align-items-center">
-              <div *ngFor="let team of match.matchteams" class="text-center flex-fill">
-                <img *ngIf="team.team_logo" [src]="team.team_logo" alt="Team Logo" width="50" height="50" class="mb-2">
-                <div><b>{{ team.team_name || 'Team' }}</b></div>
-              </div>
-            </div>
-          </div>
-          <ng-template #playerMatch>
-            <div *ngIf="match.players && match.players.length > 0">
-              <div class="d-flex flex-wrap">
-                <div *ngFor="let player of match.players" class="me-3 mb-2">
-                  <span class="badge bg-primary">{{ player.name }}</span>
-                </div>
-              </div>
-            </div>
-            <div *ngIf="!match.players || match.players.length === 0">
-              <span class="text-muted">No teams or players info available.</span>
-            </div>
-          </ng-template>
+        <button class="btn btn-primary" (click)="loadMatches()">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">
+        <i class="fas fa-filter me-2"></i>Filters
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Status</label>
+          <select class="form-select" [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+            <option *ngFor="let status of statusOptions" [value]="status.value">
+              {{ status.label }}
+            </option>
+          </select>
         </div>
-        <div class="card-footer">
-          <b>League:</b> {{ match.league_obj?.name || 'N/A' }}
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Team</label>
+          <select class="form-select" [(ngModel)]="selectedTeam" (ngModelChange)="applyFilters()">
+            <option value="">All Teams</option>
+            <option *ngFor="let team of teams" [value]="team.id">
+              {{ team.name }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Date</label>
+          <input type="date" class="form-control" [(ngModel)]="selectedDate" (ngModelChange)="applyFilters()">
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="fas fa-times me-2"></i>Clear Filters
+          </button>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Loading and Error States -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading matches...</p>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+  </div>
+
+  <!-- Matches Grid -->
+  <div class="row" *ngIf="!loading && !error">
+    <div class="col-lg-6 col-xl-6 mb-4" *ngFor="let match of filteredMatches">
+      <div class="card h-100 match-card shadow-sm" (click)="onMatchClick(match)">
+        <!-- Match Header -->
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span [class]="getStatusBadgeClass(match.status)">
+            <i class="fas fa-circle me-1" [class]="match.status === 'live' ? 'blink' : ''"></i>
+            {{ match.status || 'TBD' | titlecase }}
+          </span>
+          <small class="text-muted">
+            <i class="fas fa-calendar-alt me-1"></i>
+            {{ formatMatchDate(match.match_date) }}
+          </small>
+        </div>
+
+        <!-- Match Body -->
+        <div class="card-body">
+          <!-- League Info -->
+          <div class="mb-3" *ngIf="match.league_obj">
+            <small class="text-muted">
+              <i class="fas fa-trophy me-1"></i>
+              {{ match.league_obj.name }}
+            </small>
+          </div>
+
+          <!-- Teams Section -->
+          <div class="teams-section">
+            <div *ngIf="match.matchteams && match.matchteams.length > 0; else noTeamsTemplate">
+              
+              <!-- Two Teams Layout -->
+              <div *ngIf="match.matchteams.length === 2" class="two-teams-layout">
+                <div class="d-flex justify-content-between align-items-center">
+                  <!-- Team 1 -->
+                  <div class="team-info text-center flex-fill">
+                    <img 
+                      [src]="match.matchteams[0].team?.logo || '/assets/player.jpg'" 
+                      [alt]="match.matchteams[0].team?.name"
+                      class="team-logo mb-2">
+                    <h6 class="team-name mb-1">{{ match.matchteams[0].team?.name || 'Team 1' }}</h6>
+                    <div class="team-score">{{ match.matchteams[0].score || 0 }}</div>
+                  </div>
+
+                  <!-- VS / Score Separator -->
+                  <div class="score-separator text-center px-3">
+                    <div class="vs-text">{{ getMatchScore(match) }}</div>
+                    <small class="text-muted" *ngIf="match.status === 'live'">
+                      <i class="fas fa-clock me-1"></i>{{ match.match_duration || 0 }}'
+                    </small>
+                  </div>
+
+                  <!-- Team 2 -->
+                  <div class="team-info text-center flex-fill">
+                    <img 
+                      [src]="match.matchteams[1].team?.logo || '/assets/player.jpg'" 
+                      [alt]="match.matchteams[1].team?.name"
+                      class="team-logo mb-2">
+                    <h6 class="team-name mb-1">{{ match.matchteams[1].team?.name || 'Team 2' }}</h6>
+                    <div class="team-score">{{ match.matchteams[1].score || 0 }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Multiple Teams Layout -->
+              <div *ngIf="match.matchteams.length !== 2" class="multiple-teams-layout">
+                <div class="row">
+                  <div class="col-6" *ngFor="let teamData of match.matchteams">
+                    <div class="team-card mb-2">
+                      <img 
+                        [src]="teamData.team?.logo || '/assets/player.jpg'" 
+                        [alt]="teamData.team?.name"
+                        class="team-logo-small me-2">
+                      <span class="team-name-small">{{ teamData.team?.name }}</span>
+                      <span class="team-score-small ms-auto">{{ teamData.score || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- No Teams Template -->
+            <ng-template #noTeamsTemplate>
+              <div class="text-center text-muted py-3">
+                <i class="fas fa-users fa-2x mb-2"></i>
+                <p class="mb-0">No teams assigned</p>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Match Stats (if available) -->
+          <div class="match-stats mt-3" *ngIf="match.status === 'finished' || match.status === 'live'">
+            <div class="row g-2">
+              <div class="col-4" *ngIf="match.total_goals > 0">
+                <div class="stat-item">
+                  <i class="fas fa-futbol"></i>
+                  <small>{{ match.total_goals }} Goals</small>
+                </div>
+              </div>
+              <div class="col-4" *ngIf="match.yellow_cards > 0">
+                <div class="stat-item">
+                  <i class="fas fa-square text-warning"></i>
+                  <small>{{ match.yellow_cards }} Yellow</small>
+                </div>
+              </div>
+              <div class="col-4" *ngIf="match.red_cards > 0">
+                <div class="stat-item">
+                  <i class="fas fa-square text-danger"></i>
+                  <small>{{ match.red_cards }} Red</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Match Footer -->
+        <div class="card-footer">
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+              <i class="fas fa-clock me-1"></i>
+              Duration: {{ match.match_duration || 0 }} min
+            </small>
+            <button class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-edit me-1"></i>Edit Match
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && !error && filteredMatches.length === 0" class="text-center py-5">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h4>No matches found</h4>
+    <p class="text-muted">Try adjusting your filters or check back later.</p>
+    <button class="btn btn-primary" (click)="clearFilters()">
+      <i class="fas fa-times me-2"></i>Clear All Filters
+    </button>
   </div>
 </div>

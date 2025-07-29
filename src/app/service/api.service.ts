@@ -106,9 +106,39 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/sports/`, { headers: this.getHeaders() });
   }
   updateplayer(data: any): Observable<any> {
-    // const url = `${this.apiUrl}/player-stats/`;
     const url = `${this.apiUrl}/player-stats/custom_update/`;
-    return this.http.put(url, data, { headers: this.getHeaders() });
+    console.log('Updating player with URL:', url);
+    console.log('Player data being sent:', data);
+    console.log('Headers:', this.getHeaders());
+    return this.http.put(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => {
+        console.log('Player update successful:', response);
+      })
+    );
+  }
+
+  // Alternative method using POST if PUT doesn't work
+  updateplayerPost(data: any): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/custom_update/`;
+    console.log('Updating player with POST URL:', url);
+    console.log('Player data being sent:', data);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => {
+        console.log('Player update (POST) successful:', response);
+      })
+    );
+  }
+
+  // Alternative method using PATCH
+  updateplayerPatch(data: any): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/custom_update/`;
+    console.log('Updating player with PATCH URL:', url);
+    console.log('Player data being sent:', data);
+    return this.http.patch(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => {
+        console.log('Player update (PATCH) successful:', response);
+      })
+    );
   }
 
   // New method to get player stats

@@ -1,6 +1,6 @@
 <div class="container-fluid">
   <div class="row justify-content-center">
-    <div class="col-12 col-lg-12 col-xl-12">
+    <div class="col-12 col-lg-10 col-xl-8">
       <div class="card">
         <div class="card-header">
           <h4><i class="fas fa-edit"></i> Update Match Data</h4>
@@ -122,7 +122,7 @@
                   </label>
                   <div class="btn-group w-100" role="group">
                     <button 
-                      *ngFor="let teamData of teams; let i = index"
+                      *ngFor="let teamData of teams; let i = index" 
                       type="button" 
                       class="btn"
                       [class.active]="selectedTeam === teamData.team.id"
@@ -153,119 +153,130 @@
                       
                       <!-- Player Stats Display -->
                       <div class="player-stats">
-                        <!-- Football Stats -->
-                        <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
+                        <div class="row g-2">
+                          <!-- Football Stats -->
+                          <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="col-12">
+                            <div class="row g-2">
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Goals</div>
+                                  <div class="stat-value">{{ player.goals || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Assists</div>
+                                  <div class="stat-value">{{ player.assists || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Yellow</div>
+                                  <div class="stat-value">{{ player.yellow_cards || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Red</div>
+                                  <div class="stat-value">{{ player.red_cards || 0 }}</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
+                          
+                          <!-- Basketball Stats -->
+                          <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="col-12">
+                            <div class="row g-2">
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Points</div>
+                                  <div class="stat-value">{{ player.points || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Rebounds</div>
+                                  <div class="stat-value">{{ player.rebounds || 0 }}</div>
+                                </div>
+                              </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Assists</div>
+                                  <div class="stat-value">{{ player.assists || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Steals</div>
+                                  <div class="stat-value">{{ player.steals || 0 }}</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Yellow</div>
-                              <div class="stat-value">{{ player.yellow_cards || 0 }}</div>
+                          
+                          <!-- Water Polo Stats -->
+                          <div *ngIf="sportConfig?.name === 'Waterpolo'" class="col-12">
+                            <div class="row g-2">
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Goals</div>
+                                  <div class="stat-value">{{ player.goals || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Saves</div>
+                                  <div class="stat-value">{{ player.saves || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Exclusions</div>
+                                  <div class="stat-value">{{ player.exclusions || 0 }}</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Red</div>
-                              <div class="stat-value">{{ player.red_cards || 0 }}</div>
+                          
+                          <!-- Gymnastics Stats -->
+                          <div *ngIf="sportConfig?.name === 'Gymnastics'" class="col-12">
+                            <div class="row g-2">
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Total</div>
+                                  <div class="stat-value">{{ player.total_score || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Difficulty</div>
+                                  <div class="stat-value">{{ player.difficulty_score || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Execution</div>
+                                  <div class="stat-value">{{ player.execution_score || 0 }}</div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="stat-item">
+                                  <div class="stat-label">Falls</div>
+                                  <div class="stat-value">{{ player.fall_count || 0 }}</div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
-                        <!-- Basketball Stats -->
-                        <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Points</div>
-                              <div class="stat-value">{{ player.points || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Rebounds</div>
-                              <div class="stat-value">{{ player.rebounds || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Steals</div>
-                              <div class="stat-value">{{ player.steals || 0 }}</div>
-                            </div>
-                          </div>
+                        <div class="mt-3">
+                          <button 
+                            class="btn btn-outline-primary w-100" 
+                            (click)="updatePlayerStats(player, selectedTeam)">
+                            <i class="fas fa-chart-line me-2"></i>Update Player Stats
+                          </button>
                         </div>
-                        
-                        <!-- Water Polo Stats -->
-                        <div *ngIf="sportConfig?.name === 'Waterpolo'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Saves</div>
-                              <div class="stat-value">{{ player.saves || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Exclusions</div>
-                              <div class="stat-value">{{ player.exclusions || 0 }}</div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <!-- Gymnastics Stats -->
-                        <div *ngIf="sportConfig?.name === 'Gymnastics'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Total</div>
-                              <div class="stat-value">{{ player.total_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Difficulty</div>
-                              <div class="stat-value">{{ player.difficulty_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Execution</div>
-                              <div class="stat-value">{{ player.execution_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Falls</div>
-                              <div class="stat-value">{{ player.fall_count || 0 }}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="mt-3">
-                        <button 
-                          class="btn btn-outline-primary w-100" 
-                          (click)="updatePlayerStats(player, selectedTeam)">
-                          <i class="fas fa-chart-line me-2"></i>Update Player Stats
-                        </button>
                       </div>
                     </div>
                   </div>
