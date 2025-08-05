@@ -1,12 +1,16 @@
 <div class="container-fluid">
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-12 col-xl-12">
-      <div class="card">
-        <div class="card-header">
-          <h4><i class="fas fa-edit"></i> Update Match Data</h4>
-          <small *ngIf="sportConfig" style="opacity: 0.8;">
-            <i class="fas fa-futbol me-1"></i>Sport: {{ sportConfig.name }}
-          </small>
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="fas fa-edit me-2"></i>Update Match Data
+            </h4>
+            <button class="btn btn-light btn-sm" (click)="goBack()">
+              <i class="fas fa-arrow-left me-2"></i>Back
+            </button>
+          </div>
         </div>
         <div class="card-body">
           <!-- Loading State -->
@@ -35,13 +39,15 @@
                 <label class="form-label">
                   <i [class]="getFieldIcon(field.type)"></i>
                   {{ field.label }}
+                  <span class="text-danger" *ngIf="hasFieldError(field.key)">*</span>
                 </label>
                 
                 <!-- Text Input -->
                 <input 
                   *ngIf="field.type === 'text'" 
                   type="text" 
-                  class="form-control" 
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key"
                   [placeholder]="'Enter ' + field.label.toLowerCase()">
                 
@@ -49,7 +55,8 @@
                 <input 
                   *ngIf="field.type === 'number'" 
                   type="number" 
-                  class="form-control" 
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key"
                   [placeholder]="'Enter ' + field.label.toLowerCase()"
                   min="0">
@@ -58,14 +65,16 @@
                 <input 
                   *ngIf="field.type === 'datetime-local'" 
                   type="datetime-local" 
-                  class="form-control" 
+                  class="form-control"
+                  [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key">
                 
                 <!-- Checkbox Input -->
                 <div *ngIf="field.type === 'checkbox'" class="form-check">
                   <input 
                     type="checkbox" 
-                    class="form-check-input" 
+                    class="form-check-input"
+                    [class.is-invalid]="hasFieldError(field.key)"
                     [formControlName]="field.key"
                     [id]="field.key">
                   <label class="form-check-label" [for]="field.key">
@@ -76,13 +85,20 @@
                 <!-- Select Input -->
                 <select 
                   *ngIf="field.type === 'select'" 
-                  class="form-select" 
+                  class="form-select"
+                  [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key">
                   <option value="">Select {{ field.label.toLowerCase() }}</option>
                   <option *ngFor="let option of field.options" [value]="option">
                     {{ option | titlecase }}
                   </option>
                 </select>
+                
+                <!-- Error Message -->
+                <div *ngIf="hasFieldError(field.key)" class="invalid-feedback d-block">
+                  <i class="fas fa-exclamation-circle me-1"></i>
+                  {{ getFieldErrorMessage(field.key) }}
+                </div>
               </div>
             </div>
             
@@ -100,7 +116,7 @@
                 <button type="button" class="btn btn-warning" (click)="testPlayerUpdate()" *ngIf="showPlayerStats && selectedTeam">
                   <i class="fas fa-bug me-2"></i>Test API
                 </button>
-                <button type="submit" class="btn btn-success" [disabled]="!form.valid">
+                <button type="submit" class="btn btn-success">
                   <i class="fas fa-save me-2"></i>Update Match
                 </button>
               </div>
@@ -115,6 +131,93 @@
                 <small style="opacity: 0.8;">Manage player performance and stats</small>
               </div>
               <div class="card-body">
+                <!-- Gymnastics Special Section -->
+                <div *ngIf="sportConfig?.name === 'Gymnastics'" class="mb-4">
+                  
+                  <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                      <h6 class="mb-0"><i class="fas fa-medal me-2"></i>Gymnastics Competition Management</h6>
+                    </div>
+                    <div class="card-body">
+                      <!-- Competition Type Selection -->
+                      <div class="row mb-3">
+                        <div class="col-md-6">
+                          <label class="form-label"><i class="fas fa-trophy me-2"></i>Competition Type:</label>
+                          <select class="form-select" [(ngModel)]="selectedCompetitionType" (change)="selectCompetitionType($any($event.target).value)">
+                            <option value="">Select Competition Type</option>
+                            <option value="individual_all_around">Individual All-Around</option>
+                            <option value="team_competition">Team Competition</option>
+                            <option value="apparatus_finals">Apparatus Finals</option>
+                            <option value="qualification">Qualification</option>
+                          </select>
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label"><i class="fas fa-dumbbell me-2"></i>Target Apparatus:</label>
+                          <select class="form-select" [(ngModel)]="selectedApparatus" (change)="selectApparatus($any($event.target).value)">
+                            <option value="">Select Apparatus</option>
+                            <option value="floor_exercise">Floor Exercise</option>
+                            <option value="pommel_horse">Pommel Horse</option>
+                            <option value="still_rings">Still Rings</option>
+                            <option value="vault">Vault</option>
+                            <option value="parallel_bars">Parallel Bars</option>
+                            <option value="horizontal_bar">Horizontal Bar</option>
+                            <option value="uneven_bars">Uneven Bars</option>
+                            <option value="balance_beam">Balance Beam</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Apparatus Scores Summary -->
+                      <div *ngIf="selectedCompetitionType" class="row">
+                        <div class="col-12">
+                          <h6><i class="fas fa-chart-bar me-2"></i>Apparatus Scores Overview</h6>
+                          <div class="row g-2">
+                            <div *ngFor="let apparatus of gymnasticsApparatus" class="col-lg-3 col-md-4 col-sm-6">
+                              <div class="card apparatus-card" [class.selected]="selectedApparatus === apparatus">
+                                <div class="card-body text-center p-2">
+                                  <small class="apparatus-name">{{ apparatus.replace('_', ' ').toUpperCase() }}</small>
+                                  <div class="apparatus-score">
+                                    {{ gymnasticsScores[apparatus]?.combined_score || '0.0' }}
+                                  </div>
+                                  <small class="text-muted">
+                                    D: {{ gymnasticsScores[apparatus]?.difficulty_score || '0.0' }} | 
+                                    E: {{ gymnasticsScores[apparatus]?.execution_score || '0.0' }}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Rotation Management -->
+                      <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <h6><i class="fas fa-sync-alt me-2"></i>Rotation Management</h6>
+                          <button type="button" class="btn btn-sm btn-primary" (click)="addRotation()">
+                            <i class="fas fa-plus me-1"></i>Add Rotation
+                          </button>
+                        </div>
+                        <div class="row g-2" *ngIf="gymnasticsRotations.length > 0">
+                          <div *ngFor="let rotation of gymnasticsRotations; let i = index" class="col-md-4">
+                            <div class="card rotation-card">
+                              <div class="card-body p-2">
+                                <small><strong>Rotation {{ rotation.rotation_number }}</strong></small><br>
+                                <small>Apparatus: {{ rotation.apparatus?.replace('_', ' ') || 'TBD' }}</small><br>
+                                <small>Status: 
+                                  <span [class]="'badge ' + (rotation.status === 'completed' ? 'bg-success' : rotation.status === 'active' ? 'bg-warning' : 'bg-secondary')">
+                                    {{ rotation.status || 'pending' }}
+                                  </span>
+                                </small>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Team Selection -->
                 <div class="mb-4">
                   <label class="form-label">

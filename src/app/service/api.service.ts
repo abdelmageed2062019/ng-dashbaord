@@ -152,4 +152,92 @@ export class ApiService {
 
     return this.http.get(url, { params: params, headers: this.getHeaders() });
   }
+
+  // Gymnastics-specific API methods
+  initializeGymnasticsCompetition(competitionData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/initialize/`, competitionData, { headers: this.getHeaders() });
+  }
+
+  startGymnasticsClock(matchId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/clock/start/`, { match: matchId }, { headers: this.getHeaders() });
+  }
+
+  stopGymnasticsClock(matchId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/clock/stop/`, { match: matchId }, { headers: this.getHeaders() });
+  }
+
+  resetGymnasticsClock(matchId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/clock/reset/`, { match: matchId }, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsClockStatus(matchId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/clock/status/${matchId}/`, { headers: this.getHeaders() });
+  }
+
+  createGymnasticsSession(sessionData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/sessions/`, sessionData, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsSessions(matchId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/sessions/?match=${matchId}`, { headers: this.getHeaders() });
+  }
+
+  createGymnasticsRotation(rotationData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/rotations/`, rotationData, { headers: this.getHeaders() });
+  }
+
+  updateGymnasticsRotation(rotationId: number, rotationData: any): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/gymnastics/rotations/${rotationId}/`, rotationData, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsRotations(matchId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/rotations/?match=${matchId}`, { headers: this.getHeaders() });
+  }
+
+  submitGymnasticsScore(scoreData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/scores/`, scoreData, { headers: this.getHeaders() });
+  }
+
+  updateGymnasticsScore(scoreId: number, scoreData: any): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/gymnastics/scores/${scoreId}/`, scoreData, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsScores(matchId: number, apparatus?: string): Observable<any> {
+    let url = `${this.apiUrl}/gymnastics/scores/?match=${matchId}`;
+    if (apparatus) {
+      url += `&apparatus=${apparatus}`;
+    }
+    return this.http.get(url, { headers: this.getHeaders() });
+  }
+
+  setupJudgePanels(matchId: number, panelData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/judge-panels/`, { match: matchId, ...panelData }, { headers: this.getHeaders() });
+  }
+
+  assignJudgeToPanel(judgeData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/judge-assignments/`, judgeData, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsRankings(matchId: number, competitionType: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/rankings/?match=${matchId}&type=${competitionType}`, { headers: this.getHeaders() });
+  }
+
+  calculateGymnasticsAllAround(matchId: number, gymnast: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/calculate-all-around/`, { match: matchId, gymnast }, { headers: this.getHeaders() });
+  }
+
+  getGymnasticsApparatusRankings(matchId: number, apparatus: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/apparatus-rankings/?match=${matchId}&apparatus=${apparatus}`, { headers: this.getHeaders() });
+  }
+
+  finalizeGymnasticsResults(matchId: number): Observable<any> {
+    return this.http.post(`${this.apiUrl}/gymnastics/finalize-results/`, { match: matchId }, { headers: this.getHeaders() });
+  }
+
+  exportGymnasticsResults(matchId: number, format: 'pdf' | 'excel' | 'csv'): Observable<any> {
+    return this.http.get(`${this.apiUrl}/gymnastics/export-results/${matchId}/?format=${format}`, { 
+      headers: this.getHeaders(),
+      responseType: 'blob'
+    });
+  }
 }

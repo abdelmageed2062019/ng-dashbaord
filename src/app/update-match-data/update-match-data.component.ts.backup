@@ -1,18 +1,17 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../service/api.service';
-import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-update-match-data',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './update-match-data.component.html',
   styleUrls: ['./update-match-data.component.css']
 })
-export class UpdateMatchDataComponent implements OnInit, OnDestroy {
+export class UpdateMatchDataComponent implements OnInit {
   match: any;
   sportConfig: any;
   form!: FormGroup;
@@ -26,10 +25,6 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   successMessage: string | null = null;
-  
-  // Validation properties
-  fieldErrors: { [key: string]: string[] } = {};
-  formSubmitted = false;
 
   // Gymnastics specific properties
   gymnasticsApparatus: string[] = [
@@ -69,60 +64,6 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   gymnasticsScores: { [apparatus: string]: any } = {};
   gymnasticsRotations: any[] = [];
 
-  // Clock and timer management
-  competitionClock = {
-    isRunning: false,
-    currentTime: 0,
-    rotationTime: 0,
-    warmupTime: 0,
-    touchWarmupTime: 0,
-    routineTime: 0,
-    breakTime: 0
-  };
-
-  // Session management
-  sessionConfig = {
-    sessionId: null as number | null,
-    sessionName: '',
-    startTime: null as Date | null,
-    endTime: null as Date | null,
-    subdivision: '',
-    competitionLevel: '',
-    gender: 'mixed',
-    ageGroup: 'senior'
-  };
-
-  // Judge panels configuration
-  judgePanels = {
-    difficulty_panel: {
-      judges: [],
-      chief_judge: null,
-      isActive: false
-    },
-    execution_panel: {
-      judges: [],
-      chief_judge: null,
-      isActive: false
-    },
-    reference_panel: {
-      judges: [],
-      isActive: false
-    },
-    superior_jury: {
-      members: [],
-      isActive: false
-    }
-  };
-
-  // Competition state
-  competitionState = {
-    initialized: false,
-    currentRotation: 0,
-    currentSubdivision: 0,
-    allRotationsComplete: false,
-    awards_ceremony_ready: false
-  };
-
   constructor(private fb: FormBuilder, private route: ActivatedRoute, private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void {
@@ -145,27 +86,11 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.error = 'Failed to load match data. Please try again.';
           this.loading = false;
           console.error('Error loading match:', err);
-          
-          Swal.fire({
-            icon: 'error',
-            title: 'Failed to Load Match',
-            text: 'Could not load match data. Please check your connection and try again.',
-            confirmButtonColor: '#dc3545'
-          });
         }
       });
     } else {
       this.loading = false;
       this.error = 'No match ID provided';
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Invalid Match',
-        text: 'No match ID was provided in the URL.',
-        confirmButtonColor: '#dc3545'
-      }).then(() => {
-        this.goBack();
-      });
     }
   }
 
@@ -292,7 +217,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       this.dynamicFields.push({ key: 'extra_time_duration', label: 'Extra Time Duration', type: 'number' });
     }
 
-    // Build the form group dynamically with validators
+    // Build the form group dynamically
     const group: any = {};
     this.dynamicFields.forEach(field => {
       let defaultValue = this.match?.[field.key] || '';
@@ -307,28 +232,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         defaultValue = new Date(this.match[field.key]).toISOString().slice(0, 16);
       }
       
-      // Add validators based on field type
-      const validators = [];
-      if (field.type === 'number') {
-        validators.push(Validators.min(0));
-      }
-      if (field.key === 'status') {
-        validators.push(Validators.required);
-      }
-      if (field.type === 'datetime-local') {
-        // Add custom validator for datetime format
-        validators.push(this.dateTimeValidator);
-      }
-      
-      group[field.key] = [defaultValue, validators];
+      group[field.key] = [defaultValue];
     });
     this.form = this.fb.group(group);
   }
 
   onSubmit() {
-    this.formSubmitted = true;
-    this.fieldErrors = {};
-    
     if (this.form.valid) {
       const formData = this.form.value;
       
@@ -339,48 +248,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         }
       });
       
-      // Show loading alert
-      Swal.fire({
-        title: 'Updating Match...',
-        text: 'Please wait while we update the match data.',
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-      
       console.log('Updating match with data:', formData);
-      
-      this.apiService.updateMatch(this.match.id, formData).subscribe({
-        next: (response) => {
-          console.log('Match updated successfully:', response);
-          Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: 'Match updated successfully!',
-            confirmButtonColor: '#198754'
-          });
-        },
-        error: (error) => {
-          console.error('Error updating match:', error);
-          this.handleApiError(error, 'Failed to update match');
-        }
+      // TODO: Call API to update match
+      this.apiService.updateMatch(this.match.id, formData).subscribe(response => {
+        alert('Match updated successfully!');
+        // this.goBack();
       });
-    } else {
-      // Show validation error
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        text: 'Please fill in all required fields correctly.',
-        confirmButtonColor: '#dc3545'
-      });
-      
-      // Mark all invalid fields
-      Object.keys(this.form.controls).forEach(key => {
-        if (this.form.get(key)?.invalid) {
-          this.form.get(key)?.markAsTouched();
-        }
-      });
+      // alert('Match updated successfully! Data: ' + JSON.stringify(formData, null, 2));
     }
   }
 
@@ -390,159 +264,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Error handling methods
-  handleApiError(error: any, defaultMessage: string): void {
-    console.error('API Error:', error);
-    
-    let errorTitle = 'Error';
-    let errorMessage = defaultMessage;
-    
-    if (error.status === 400 && error.error) {
-      // Handle validation errors
-      errorTitle = 'Validation Error';
-      this.fieldErrors = error.error;
-      
-      const errorMessages: string[] = [];
-      Object.keys(error.error).forEach(field => {
-        const fieldName = this.getFieldDisplayName(field);
-        const messages = Array.isArray(error.error[field]) ? error.error[field] : [error.error[field]];
-        messages.forEach((msg: string) => {
-          errorMessages.push(`${fieldName}: ${msg}`);
-        });
-      });
-      
-      errorMessage = errorMessages.join('\n');
-      
-      // Mark form fields with errors as invalid
-      this.markFieldsWithErrors();
-    } else if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.error?.detail) {
-      errorMessage = error.error.detail;
-    } else if (error.message) {
-      errorMessage = error.message;
-    }
-    
-    Swal.fire({
-      icon: 'error',
-      title: errorTitle,
-      text: errorMessage,
-      confirmButtonColor: '#dc3545',
-      customClass: {
-        popup: 'error-popup'
-      }
-    });
-  }
-
-  getFieldDisplayName(fieldKey: string): string {
-    const field = this.dynamicFields.find(f => f.key === fieldKey);
-    return field ? field.label : fieldKey.replace('_', ' ').toUpperCase();
-  }
-
-  markFieldsWithErrors(): void {
-    Object.keys(this.fieldErrors).forEach(fieldKey => {
-      const control = this.form.get(fieldKey);
-      if (control) {
-        control.setErrors({ serverError: this.fieldErrors[fieldKey] });
-        control.markAsTouched();
-      }
-    });
-  }
-
-  hasFieldError(fieldKey: string): boolean {
-    const control = this.form.get(fieldKey);
-    return !!(control && control.errors && (control.dirty || control.touched || this.formSubmitted));
-  }
-
-  getFieldErrorMessage(fieldKey: string): string {
-    const control = this.form.get(fieldKey);
-    if (!control || !control.errors) return '';
-    
-    if (control.errors['serverError']) {
-      return Array.isArray(control.errors['serverError']) 
-        ? control.errors['serverError'].join(', ')
-        : control.errors['serverError'];
-    }
-    
-    if (control.errors['required']) {
-      return `${this.getFieldDisplayName(fieldKey)} is required`;
-    }
-    
-    if (control.errors['min']) {
-      return `${this.getFieldDisplayName(fieldKey)} must be at least ${control.errors['min'].min}`;
-    }
-    
-    if (control.errors['invalidDateTime']) {
-      return `${this.getFieldDisplayName(fieldKey)} has invalid date/time format`;
-    }
-    
-    return 'Invalid value';
-  }
-
-  // Custom validator for datetime fields
-  dateTimeValidator(control: any) {
-    if (!control.value) return null;
-    
-    try {
-      const date = new Date(control.value);
-      if (isNaN(date.getTime())) {
-        return { invalidDateTime: true };
-      }
-      return null;
-    } catch (e) {
-      return { invalidDateTime: true };
-    }
-  }
-
-  handlePlayerUpdateError(error: any, player: any): void {
-    console.error('Player update error:', error);
-    
-    let errorTitle = 'Error Updating Player';
-    let errorMessage = 'Failed to update player statistics.';
-    
-    if (error.status === 400 && error.error) {
-      errorTitle = 'Validation Error';
-      const errorMessages: string[] = [];
-      
-      Object.keys(error.error).forEach(field => {
-        const messages = Array.isArray(error.error[field]) ? error.error[field] : [error.error[field]];
-        messages.forEach((msg: string) => {
-          errorMessages.push(`${field.replace('_', ' ')}: ${msg}`);
-        });
-      });
-      
-      errorMessage = errorMessages.join('\n');
-    } else if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.error?.detail) {
-      errorMessage = error.error.detail;
-    }
-    
-    Swal.fire({
-      icon: 'error',
-      title: errorTitle,
-      text: `Error updating ${player.first_name} ${player.last_name}: ${errorMessage}`,
-      confirmButtonColor: '#dc3545'
-    });
-  }
-
   loadPlayersForAllTeams(): void {
     this.teams.forEach(teamData => {
       const teamId = teamData.team.id;
-      this.apiService.getplayerlist(teamId).subscribe({
-        next: (players) => {
-          this.playersData[teamId] = players;
-          console.log(`Players loaded for team ${teamId}:`, players);
-        },
-        error: (error) => {
-          console.error(`Error loading players for team ${teamId}:`, error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error Loading Players',
-            text: `Failed to load players for team ${teamData.team.name || teamId}`,
-            confirmButtonColor: '#dc3545'
-          });
-        }
+      this.apiService.getplayerlist(teamId).subscribe(players => {
+        this.playersData[teamId] = players;
+        console.log(`Players loaded for team ${teamId}:`, players);
       });
     });
   }
@@ -557,71 +284,27 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       const players = this.playersData[this.selectedTeam];
       if (players && players.length > 0) {
         const testPlayer = players[0];
+        const testData = {
+          match: this.match.id,
+          team: this.selectedTeam,
+          player: testPlayer.id,
+          goals: 1,
+          assists: 1,
+          minutes_played: 90
+        };
         
-        // Show confirmation dialog
-        Swal.fire({
-          title: 'Test Player Update',
-          text: `This will test updating player ${testPlayer.first_name} ${testPlayer.last_name}. Continue?`,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#198754',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Yes, test it!',
-          cancelButtonText: 'Cancel'
-        }).then((result) => {
-          if (result.isConfirmed) {
-            const testData = {
-              match: this.match.id,
-              team: this.selectedTeam,
-              player: testPlayer.id,
-              goals: 1,
-              assists: 1,
-              minutes_played: 90
-            };
-            
-            // Show loading
-            Swal.fire({
-              title: 'Testing API...',
-              text: 'Please wait while we test the player update.',
-              allowOutsideClick: false,
-              didOpen: () => {
-                Swal.showLoading();
-              }
-            });
-            
-            console.log('Testing player update with:', testData);
-            this.apiService.updateplayer(testData).subscribe({
-              next: (response) => {
-                console.log('Test update successful:', response);
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Test Successful!',
-                  text: 'Player update API is working correctly.',
-                  confirmButtonColor: '#198754'
-                });
-              },
-              error: (error) => {
-                console.error('Test update failed:', error);
-                this.handlePlayerUpdateError(error, testPlayer);
-              }
-            });
+        console.log('Testing player update with:', testData);
+        this.apiService.updateplayer(testData).subscribe({
+          next: (response) => {
+            console.log('Test update successful:', response);
+            alert('Test update successful!');
+          },
+          error: (error) => {
+            console.error('Test update failed:', error);
+            alert('Test update failed. Check console for details.');
           }
         });
-      } else {
-        Swal.fire({
-          icon: 'warning',
-          title: 'No Players Found',
-          text: 'No players available for the selected team.',
-          confirmButtonColor: '#ffc107'
-        });
       }
-    } else {
-      Swal.fire({
-        icon: 'warning',
-        title: 'No Team Selected',
-        text: 'Please select a team first.',
-        confirmButtonColor: '#ffc107'
-      });
     }
   }
 
@@ -738,41 +421,21 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   updatePlayerStats(player: any, teamId: number): void {
-    // Show loading
-    Swal.fire({
-      title: 'Loading Player Stats...',
-      text: 'Please wait while we fetch current player statistics.',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
     // First get current player stats from the API
     this.apiService.getPlayerStats(this.match.id, teamId, player.id).subscribe({
       next: (currentPlayerStats) => {
         console.log('Current player stats from API:', currentPlayerStats);
-        Swal.close(); // Close loading dialog
         this.showPlayerEditDialog(player, teamId, currentPlayerStats);
       },
       error: (error) => {
         console.error('Error fetching player stats:', error);
-        Swal.close(); // Close loading dialog
-        
-        // Show warning and fallback to using player data from the team list
-        Swal.fire({
-          icon: 'warning',
-          title: 'Stats Not Found',
-          text: 'Could not load existing player stats. Starting with default values.',
-          confirmButtonColor: '#ffc107'
-        }).then(() => {
-          const playerFields = this.getPlayerFields();
-          const playerFormData: any = {};
-          playerFields.forEach(field => {
-            playerFormData[field.key] = player[field.key] || (field.type === 'checkbox' ? false : 0);
-          });
-          this.showPlayerEditDialog(player, teamId, playerFormData);
+        // Fallback to using player data from the team list
+        const playerFields = this.getPlayerFields();
+        const playerFormData: any = {};
+        playerFields.forEach(field => {
+          playerFormData[field.key] = player[field.key] || (field.type === 'checkbox' ? false : 0);
         });
+        this.showPlayerEditDialog(player, teamId, playerFormData);
       }
     });
   }
@@ -852,10 +515,18 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
       // Special handling for gymnastics player updates
       if (this.sportConfig?.name === 'Gymnastics') {
-        this.updateGymnasticsPlayerStats(updatedStats, dialogDiv, saveBtn, player);
+        this.updateGymnasticsPlayerStats(updatedStats);
       } else {
-        this.sendPlayerUpdate(updatedStats, dialogDiv, saveBtn, player);
+        this.sendPlayerUpdate(updatedStats);
       }
+
+      document.body.removeChild(overlay);
+    };
+
+    // Handle cancel
+    const cancelBtn = dialogDiv.querySelector('#cancelBtn') as HTMLButtonElement;
+    cancelBtn.onclick = () => {
+      document.body.removeChild(overlay);
     };
   }
 
@@ -924,16 +595,6 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   addRotation(): void {
-    if (!this.selectedApparatus) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'No Apparatus Selected',
-        text: 'Please select an apparatus before adding a rotation.',
-        confirmButtonColor: '#ffc107'
-      });
-      return;
-    }
-
     const newRotation = {
       rotation_number: this.gymnasticsRotations.length + 1,
       apparatus: this.selectedApparatus,
@@ -945,441 +606,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     
     this.gymnasticsRotations.push(newRotation);
     console.log('Added rotation:', newRotation);
-    
-    // Show success message
-    Swal.fire({
-      icon: 'success',
-      title: 'Rotation Added!',
-      text: `Rotation ${newRotation.rotation_number} for ${this.selectedApparatus.replace('_', ' ').toUpperCase()} has been added successfully.`,
-      confirmButtonColor: '#198754',
-      timer: 3000,
-      timerProgressBar: true
-    });
   }
 
-  // Clock and Timer Management Methods
-  initializeCompetition(): void {
-    if (!this.match?.id) {
-      Swal.fire({
-        icon: 'error',
-        title: 'No Match Selected',
-        text: 'Cannot initialize competition without a valid match.',
-        confirmButtonColor: '#dc3545'
-      });
-      return;
-    }
-
-    const competitionData = {
-      match: this.match.id,
-      competition_type: this.selectedCompetitionType,
-      session_config: this.sessionConfig,
-      apparatus_count: this.gymnasticsApparatus.length,
-      total_rotations: this.gymnasticsRotations.length || 6,
-      warmup_time: 30,
-      touch_warmup_time: 50,
-      routine_time: 90,
-      break_time_between_rotations: 120
-    };
-
-    Swal.fire({
-      title: 'Initialize Competition',
-      text: 'This will set up the gymnastics competition with all necessary configurations.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#198754',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Initialize',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: 'Initializing Competition...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
-
-        this.apiService.initializeGymnasticsCompetition(competitionData).subscribe({
-          next: (response) => {
-            console.log('Competition initialized:', response);
-            this.competitionState.initialized = true;
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Competition Initialized!',
-              text: 'The gymnastics competition has been successfully set up.',
-              confirmButtonColor: '#198754'
-            });
-          },
-          error: (error) => {
-            console.error('Failed to initialize competition:', error);
-            this.handleApiError(error, 'Failed to initialize gymnastics competition');
-          }
-        });
-      }
-    });
-  }
-
-  startClock(): void {
-    if (!this.match?.id) return;
-
-    this.apiService.startGymnasticsClock(this.match.id).subscribe({
-      next: (response) => {
-        console.log('Clock started:', response);
-        this.competitionClock.isRunning = true;
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Competition Clock Started!',
-          text: 'The gymnastics competition timer is now running.',
-          confirmButtonColor: '#198754',
-          timer: 2000,
-          timerProgressBar: true
-        });
-
-        // Start local timer update
-        this.startClockUpdate();
-      },
-      error: (error) => {
-        console.error('Failed to start clock:', error);
-        this.handleApiError(error, 'Failed to start competition clock');
-      }
-    });
-  }
-
-  stopClock(): void {
-    if (!this.match?.id) return;
-
-    this.apiService.stopGymnasticsClock(this.match.id).subscribe({
-      next: (response) => {
-        console.log('Clock stopped:', response);
-        this.competitionClock.isRunning = false;
-        
-        Swal.fire({
-          icon: 'info',
-          title: 'Competition Clock Stopped',
-          text: 'The gymnastics competition timer has been paused.',
-          confirmButtonColor: '#17a2b8',
-          timer: 2000,
-          timerProgressBar: true
-        });
-
-        this.stopClockUpdate();
-      },
-      error: (error) => {
-        console.error('Failed to stop clock:', error);
-        this.handleApiError(error, 'Failed to stop competition clock');
-      }
-    });
-  }
-
-  resetClock(): void {
-    if (!this.match?.id) return;
-
-    Swal.fire({
-      title: 'Reset Competition Clock?',
-      text: 'This will reset all timers to zero. This action cannot be undone.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#dc3545',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Reset',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.apiService.resetGymnasticsClock(this.match.id).subscribe({
-          next: (response) => {
-            console.log('Clock reset:', response);
-            this.competitionClock = {
-              isRunning: false,
-              currentTime: 0,
-              rotationTime: 0,
-              warmupTime: 0,
-              touchWarmupTime: 0,
-              routineTime: 0,
-              breakTime: 0
-            };
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Clock Reset!',
-              text: 'All competition timers have been reset to zero.',
-              confirmButtonColor: '#198754'
-            });
-          },
-          error: (error) => {
-            console.error('Failed to reset clock:', error);
-            this.handleApiError(error, 'Failed to reset competition clock');
-          }
-        });
-      }
-    });
-  }
-
-  private clockUpdateInterval: any;
-
-  startClockUpdate(): void {
-    this.clockUpdateInterval = setInterval(() => {
-      this.updateClockStatus();
-    }, 1000);
-  }
-
-  stopClockUpdate(): void {
-    if (this.clockUpdateInterval) {
-      clearInterval(this.clockUpdateInterval);
-    }
-  }
-
-  updateClockStatus(): void {
-    if (!this.match?.id) return;
-
-    this.apiService.getGymnasticsClockStatus(this.match.id).subscribe({
-      next: (status) => {
-        this.competitionClock = { ...this.competitionClock, ...status };
-      },
-      error: (error) => {
-        console.error('Failed to get clock status:', error);
-      }
-    });
-  }
-
-  // Session Management Methods
-  createSession(): void {
-    if (!this.match?.id) return;
-
-    const sessionData = {
-      match: this.match.id,
-      session_name: this.sessionConfig.sessionName || `Session ${new Date().getTime()}`,
-      start_time: this.sessionConfig.startTime || new Date(),
-      subdivision: this.sessionConfig.subdivision || 'A',
-      competition_level: this.sessionConfig.competitionLevel || 'Senior',
-      gender: this.sessionConfig.gender || 'mixed',
-      age_group: this.sessionConfig.ageGroup || 'senior'
-    };
-
-    this.apiService.createGymnasticsSession(sessionData).subscribe({
-      next: (response) => {
-        console.log('Session created:', response);
-        this.sessionConfig.sessionId = response.id;
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Session Created!',
-          text: `Gymnastics session "${sessionData.session_name}" has been created successfully.`,
-          confirmButtonColor: '#198754'
-        });
-      },
-      error: (error) => {
-        console.error('Failed to create session:', error);
-        this.handleApiError(error, 'Failed to create gymnastics session');
-      }
-    });
-  }
-
-  // Judge Panel Management
-  setupJudgePanels(): void {
-    if (!this.match?.id) return;
-
-    const panelData = {
-      difficulty_panel_judges: this.judgePanels.difficulty_panel.judges.length || 2,
-      execution_panel_judges: this.judgePanels.execution_panel.judges.length || 5,
-      reference_panel_active: this.judgePanels.reference_panel.isActive,
-      superior_jury_active: this.judgePanels.superior_jury.isActive
-    };
-
-    this.apiService.setupJudgePanels(this.match.id, panelData).subscribe({
-      next: (response) => {
-        console.log('Judge panels set up:', response);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Judge Panels Configured!',
-          text: 'All judge panels have been set up successfully.',
-          confirmButtonColor: '#198754'
-        });
-      },
-      error: (error) => {
-        console.error('Failed to setup judge panels:', error);
-        this.handleApiError(error, 'Failed to configure judge panels');
-      }
-    });
-  }
-
-  // Score Management
-  submitApparatusScore(apparatus: string, scoreData: any): void {
-    if (!this.match?.id) return;
-
-    const fullScoreData = {
-      match: this.match.id,
-      apparatus: apparatus,
-      difficulty_score: scoreData.difficulty_score || 0,
-      execution_score: scoreData.execution_score || 0,
-      neutral_deduction: scoreData.neutral_deduction || 0,
-      combined_score: scoreData.combined_score || (scoreData.difficulty_score + scoreData.execution_score - scoreData.neutral_deduction),
-      gymnast: scoreData.gymnast,
-      rotation_number: this.competitionState.currentRotation,
-      submission_time: new Date()
-    };
-
-    this.apiService.submitGymnasticsScore(fullScoreData).subscribe({
-      next: (response) => {
-        console.log('Score submitted:', response);
-        
-        // Update local scores
-        this.gymnasticsScores[apparatus] = fullScoreData;
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Score Submitted!',
-          text: `Score for ${apparatus.replace('_', ' ').toUpperCase()} has been recorded successfully.`,
-          confirmButtonColor: '#198754',
-          timer: 2000,
-          timerProgressBar: true
-        });
-      },
-      error: (error) => {
-        console.error('Failed to submit score:', error);
-        this.handleApiError(error, 'Failed to submit gymnastics score');
-      }
-    });
-  }
-
-  // Rankings and Results
-  viewRankings(): void {
-    if (!this.match?.id || !this.selectedCompetitionType) return;
-
-    this.apiService.getGymnasticsRankings(this.match.id, this.selectedCompetitionType).subscribe({
-      next: (rankings) => {
-        console.log('Rankings loaded:', rankings);
-        
-        // Display rankings in a modal or separate view
-        this.displayRankings(rankings);
-      },
-      error: (error) => {
-        console.error('Failed to load rankings:', error);
-        this.handleApiError(error, 'Failed to load competition rankings');
-      }
-    });
-  }
-
-  displayRankings(rankings: any): void {
-    let rankingHtml = '<div class="ranking-display">';
-    rankingHtml += '<h5>Current Rankings</h5>';
-    
-    if (rankings && rankings.length > 0) {
-      rankingHtml += '<table class="table table-striped">';
-      rankingHtml += '<thead><tr><th>Rank</th><th>Gymnast</th><th>Score</th></tr></thead><tbody>';
-      
-      rankings.forEach((rank: any, index: number) => {
-        rankingHtml += `<tr>
-          <td>${index + 1}</td>
-          <td>${rank.gymnast_name || rank.gymnast}</td>
-          <td>${rank.total_score || rank.score}</td>
-        </tr>`;
-      });
-      
-      rankingHtml += '</tbody></table>';
-    } else {
-      rankingHtml += '<p>No rankings available yet.</p>';
-    }
-    
-    rankingHtml += '</div>';
-
-    Swal.fire({
-      title: 'Competition Rankings',
-      html: rankingHtml,
-      width: 600,
-      confirmButtonColor: '#198754'
-    });
-  }
-
-  // Competition Finalization
-  finalizeResults(): void {
-    if (!this.match?.id) return;
-
-    Swal.fire({
-      title: 'Finalize Competition Results?',
-      text: 'This will lock all scores and generate final rankings. This action cannot be undone.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#198754',
-      cancelButtonColor: '#dc3545',
-      confirmButtonText: 'Finalize Results',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: 'Finalizing Results...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
-
-        this.apiService.finalizeGymnasticsResults(this.match.id).subscribe({
-          next: (response) => {
-            console.log('Results finalized:', response);
-            this.competitionState.allRotationsComplete = true;
-            this.competitionState.awards_ceremony_ready = true;
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Results Finalized!',
-              text: 'Competition results have been finalized and are ready for awards ceremony.',
-              confirmButtonColor: '#198754'
-            });
-          },
-          error: (error) => {
-            console.error('Failed to finalize results:', error);
-            this.handleApiError(error, 'Failed to finalize competition results');
-          }
-        });
-      }
-    });
-  }
-
-  // Export Results
-  exportResults(format: 'pdf' | 'excel' | 'csv'): void {
-    if (!this.match?.id) return;
-
-    Swal.fire({
-      title: 'Exporting Results...',
-      text: `Generating ${format.toUpperCase()} report...`,
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      }
-    });
-
-    this.apiService.exportGymnasticsResults(this.match.id, format).subscribe({
-      next: (blob) => {
-        console.log('Results exported:', blob);
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `gymnastics_results_${this.match.id}.${format}`;
-        link.click();
-        
-        window.URL.revokeObjectURL(url);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Export Complete!',
-          text: `Results have been exported as ${format.toUpperCase()} file.`,
-          confirmButtonColor: '#198754'
-        });
-      },
-      error: (error) => {
-        console.error('Failed to export results:', error);
-        this.handleApiError(error, 'Failed to export competition results');
-      }
-    });
-  }
-
-  updateGymnasticsPlayerStats(statsData: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
+  updateGymnasticsPlayerStats(statsData: any): void {
     // Add gymnastics-specific player stats
     const gymnasticsPlayerData = {
       ...statsData,
@@ -1425,18 +654,14 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     });
 
     console.log('Gymnastics player data:', gymnasticsPlayerData);
-    this.sendPlayerUpdate(gymnasticsPlayerData, dialogDiv, saveBtn, player);
+    this.sendPlayerUpdate(gymnasticsPlayerData);
   }
 
-  sendPlayerUpdate(updatedStats: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
+  sendPlayerUpdate(statsData: any): void {
+
       // Validate required fields
       if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Validation Error',
-          text: 'Missing required match, team, or player information',
-          confirmButtonColor: '#dc3545'
-        });
+        alert('Missing required match, team, or player information');
         return;
       }
 
@@ -1448,15 +673,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       this.apiService.updateplayer(updatedStats).subscribe({
         next: (response) => {
           console.log('Player update response:', response);
+          alert(`Player stats updated successfully for ${player.first_name} ${player.last_name}!`);
           document.body.removeChild(dialogDiv);
-          
-          Swal.fire({
-            icon: 'success',
-            title: 'Success!',
-            text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
-            confirmButtonColor: '#198754'
-          });
-          
           // Reload players data
           this.loadPlayersForAllTeams();
         },
@@ -1467,15 +685,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.apiService.updateplayerPost(updatedStats).subscribe({
             next: (response) => {
               console.log('Player update response (POST):', response);
+              alert(`Player stats updated successfully for ${player.first_name} ${player.last_name}!`);
               document.body.removeChild(dialogDiv);
-              
-              Swal.fire({
-                icon: 'success',
-                title: 'Success!',
-                text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
-                confirmButtonColor: '#198754'
-              });
-              
               this.loadPlayersForAllTeams();
             },
             error: (postError) => {
@@ -1485,15 +696,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
               this.apiService.updateplayerPatch(updatedStats).subscribe({
                 next: (response) => {
                   console.log('Player update response (PATCH):', response);
+                  alert(`Player stats updated successfully for ${player.first_name} ${player.last_name}!`);
                   document.body.removeChild(dialogDiv);
-                  
-                  Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
-                    confirmButtonColor: '#198754'
-                  });
-                  
                   this.loadPlayersForAllTeams();
                 },
                 error: (patchError) => {
@@ -1502,37 +706,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
                   saveBtn.disabled = false;
                   saveBtn.textContent = 'Save';
                   
-                  // Handle error with SweetAlert
-                  this.handlePlayerUpdateError(patchError, player);
+                  let errorMessage = 'All HTTP methods failed. ';
+                  if (patchError.error?.message) {
+                    errorMessage += patchError.error.message;
+                  } else if (patchError.error?.detail) {
+                    errorMessage += patchError.error.detail;
+                  } else {
+                    errorMessage += 'Please check console for details.';
+                  }
+                  
+                  alert(`Error updating player stats: ${errorMessage}`);
                 }
               });
             }
           });
         }
       });
-    }
-
-  ngOnDestroy(): void {
-    // Clean up clock interval
-    this.stopClockUpdate();
-  }
-
-  // Utility method for formatting time display
-  formatTime(seconds: number): string {
-    if (!seconds || seconds < 0) return '00:00';
-    
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }
-
-  // Method to get total number of players
-  getTotalPlayers(): number {
-    let total = 0;
-    Object.values(this.playersData).forEach(teamPlayers => {
-      total += teamPlayers.length;
-    });
-    return total;
+    };
   }
 }
