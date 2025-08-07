@@ -743,3 +743,437 @@
 .judge-panel.superior-jury {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+
+/* ⚽ LIVE FOOTBALL SCORE BOARD STYLES */
+.live-score-container {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.live-score-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.live-score-board {
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Team Information */
+.team-info {
+  padding: 0.5rem;
+}
+
+.team-logo {
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.team-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.team-score {
+  font-size: 3rem;
+  font-weight: 900;
+  font-family: 'Arial Black', Arial, sans-serif;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  line-height: 1;
+  background: linear-gradient(45deg, #fff, #f0f8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Team Mini Stats */
+.team-stats {
+  font-size: 0.7rem;
+}
+
+.mini-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  margin-bottom: 2px;
+}
+
+.mini-stat i {
+  font-size: 0.6rem;
+}
+
+.mini-stat span {
+  font-weight: 600;
+  font-size: 0.65rem;
+}
+
+/* Match Status Center */
+.match-status {
+  padding: 1rem 0;
+}
+
+.match-time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 25px;
+  border: 2px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  display: inline-block;
+}
+
+.match-time.live-pulse {
+  animation: live-pulse 2s ease-in-out infinite;
+  background: rgba(220, 53, 69, 0.3);
+  border-color: rgba(220, 53, 69, 0.5);
+  color: #fff;
+}
+
+@keyframes live-pulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  50% { 
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+}
+
+.match-time.finished {
+  background: rgba(40, 167, 69, 0.3);
+  border-color: rgba(40, 167, 69, 0.5);
+}
+
+.match-time.upcoming {
+  background: rgba(255, 193, 7, 0.3);
+  border-color: rgba(255, 193, 7, 0.5);
+  color: #fff;
+}
+
+.match-date {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.match-status-badge {
+  margin-top: 0.5rem;
+}
+
+.live-badge {
+  animation: badge-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Match Details Bar */
+.match-details-bar {
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 1rem;
+  background: rgba(0,0,0,0.1);
+  margin: 1rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+}
+
+.match-details-bar small {
+  display: block;
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.refresh-indicator {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Stadium-like Visual Effects */
+.live-score-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,0.5) 25%, 
+    rgba(255,255,255,0.8) 50%, 
+    rgba(255,255,255,0.5) 75%, 
+    transparent 100%);
+  animation: stadium-lights 3s ease-in-out infinite;
+}
+
+@keyframes stadium-lights {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Responsive Design for Score Board */
+@media (max-width: 768px) {
+  .live-score-board {
+    padding: 1rem;
+  }
+  
+  .team-score {
+    font-size: 2.5rem;
+  }
+  
+  .match-time {
+    font-size: 1.2rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .team-name {
+    font-size: 0.8rem;
+  }
+  
+  .match-details-bar {
+    margin: 0.5rem -1rem -1rem -1rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* 🤸‍♀️ GYMNASTICS SCOREBOARD STYLES */
+.gymnastics-scoreboard {
+  background: linear-gradient(135deg, 
+    #667eea 0%, 
+    #764ba2 25%, 
+    #f093fb 50%, 
+    #f5576c 75%, 
+    #4facfe 100%);
+  background-size: 400% 400%;
+  animation: gymnastics-gradient 8s ease infinite;
+}
+
+@keyframes gymnastics-gradient {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 50%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gymnastics-scoreboard::before {
+  background: linear-gradient(45deg, 
+    rgba(255,215,0,0.1) 0%, 
+    rgba(255,140,0,0.1) 25%, 
+    rgba(255,69,0,0.1) 50%, 
+    rgba(255,20,147,0.1) 75%, 
+    rgba(138,43,226,0.1) 100%);
+}
+
+.gymnastics-scoreboard::after {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,215,0,0.6) 25%, 
+    rgba(255,215,0,0.9) 50%, 
+    rgba(255,215,0,0.6) 75%, 
+    transparent 100%);
+  animation: golden-lights 4s ease-in-out infinite;
+}
+
+@keyframes golden-lights {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Gymnastics Score Display */
+.gymnastics-total {
+  font-size: 3.5rem;
+  font-weight: 900;
+  background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+  font-family: 'Arial Black', Arial, sans-serif;
+  letter-spacing: -1px;
+  margin: 0.5rem 0;
+  animation: score-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes score-glow {
+  0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255,215,0,0.3)); }
+  100% { filter: brightness(1.2) drop-shadow(0 0 15px rgba(255,215,0,0.6)); }
+}
+
+/* Gymnastics Statistics */
+.gymnastics-stat {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  margin: 0.1rem;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.gymnastics-stat:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.gymnastics-stat i {
+  font-size: 0.9rem;
+  margin-right: 0.3rem;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.gymnastics-stat span {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Competition Mode Badge */
+.competition-mode .badge {
+  font-size: 0.9rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  border: 2px solid rgba(255,255,255,0.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  animation: pulse-badge 3s ease infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Current Apparatus Display */
+.current-apparatus {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.8rem;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.apparatus-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  margin-top: 0.2rem;
+}
+
+/* Competition Time for Gymnastics */
+.gymnastics-scoreboard .competition-time {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 0.6rem 1.2rem;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,0.2);
+  margin: 0.5rem 0;
+}
+
+/* Medal Icons for Gymnastics */
+.gymnastics-scoreboard .team-logo .fa-medal {
+  filter: drop-shadow(0 4px 8px rgba(255,215,0,0.4));
+  animation: medal-shine 3s ease infinite;
+}
+
+@keyframes medal-shine {
+  0%, 100% { transform: rotate(-5deg) scale(1); }
+  25% { transform: rotate(0deg) scale(1.1); }
+  50% { transform: rotate(5deg) scale(1); }
+  75% { transform: rotate(0deg) scale(1.1); }
+}
+
+/* Apparatus Progress Icons */
+.gymnastics-scoreboard .match-details-bar small {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.gymnastics-scoreboard .match-details-bar small:hover {
+  transform: translateY(-2px);
+  text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+}
+
+.gymnastics-scoreboard .match-details-bar i {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+/* Team Logo Variations for Gymnastics */
+.gymnastics-scoreboard .team-logo {
+  position: relative;
+  animation: team-glow 4s ease infinite alternate;
+}
+
+@keyframes team-glow {
+  0% { filter: drop-shadow(0 0 10px rgba(255,215,0,0.3)); }
+  100% { filter: drop-shadow(0 0 20px rgba(255,215,0,0.6)); }
+}
+
+/* Responsive Gymnastics Styles */
+@media (max-width: 768px) {
+  .gymnastics-total {
+    font-size: 2.8rem;
+  }
+  
+  .gymnastics-stat {
+    padding: 0.3rem 0.4rem;
+    margin: 0.05rem;
+  }
+  
+  .gymnastics-stat span {
+    font-size: 0.75rem;
+  }
+  
+  .competition-mode .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .apparatus-name {
+    font-size: 0.9rem;
+  }
+  
+  .gymnastics-scoreboard .competition-time {
+    font-size: 1.4rem;
+    padding: 0.4rem 0.8rem;
+  }
+}

@@ -123,6 +123,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     awards_ceremony_ready: false
   };
 
+  // Auto-refresh properties
+  private autoRefreshInterval: any;
+  private readonly AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
+
   constructor(private fb: FormBuilder, private route: ActivatedRoute, private apiService: ApiService, private router: Router) {}
 
   ngOnInit(): void {
@@ -130,30 +134,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.sportConfig = history.state.sportConfig;
     const matchId = this.route.snapshot.paramMap.get('matchId');
     if (matchId) {
-      this.apiService.getMatchDetails(Number(matchId)).subscribe({
-        next: (match) => {
-          this.match = match;
-          this.teams = match.matchteams || [];
-          this.buildDynamicForm();
-          this.loadPlayersForAllTeams();
-          this.loading = false;
-          console.log('Match data loaded:', this.match);
-          console.log('Sport config:', this.sportConfig);
-          console.log('Teams:', this.teams);
-        },
-        error: (err) => {
-          this.error = 'Failed to load match data. Please try again.';
-          this.loading = false;
-          console.error('Error loading match:', err);
-          
-          Swal.fire({
-            icon: 'error',
-            title: 'Failed to Load Match',
-            text: 'Could not load match data. Please check your connection and try again.',
-            confirmButtonColor: '#dc3545'
-          });
-        }
-      });
+      this.loadMatchData(Number(matchId));
     } else {
       this.loading = false;
       this.error = 'No match ID provided';
@@ -166,6 +147,89 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       }).then(() => {
         this.goBack();
       });
+    }
+  }
+
+  /**
+   * Load or reload complete match data including teams and players
+   * @param matchId - The match ID to load
+   * @param showLoadingDialog - Whether to show loading dialog (default: false for refreshes)
+   */
+  loadMatchData(matchId: number, showLoadingDialog: boolean = false): void {
+    if (showLoadingDialog) {
+      Swal.fire({
+        title: 'Refreshing Match Data...',
+        text: 'Please wait while we reload the latest match information.',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+    }
+
+    this.apiService.getMatchDetails(matchId).subscribe({
+      next: (match) => {
+        this.match = match;
+        this.teams = match.matchteams || [];
+        this.buildDynamicForm();
+        this.loadPlayersForAllTeams();
+        this.loading = false;
+        
+        if (showLoadingDialog) {
+          Swal.close();
+        }
+        
+        console.log('Match data loaded/refreshed:', this.match);
+        console.log('Sport config:', this.sportConfig);
+        console.log('Teams:', this.teams);
+        
+        // Setup auto-refresh for live matches
+        this.setupAutoRefresh();
+      },
+      error: (err) => {
+        this.error = 'Failed to load match data. Please try again.';
+        this.loading = false;
+        console.error('Error loading match:', err);
+        
+        if (showLoadingDialog) {
+          Swal.close();
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Failed to Load Match',
+          text: 'Could not load match data. Please check your connection and try again.',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  /**
+   * Setup auto-refresh for live matches
+   */
+  private setupAutoRefresh(): void {
+    // Clear existing interval
+    if (this.autoRefreshInterval) {
+      clearInterval(this.autoRefreshInterval);
+    }
+
+    // Only auto-refresh for live football matches
+    if (this.isFootballMatch() && this.match?.status === 'live') {
+      this.autoRefreshInterval = setInterval(() => {
+        console.log('Auto-refreshing live match data...');
+        this.loadMatchData(this.match.id, false); // Silent refresh
+      }, this.AUTO_REFRESH_INTERVAL);
+    }
+  }
+
+  /**
+   * Stop auto-refresh
+   */
+  private stopAutoRefresh(): void {
+    if (this.autoRefreshInterval) {
+      clearInterval(this.autoRefreshInterval);
+      this.autoRefreshInterval = null;
     }
   }
 
@@ -359,6 +423,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
             title: 'Success!',
             text: 'Match updated successfully!',
             confirmButtonColor: '#198754'
+          }).then(() => {
+            // Refresh match data after successful update
+            this.loadMatchData(this.match.id, true);
           });
         },
         error: (error) => {
@@ -551,6 +618,219 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.showPlayerStats = !this.showPlayerStats;
   }
 
+  /**
+   * Manual refresh method for users to reload match data
+   */
+  refreshMatchData(): void {
+    if (this.match?.id) {
+      this.loadMatchData(this.match.id, true);
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No match data available to refresh.',
+        confirmButtonColor: '#dc3545'
+      });
+    }
+  }
+
+  /**
+   * Calculate team score based on player stats
+   * @param teamId - The team ID to calculate score for
+   * @returns The total score for the team
+   */
+  getTeamScore(teamId: number): number {
+    // First try to get score from match teams data (official match score)
+    const matchTeam = this.teams.find(t => t.team.id === teamId);
+    if (matchTeam && matchTeam.score !== undefined && matchTeam.score !== null) {
+      return matchTeam.score;
+    }
+
+    // Fallback: calculate from player stats if match score is not available
+    const players = this.playersData[teamId] || [];
+    let totalScore = 0;
+
+    if (this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals') {
+      // For football, sum up all goals from players
+      totalScore = players.reduce((sum, player) => sum + (player.goals || 0), 0);
+    } else if (this.sportConfig?.name === 'Basketball' || this.sportConfig?.scoring_system === 'points') {
+      // For basketball, sum up all points from players
+      totalScore = players.reduce((sum, player) => sum + (player.points || 0), 0);
+    } else if (this.sportConfig?.name === 'Gymnastics') {
+      // For gymnastics, sum up total combined scores
+      totalScore = players.reduce((sum, player) => sum + (player.total_combined_score || player.total_score || 0), 0);
+    } else {
+      // Default: try to find any score-like field
+      totalScore = players.reduce((sum, player) => 
+        sum + (player.goals || player.points || player.score || 0), 0);
+    }
+
+    return totalScore;
+  }
+
+  /**
+   * Get team name by ID
+   * @param teamId - The team ID
+   * @returns The team name
+   */
+  getTeamName(teamId: number): string {
+    const team = this.teams.find(t => t.team.id === teamId);
+    return team?.team.name || `Team ${teamId}`;
+  }
+
+  /**
+   * Get team match stats by ID
+   * @param teamId - The team ID
+   * @returns The team match stats object
+   */
+  getTeamMatchStats(teamId: number): any {
+    const team = this.teams.find(t => t.team.id === teamId);
+    return team || {};
+  }
+
+  /**
+   * Get match time display
+   * @returns Formatted match time string
+   */
+  getMatchTime(): string {
+    if (!this.match) return '';
+    
+    if (this.match.status === 'live') {
+      // For live matches, you might want to calculate elapsed time
+      const startTime = new Date(this.match.start_date || this.match.match_date);
+      const now = new Date();
+      const elapsed = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+      
+      if (elapsed >= 0 && elapsed <= 120) { // 0-120 minutes for football
+        return `${elapsed}'`;
+      }
+      return 'LIVE';
+    } else if (this.match.status === 'finished') {
+      return 'FT';
+    } else if (this.match.status === 'upcoming') {
+      const matchTime = new Date(this.match.match_date || this.match.start_date);
+      return matchTime.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+    }
+    
+    return this.match.status?.toUpperCase() || '';
+  }
+
+  /**
+   * Check if this is a football match
+   * @returns true if sport is football
+   */
+  isFootballMatch(): boolean {
+    return this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals';
+  }
+
+  /**
+   * Check if this is a gymnastics match
+   * @returns true if sport is gymnastics
+   */
+  isGymnasticsMatch(): boolean {
+    return this.sportConfig?.name === 'Gymnastics' || this.sportConfig?.scoring_system === 'gymnastics';
+  }
+
+  /**
+   * Get team's total gymnastics score
+   * @param teamId - Team ID
+   * @returns formatted total score string
+   */
+  getTeamGymnasticsScore(teamId: number): string {
+    if (!teamId || !this.playersData[teamId]) {
+      return '0.000';
+    }
+
+    // Check if there's an official team score first
+    const teamData = this.teams.find(t => t.team?.id === teamId);
+    if (teamData?.total_score) {
+      return Number(teamData.total_score).toFixed(3);
+    }
+
+    // Calculate from player scores
+    const players = this.playersData[teamId] || [];
+    const totalScore = players.reduce((sum, player) => {
+      return sum + (Number(player.total_score) || 0);
+    }, 0);
+
+    return totalScore.toFixed(3);
+  }
+
+  /**
+   * Get team's highest individual score
+   * @param teamId - Team ID
+   * @returns highest individual score
+   */
+  getTeamHighestScore(teamId: number): string {
+    if (!teamId || !this.playersData[teamId]) {
+      return '0.000';
+    }
+
+    const players = this.playersData[teamId] || [];
+    const highestScore = Math.max(...players.map(p => Number(p.total_score) || 0));
+    return highestScore.toFixed(3);
+  }
+
+  /**
+   * Get team's average score
+   * @param teamId - Team ID
+   * @returns average team score
+   */
+  getTeamAverageScore(teamId: number): string {
+    if (!teamId || !this.playersData[teamId]) {
+      return '0.000';
+    }
+
+    const players = this.playersData[teamId] || [];
+    if (players.length === 0) return '0.000';
+
+    const totalScore = players.reduce((sum, player) => {
+      return sum + (Number(player.total_score) || 0);
+    }, 0);
+
+    return (totalScore / players.length).toFixed(3);
+  }
+
+  /**
+   * Get team's difficulty score
+   * @param teamId - Team ID
+   * @returns team difficulty score
+   */
+  getTeamDifficultyScore(teamId: number): string {
+    if (!teamId || !this.playersData[teamId]) {
+      return '0.000';
+    }
+
+    const players = this.playersData[teamId] || [];
+    const totalDifficulty = players.reduce((sum, player) => {
+      return sum + (Number(player.difficulty_score) || 0);
+    }, 0);
+
+    return totalDifficulty.toFixed(3);
+  }
+
+  /**
+   * Get team's execution score
+   * @param teamId - Team ID
+   * @returns team execution score
+   */
+  getTeamExecutionScore(teamId: number): string {
+    if (!teamId || !this.playersData[teamId]) {
+      return '0.000';
+    }
+
+    const players = this.playersData[teamId] || [];
+    const totalExecution = players.reduce((sum, player) => {
+      return sum + (Number(player.execution_score) || 0);
+    }, 0);
+
+    return totalExecution.toFixed(3);
+  }
+
   // Debug method to test player update API
   testPlayerUpdate(): void {
     if (this.teams.length > 0 && this.selectedTeam) {
@@ -598,6 +878,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
                   title: 'Test Successful!',
                   text: 'Player update API is working correctly.',
                   confirmButtonColor: '#198754'
+                }).then(() => {
+                  // Refresh match data after test update
+                  this.loadMatchData(this.match.id, true);
                 });
               },
               error: (error) => {
@@ -1010,6 +1293,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
               title: 'Competition Initialized!',
               text: 'The gymnastics competition has been successfully set up.',
               confirmButtonColor: '#198754'
+            }).then(() => {
+              // Refresh match data after initialization
+              this.loadMatchData(this.match.id, true);
             });
           },
           error: (error) => {
@@ -1168,6 +1454,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           title: 'Session Created!',
           text: `Gymnastics session "${sessionData.session_name}" has been created successfully.`,
           confirmButtonColor: '#198754'
+        }).then(() => {
+          // Refresh match data after session creation
+          this.loadMatchData(this.match.id, true);
         });
       },
       error: (error) => {
@@ -1197,10 +1486,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           title: 'Judge Panels Configured!',
           text: 'All judge panels have been set up successfully.',
           confirmButtonColor: '#198754'
+        }).then(() => {
+          // Refresh match data after judge panel setup
+          this.loadMatchData(this.match.id, true);
         });
       },
       error: (error) => {
-        console.error('Failed to setup judge panels:', error);
+        console.error('Failed to set up judge panels:', error);
         this.handleApiError(error, 'Failed to configure judge panels');
       }
     });
@@ -1328,6 +1620,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
               title: 'Results Finalized!',
               text: 'Competition results have been finalized and are ready for awards ceremony.',
               confirmButtonColor: '#198754'
+            }).then(() => {
+              // Refresh match data after finalizing results
+              this.loadMatchData(this.match.id, true);
             });
           },
           error: (error) => {
@@ -1455,10 +1750,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
             title: 'Success!',
             text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
             confirmButtonColor: '#198754'
+          }).then(() => {
+            // Refresh complete match data after player update
+            this.loadMatchData(this.match.id, true);
           });
-          
-          // Reload players data
-          this.loadPlayersForAllTeams();
         },
         error: (error) => {
           console.error('PUT request failed, trying POST:', error);
@@ -1474,9 +1769,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
                 title: 'Success!',
                 text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
                 confirmButtonColor: '#198754'
+              }).then(() => {
+                // Refresh complete match data after player update
+                this.loadMatchData(this.match.id, true);
               });
-              
-              this.loadPlayersForAllTeams();
             },
             error: (postError) => {
               console.error('POST request also failed, trying PATCH:', postError);
@@ -1492,9 +1788,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
                     title: 'Success!',
                     text: `Player stats updated successfully for ${player.first_name} ${player.last_name}!`,
                     confirmButtonColor: '#198754'
+                  }).then(() => {
+                    // Refresh complete match data after player update
+                    this.loadMatchData(this.match.id, true);
                   });
-                  
-                  this.loadPlayersForAllTeams();
                 },
                 error: (patchError) => {
                   console.error('All methods failed:', patchError);
@@ -1515,6 +1812,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Clean up clock interval
     this.stopClockUpdate();
+    // Clean up auto-refresh interval
+    this.stopAutoRefresh();
   }
 
   // Utility method for formatting time display

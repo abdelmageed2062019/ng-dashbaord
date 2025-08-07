@@ -12,6 +12,388 @@
             </button>
           </div>
         </div>
+
+        <!-- 🏟️ LIVE FOOTBALL MATCH SCORE DISPLAY -->
+        <div *ngIf="isFootballMatch() && teams.length >= 2 && match" class="live-score-container">
+          <div class="live-score-board">
+            <div class="row align-items-center">
+              <!-- Home Team -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-shield-alt fa-2x text-primary"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
+                  <div class="team-score">{{ getTeamScore(teams[0]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-square text-warning"></i>
+                          <span>{{ teams[0]?.yellow_cards || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-square text-danger"></i>
+                          <span>{{ teams[0]?.red_cards || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-flag"></i>
+                          <span>{{ teams[0]?.corners || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-bullseye"></i>
+                          <span>{{ teams[0]?.shots_on_target || 0 }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Match Info Center -->
+              <div class="col-4 text-center">
+                <div class="match-status">
+                  <div class="match-time" [ngClass]="{
+                    'live-pulse': match.status === 'live',
+                    'finished': match.status === 'finished',
+                    'upcoming': match.status === 'upcoming'
+                  }">
+                    {{ getMatchTime() }}
+                  </div>
+                  <div class="match-date">
+                    {{ (match.match_date || match.start_date) | date:'MMM d, y' }}
+                  </div>
+                  <div class="match-status-badge">
+                    <span class="badge" [ngClass]="{
+                      'bg-danger live-badge': match.status === 'live',
+                      'bg-success': match.status === 'finished',
+                      'bg-warning text-dark': match.status === 'upcoming',
+                      'bg-secondary': match.status === 'postponed' || match.status === 'cancelled'
+                    }">
+                      <i class="fas" [ngClass]="{
+                        'fa-circle fa-pulse': match.status === 'live',
+                        'fa-flag-checkered': match.status === 'finished',
+                        'fa-clock': match.status === 'upcoming',
+                        'fa-pause': match.status === 'postponed',
+                        'fa-times': match.status === 'cancelled'
+                      }"></i>
+                      {{ match.status | titlecase }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Away Team -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-shield-alt fa-2x text-danger"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
+                  <div class="team-score">{{ getTeamScore(teams[1]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-square text-warning"></i>
+                          <span>{{ teams[1]?.yellow_cards || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-square text-danger"></i>
+                          <span>{{ teams[1]?.red_cards || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-flag"></i>
+                          <span>{{ teams[1]?.corners || 0 }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat">
+                          <i class="fas fa-bullseye"></i>
+                          <span>{{ teams[1]?.shots_on_target || 0 }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Match Details Bar -->
+            <div class="match-details-bar mt-3">
+              <div class="row text-center">
+                <div class="col-2">
+                  <small class="text-muted">Week {{ match.week || '1' }}</small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">{{ match.group_name || 'Regular Season' }}</small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-stopwatch me-1"></i>{{ match.match_duration || 90 }}'
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-flag me-1"></i>{{ match.corners || 0 }} Corners
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
+                    <span *ngIf="!loading">Live</span>
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Additional Stats Row for Football -->
+              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="col-3">
+                  <small class="text-muted">
+                    <i class="fas fa-square text-warning me-1"></i>{{ match.yellow_cards || 0 }} Yellow
+                  </small>
+                </div>
+                <div class="col-3">
+                  <small class="text-muted">
+                    <i class="fas fa-square text-danger me-1"></i>{{ match.red_cards || 0 }} Red
+                  </small>
+                </div>
+                <div class="col-3">
+                  <small class="text-muted">
+                    <i class="fas fa-exclamation-triangle me-1"></i>{{ match.fouls || 0 }} Fouls
+                  </small>
+                </div>
+                <div class="col-3">
+                  <small class="text-muted">
+                    <i class="fas fa-bullseye me-1"></i>{{ match.shots_on_target || 0 }} Shots
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🤸‍♀️ LIVE GYMNASTICS COMPETITION SCORE DISPLAY -->
+        <div *ngIf="isGymnasticsMatch() && teams.length >= 2 && match" class="live-score-container gymnastics-scoreboard">
+          <div class="live-score-board">
+            <div class="row align-items-center">
+              <!-- Team/Athlete 1 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-medal fa-2x text-warning"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
+                  <div class="team-score gymnastics-total">{{ getTeamGymnasticsScore(teams[0]?.team?.id) }}</div>
+                  
+                  <!-- Gymnastics Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-star text-primary"></i>
+                          <span title="Difficulty Score">{{ getTeamDifficultyScore(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-thumbs-up text-success"></i>
+                          <span title="Execution Score">{{ getTeamExecutionScore(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-trophy text-warning"></i>
+                          <span title="Highest Score">{{ getTeamHighestScore(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-calculator text-info"></i>
+                          <span title="Average Score">{{ getTeamAverageScore(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Competition Info Center -->
+              <div class="col-4 text-center">
+                <div class="match-status">
+                  <div class="competition-mode">
+                    <i class="fas fa-dumbbell me-2"></i>
+                    <span class="badge bg-primary">{{ (selectedCompetitionType?.replace('_', ' ') | titlecase) || 'All-Around' }}</span>
+                  </div>
+                  <div class="current-apparatus mt-2">
+                    <small class="text-muted">Current Apparatus</small>
+                    <div class="apparatus-name">{{ (selectedApparatus?.replace('_', ' ') | titlecase) || 'Multiple' }}</div>
+                  </div>
+                  <div class="competition-time mt-2" [ngClass]="{
+                    'live-pulse': match.status === 'live',
+                    'finished': match.status === 'finished',
+                    'upcoming': match.status === 'upcoming'
+                  }">
+                    {{ getMatchTime() }}
+                  </div>
+                  <div class="match-date">
+                    {{ (match.match_date || match.start_date) | date:'MMM d, y' }}
+                  </div>
+                  <div class="match-status-badge">
+                    <span class="badge" [ngClass]="{
+                      'bg-danger live-badge': match.status === 'live',
+                      'bg-success': match.status === 'finished',
+                      'bg-warning text-dark': match.status === 'upcoming',
+                      'bg-secondary': match.status === 'postponed' || match.status === 'cancelled'
+                    }">
+                      <i class="fas" [ngClass]="{
+                        'fa-circle fa-pulse': match.status === 'live',
+                        'fa-flag-checkered': match.status === 'finished',
+                        'fa-clock': match.status === 'upcoming',
+                        'fa-pause': match.status === 'postponed',
+                        'fa-times': match.status === 'cancelled'
+                      }"></i>
+                      {{ match.status | titlecase }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Team/Athlete 2 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-medal fa-2x text-danger"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
+                  <div class="team-score gymnastics-total">{{ getTeamGymnasticsScore(teams[1]?.team?.id) }}</div>
+                  
+                  <!-- Gymnastics Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-star text-primary"></i>
+                          <span title="Difficulty Score">{{ getTeamDifficultyScore(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-thumbs-up text-success"></i>
+                          <span title="Execution Score">{{ getTeamExecutionScore(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-trophy text-warning"></i>
+                          <span title="Highest Score">{{ getTeamHighestScore(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat gymnastics-stat">
+                          <i class="fas fa-calculator text-info"></i>
+                          <span title="Average Score">{{ getTeamAverageScore(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Competition Details Bar -->
+            <div class="match-details-bar mt-3">
+              <div class="row text-center">
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Athletes
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-sync-alt me-1"></i>R{{ competitionState.currentRotation || 1 }}/{{ gymnasticsRotations.length || 6 }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-layer-group me-1"></i>{{ sessionConfig.subdivision || 'A' }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-medal me-1"></i>{{ sessionConfig.competitionLevel || 'Senior' }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-venus-mars me-1"></i>{{ sessionConfig.gender || 'Mixed' | titlecase }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
+                    <span *ngIf="!loading">Live</span>
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Apparatus Progress Row for Gymnastics -->
+              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-running me-1"></i>Floor
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-dumbbell me-1"></i>Pommel
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-circle me-1"></i>Rings
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-arrow-up me-1"></i>Vault
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-equals me-1"></i>P.Bars
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-minus me-1"></i>H.Bar
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="card-body">
           <!-- Loading State -->
           <div *ngIf="loading" class="loading-container">
@@ -112,6 +494,10 @@
                 <button type="button" class="btn btn-info" (click)="togglePlayerStats()">
                   <i class="fas fa-users me-2"></i>
                   {{ showPlayerStats ? 'Hide' : 'Show' }} Player Stats
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="refreshMatchData()" [disabled]="loading">
+                  <i class="fas fa-sync-alt me-2" [class.fa-spin]="loading"></i>
+                  Refresh Data
                 </button>
                 <button type="button" class="btn btn-warning" (click)="testPlayerUpdate()" *ngIf="showPlayerStats && selectedTeam">
                   <i class="fas fa-bug me-2"></i>Test API
