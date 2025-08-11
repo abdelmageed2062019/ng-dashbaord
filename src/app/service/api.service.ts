@@ -154,24 +154,64 @@ export class ApiService {
   }
 
   // Gymnastics-specific API methods
-  initializeGymnasticsCompetition(competitionData: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/gymnastics/initialize/`, competitionData, { headers: this.getHeaders() });
-  }
+  // initializeGymnasticsCompetition(competitionData: any): Observable<any> {
+  //   return this.http.post(`${this.apiUrl}/matches/${competitionData.match}/clock/initialize/`, { headers: this.getHeaders() });
+  // }
+initializeGymnasticsCompetition(competitionData: any): Observable<any> {
+  const url = `${this.apiUrl}/matches/${competitionData.match}/clock/initialize/`;
+  console.log('Initializing gymnastics competition with POST URL:', url);
+  console.log('Competition data being sent:', competitionData);
 
+  return this.http.post(url, competitionData, { headers: this.getHeaders() }).pipe(
+    tap(response => {
+      console.log('Gymnastics competition initialization successful:', response);
+    })
+  );
+}
   startGymnasticsClock(matchId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/gymnastics/clock/start/`, { match: matchId }, { headers: this.getHeaders() });
-  }
+  const url = `${this.apiUrl}/matches/${matchId}/clock/start/`;
+  console.log('Starting gymnastics clock with POST URL:', url);
+  console.log('Match ID being sent:', matchId);
+
+  return this.http.post(url, { matchId }, { headers: this.getHeaders() }).pipe(
+    tap(response => {
+      console.log('Gymnastics clock start successful:', response);
+    })
+  );
+}
 
   stopGymnasticsClock(matchId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/gymnastics/clock/stop/`, { match: matchId }, { headers: this.getHeaders() });
-  }
+  const url = `${this.apiUrl}/matches/${matchId}/clock/stop/`;
+  const body = { match: matchId };
+  const headers = this.getHeaders();
+
+  console.log('Stopping gymnastics clock with POST URL:', url);
+  console.log('Request body:', body);
+
+  return this.http.post(url, body, { headers }).pipe(
+    tap(response => {
+      console.log('Gymnastics clock stop successful:', response);
+    })
+  );
+}
 
   resetGymnasticsClock(matchId: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/gymnastics/clock/reset/`, { match: matchId }, { headers: this.getHeaders() });
-  }
+  const url = `${this.apiUrl}/matches/${matchId}/clock/reset/`;
+  const body = { match: matchId };
+  const headers = this.getHeaders();
+
+  console.log('Resetting gymnastics clock with POST URL:', url);
+  console.log('Request body:', body);
+
+  return this.http.post(url, body, { headers }).pipe(
+    tap(response => {
+      console.log('Gymnastics clock reset successful:', response);
+    })
+  );
+}
 
   getGymnasticsClockStatus(matchId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/gymnastics/clock/status/${matchId}/`, { headers: this.getHeaders() });
+    return this.http.get(`${this.apiUrl}/matches/${matchId}/clock/status/`, { headers: this.getHeaders() });
   }
 
   createGymnasticsSession(sessionData: any): Observable<any> {
