@@ -622,15 +622,29 @@
                                     </div>
                                   </button>
                                   
-                                  <!-- Start Clock Button -->
+                                  <!-- Start/Resume Clock Button -->
                                   <button class="btn btn-success btn-lg" 
+                                          *ngIf="!competitionClock.isRunning && competitionClock.currentTime === 0"
                                           (click)="startClock()" 
-                                          [disabled]="competitionClock.isRunning || !competitionState.initialized"
+                                          [disabled]="!competitionState.initialized"
                                           style="height: 60px;">
                                     <i class="fas fa-play me-2"></i>
                                     <div>
                                       <strong>Start Clock</strong>
                                       <br><small>Begin competition timing</small>
+                                    </div>
+                                  </button>
+
+                                  <!-- Resume Clock Button -->
+                                  <button class="btn btn-warning btn-lg" 
+                                          *ngIf="!competitionClock.isRunning && competitionClock.currentTime > 0"
+                                          (click)="resumeClock()" 
+                                          [disabled]="!competitionState.initialized"
+                                          style="height: 60px;">
+                                    <i class="fas fa-play me-2"></i>
+                                    <div>
+                                      <strong>Resume Clock</strong>
+                                      <br><small>Continue competition timing</small>
                                     </div>
                                   </button>
                                   
