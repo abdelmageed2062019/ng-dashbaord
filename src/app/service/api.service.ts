@@ -265,7 +265,7 @@ export class ApiService {
   }
 
   stopRoutineTimer(matchId: number, playerData?: { player_id: number }): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/stop_routine/`;
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop_routine/`;
     console.log('Stopping routine timer for match:', matchId);
     return this.http.post(url, playerData || {}, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Routine timer stopped:', response))
@@ -274,7 +274,7 @@ export class ApiService {
 
   // 6. TIMEOUT MANAGEMENT METHODS
   callTimeout(matchId: number, timeoutData: { team_id: number, duration: string, reason: string }): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/timeout/`;
+    const url = `${this.apiUrl}matches/${matchId}/clock/timeout/`;
     console.log('Calling timeout:', timeoutData);
     return this.http.post(url, timeoutData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Timeout called:', response))
@@ -282,7 +282,7 @@ export class ApiService {
   }
 
   endTimeout(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/end_timeout/`;
+    const url = `${this.apiUrl}/matches/${matchId}/clock/end_timeout/`;
     console.log('Ending timeout for match:', matchId);
     return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Timeout ended:', response))
@@ -291,7 +291,7 @@ export class ApiService {
 
   // 7. PERIOD AND APPARATUS ADVANCEMENT METHODS
   advancePeriod(matchId: number, periodData: { next_period: number, apparatus: string }): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/advance_period/`;
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
     console.log('Advancing period for match:', matchId, periodData);
     return this.http.post(url, periodData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Period advanced:', response))
@@ -299,7 +299,7 @@ export class ApiService {
   }
 
   advanceApparatusRotation(matchId: number, rotationData: { next_apparatus: string, rotation_duration?: number }): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/advance_rotation/`;
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_rotation/`;
     console.log('Advancing apparatus rotation for match:', matchId, rotationData);
     return this.http.post(url, rotationData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Apparatus rotation advanced:', response))
@@ -308,7 +308,7 @@ export class ApiService {
 
   // 8. MATCH CONTROL METHODS
   stopMatch(matchId: number, reason?: string): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/stop/`;
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop/`;
     console.log('Stopping match:', matchId);
     return this.http.post(url, { reason: reason || 'match_completed' }, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Match stopped:', response))
@@ -317,14 +317,14 @@ export class ApiService {
 
   // 9. SCORING AND STATISTICS METHODS  
   getFinalScores(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/gymnastics/final-scores/?match_id=${matchId}`;
+    const url = `${this.apiUrl}/gymnastics/final-scores/?match_id=${matchId}`;
     return this.http.get(url, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Final scores retrieved:', response))
     );
   }
 
   getAllAroundRankings(matchId: number, options?: { limit?: number }): Observable<any> {
-    let url = `${this.apiUrl}/sports-app/gymnastics/all-around-rankings/?match_id=${matchId}`;
+    let url = `${this.apiUrl}/gymnastics/all-around-rankings/?match_id=${matchId}`;
     if (options?.limit) {
       url += `&limit=${options.limit}`;
     }
@@ -334,7 +334,7 @@ export class ApiService {
   }
 
   getApparatusStats(matchId: number, apparatus?: string): Observable<any> {
-    let url = `${this.apiUrl}/sports-app/gymnastics/apparatus-stats/?match_id=${matchId}`;
+    let url = `${this.apiUrl}/gymnastics/apparatus-stats/?match_id=${matchId}`;
     if (apparatus) {
       url += `&apparatus=${apparatus}`;
     }
@@ -344,7 +344,7 @@ export class ApiService {
   }
 
   getLiveScoring(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/sports-app/player-stats/live_scoring/?match_id=${matchId}`;
+    const url = `${this.apiUrl}/player-stats/live_scoring/?match_id=${matchId}`;
     return this.http.get(url, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Live scoring data retrieved:', response))
     );
@@ -460,29 +460,7 @@ export class ApiService {
     return this.http.patch(url, sessionData, { headers: this.getHeaders() });
   }
 
-  // 10. ROTATION MANAGEMENT METHODS
-  createGymnasticsRotation(rotationData: any): Observable<any> {
-    const url = `${this.apiUrl}/gymnastics/rotations/`;
-    console.log('Creating gymnastics rotation:', rotationData);
-    return this.http.post(url, rotationData, { headers: this.getHeaders() }).pipe(
-      tap(response => console.log('Gymnastics rotation created:', response))
-    );
-  }
-
-  getGymnasticsRotations(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/gymnastics/rotations/?match=${matchId}`;
-    return this.http.get(url, { headers: this.getHeaders() });
-  }
-
-  updateGymnasticsRotation(rotationId: number, rotationData: any): Observable<any> {
-    const url = `${this.apiUrl}/gymnastics/rotations/${rotationId}/`;
-    return this.http.patch(url, rotationData, { headers: this.getHeaders() });
-  }
-
-  deleteGymnasticsRotation(rotationId: number): Observable<any> {
-    const url = `${this.apiUrl}/gymnastics/rotations/${rotationId}/`;
-    return this.http.delete(url, { headers: this.getHeaders() });
-  }
+  
 
   // 11. JUDGE PANEL MANAGEMENT METHODS
   setupJudgePanels(matchId: number, panelData: any): Observable<any> {

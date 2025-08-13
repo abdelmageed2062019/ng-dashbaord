@@ -1662,6 +1662,21 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           <p>Move from <strong>Rotation ${currentRotation}</strong> to <strong>Rotation ${nextRotation}</strong></p>
           <p class="text-muted">Current: ${this.getCurrentApparatus()}</p>
           <p class="text-muted">Next: ${this.getNextApparatus()}</p>
+          
+          <div class="mt-4">
+            <label class="form-label"><i class="fas fa-clock me-1"></i><strong>Rotation Duration</strong></label>
+            <div class="input-group">
+              <input type="number" 
+                     class="form-control text-center" 
+                     id="rotationDurationInput" 
+                     value="120" 
+                     min="60" 
+                     max="300"
+                     style="font-size: 16px;">
+              <span class="input-group-text">seconds</span>
+            </div>
+            <small class="text-muted">Standard duration: 120 seconds (2 minutes)</small>
+          </div>
         </div>
       `,
       icon: 'question',
@@ -1669,10 +1684,21 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       confirmButtonColor: '#198754',
       cancelButtonColor: '#6c757d',
       confirmButtonText: 'Advance Rotation',
-      cancelButtonText: 'Cancel'
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        const durationInput = document.getElementById('rotationDurationInput') as HTMLInputElement;
+        const duration = parseInt(durationInput.value) || 120;
+        
+        if (duration < 60 || duration > 300) {
+          Swal.showValidationMessage('Duration must be between 60 and 300 seconds');
+          return false;
+        }
+        
+        return duration;
+      }
     }).then((result) => {
       if (result.isConfirmed) {
-        this.performApparatusAdvancement(nextRotation);
+        this.performApparatusAdvancement(nextRotation, false, result.value);
       }
     });
   }
@@ -1697,6 +1723,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
             `<p class="text-muted">Next apparatus: <strong>${this.getNextApparatus()}</strong></p>` : 
             '<p class="text-success"><strong>All rotations completed!</strong></p>'
           }
+          
+          ${nextRotation <= totalRotations ? `
+          <div class="mt-4">
+            <label class="form-label"><i class="fas fa-clock me-1"></i><strong>Next Rotation Duration</strong></label>
+            <div class="input-group">
+              <input type="number" 
+                     class="form-control text-center" 
+                     id="periodEndDurationInput" 
+                     value="120" 
+                     min="60" 
+                     max="300"
+                     style="font-size: 16px;">
+              <span class="input-group-text">seconds</span>
+            </div>
+            <small class="text-muted">Standard duration: 120 seconds (2 minutes)</small>
+          </div>` : ''}
         </div>
       `,
       icon: 'info',
@@ -1705,11 +1747,26 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       cancelButtonColor: '#6c757d',
       confirmButtonText: nextRotation <= totalRotations ? 'Advance to Next Apparatus' : 'Complete Competition',
       cancelButtonText: 'Stay on Current Apparatus',
-      allowOutsideClick: false
+      allowOutsideClick: false,
+      preConfirm: () => {
+        if (nextRotation <= totalRotations) {
+          const durationInput = document.getElementById('periodEndDurationInput') as HTMLInputElement;
+          const duration = parseInt(durationInput.value) || 120;
+          
+          if (duration < 60 || duration > 300) {
+            Swal.showValidationMessage('Duration must be between 60 and 300 seconds');
+            return false;
+          }
+          
+          return duration;
+        }
+        return true;
+      }
     }).then((result) => {
       if (result.isConfirmed && nextRotation <= totalRotations) {
-        // Automatically advance to next apparatus
-        this.performApparatusAdvancement(nextRotation, true);
+        // Automatically advance to next apparatus with user-specified duration
+        const rotationDuration = typeof result.value === 'number' ? result.value : 120;
+        this.performApparatusAdvancement(nextRotation, true, rotationDuration);
       } else if (result.isConfirmed && nextRotation > totalRotations) {
         // Mark competition as complete
         this.competitionState.allRotationsComplete = true;
@@ -1722,13 +1779,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   /**
    * Perform the actual apparatus advancement
    */
-  private performApparatusAdvancement(nextRotation: number, isAutomatic: boolean = false): void {
+  private performApparatusAdvancement(nextRotation: number, isAutomatic: boolean = false, rotationDuration: number = 120): void {
     const nextApparatus = this.getNextApparatus();
     const nextApparatusKey = this.getNextApparatusKey();
     
     this.apiService.advanceApparatusRotation(this.match.id, {
       next_apparatus: nextApparatusKey,
-      rotation_duration: 120
+      rotation_duration: rotationDuration
     }).subscribe({
       next: (response) => {
         console.log('✅ Rotation advanced:', response);
@@ -1752,7 +1809,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         if (response.time_remaining_in_period) {
           this.competitionClock.currentTime = this.parseTimeToSeconds(response.time_remaining_in_period);
         } else {
-          this.competitionClock.currentTime = 120; // Default 2 minutes
+          this.competitionClock.currentTime = rotationDuration; // Use the selected duration
         }
 
         const totalRotations = this.gymnasticsRotations.length || 8;
@@ -1768,6 +1825,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
               <i class="fas fa-sync-alt fa-2x text-success mb-3"></i>
               <p>Now on <strong>Rotation ${nextRotation}</strong> of ${totalRotations}</p>
               <p class="text-muted">Apparatus: <strong>${nextApparatus}</strong></p>
+              <p class="text-info">Duration: <strong>${rotationDuration} seconds</strong></p>
               <p class="text-info">Time: ${this.formatTime(this.competitionClock.currentTime)}</p>
             </div>
           `,
@@ -3161,7 +3219,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.loadGymnasticsScores(matchId);
 
           // Load competition rotations
-          this.loadCompetitionRotations(matchId);
+          // this.loadCompetitionRotations(matchId);
 
           console.log('Competition state restored:', this.competitionState);
         }
@@ -3238,22 +3296,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Load competition rotations
-  loadCompetitionRotations(matchId: number): void {
-    this.apiService.getGymnasticsRotations(matchId).subscribe({
-      next: (rotations) => {
-        console.log('Competition rotations loaded:', rotations);
-        
-        if (rotations && Array.isArray(rotations)) {
-          this.gymnasticsRotations = rotations;
-        }
-      },
-      error: (error) => {
-        console.log('No competition rotations found or error loading rotations:', error);
-        this.gymnasticsRotations = [];
-      }
-    });
-  }
+
 
   updateGymnasticsPlayerStats(statsData: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
     // Add gymnastics-specific player stats
