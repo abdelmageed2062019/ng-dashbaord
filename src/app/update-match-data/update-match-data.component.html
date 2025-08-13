@@ -671,6 +671,20 @@
                                       </button>
                                     </div>
                                   </div>
+                                  
+                                  <!-- 🔄 APPARATUS ROTATION CONTROL -->
+                                  <div class="mt-3">
+                                    <button class="btn btn-info w-100" 
+                                            (click)="advanceRotation()" 
+                                            [disabled]="competitionState.allRotationsComplete || !competitionState.initialized"
+                                            style="height: 50px;">
+                                      <i class="fas fa-sync-alt me-2"></i>
+                                      <div>
+                                        <strong>Advance to Next Apparatus</strong>
+                                        <br><small>{{ getNextApparatus() || 'Competition Complete' }}</small>
+                                      </div>
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -695,6 +709,151 @@
                                 <div class="text-muted small">Competition Level</div>
                                 <div class="h6">{{ sessionConfig.competitionLevel || 'Senior' }}</div>
                               </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 🏃‍♀️ ROUTINE MANAGEMENT PANEL -->
+                      <div class="card border-warning mb-4">
+                        <div class="card-header bg-warning text-dark">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                              <i class="fas fa-stopwatch me-2"></i><strong>Routine Management</strong>
+                            </h6>
+                            <div class="badge bg-secondary">
+                              {{ getRoutineStatusText() }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="card-body">
+                          <!-- Active Routine Display -->
+                          <div *ngIf="isRoutineTimerActive()" class="alert alert-info mb-3">
+                            <div class="row align-items-center">
+                              <div class="col-8">
+                                <div class="d-flex align-items-center">
+                                  <i class="fas fa-user-clock fa-2x text-primary me-3"></i>
+                                  <div>
+                                    <h6 class="mb-0">
+                                      {{ getActiveRoutinePlayer()?.first_name }} {{ getActiveRoutinePlayer()?.last_name }}
+                                    </h6>
+                                    <small class="text-muted">
+                                      <i class="fas fa-dumbbell me-1"></i>
+                                      {{ getActiveRoutineApparatus().replace('_', ' ') | titlecase }}
+                                    </small>
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-4 text-end">
+                                <div class="h4 mb-0 text-primary">{{ getCurrentRoutineTimer() }}</div>
+                                <small class="text-muted">Routine Timer</small>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- No Active Routine Message -->
+                          <div *ngIf="!isRoutineTimerActive()" class="alert alert-light mb-3">
+                            <div class="text-center text-muted">
+                              <i class="fas fa-clock fa-2x mb-2"></i>
+                              <div>No active routine timer</div>
+                              <small>Select a player to start their routine</small>
+                            </div>
+                          </div>
+
+                          <!-- Routine Control Buttons -->
+                          <div class="row g-2">
+                            <!-- Start Routine Button -->
+                            <div class="col-md-6">
+                              <div class="mb-2">
+                                <label class="form-label small"><i class="fas fa-user me-1"></i>Select Player</label>
+                                <select class="form-select form-select-sm" id="routinePlayerSelect">
+                                  <option value="">Choose a player...</option>
+                                  <ng-container *ngFor="let teamData of teams">
+                                    <optgroup [label]="teamData.team.name">
+                                      <option 
+                                        *ngFor="let player of playersData[teamData.team.id]"
+                                        [value]="player.id">
+                                        {{ player.first_name }} {{ player.last_name }} (#{{ player.uniform || player.displayid }})
+                                      </option>
+                                    </optgroup>
+                                  </ng-container>
+                                </select>
+                              </div>
+                              
+                              <div class="mb-2">
+                                <label class="form-label small"><i class="fas fa-dumbbell me-1"></i>Apparatus</label>
+                                <select class="form-select form-select-sm" id="routineApparatusSelect">
+                                  <option value="">Select apparatus...</option>
+                                  <option *ngFor="let apparatus of gymnasticsApparatus" [value]="apparatus">
+                                    {{ apparatus.replace('_', ' ') | titlecase }}
+                                  </option>
+                                </select>
+                              </div>
+
+                              <div class="mb-2">
+                                <label class="form-label small"><i class="fas fa-hourglass-half me-1"></i>Duration (seconds)</label>
+                                <input type="number" class="form-control form-control-sm" 
+                                       id="routineDurationInput" 
+                                       value="90" 
+                                       min="30" 
+                                       max="150">
+                              </div>
+
+                              <button class="btn btn-success btn-sm w-100 mb-2" 
+                                      [disabled]="isRoutineTimerActive() || !competitionState.initialized"
+                                      (click)="startRoutineFromUI()">
+                                <i class="fas fa-play me-1"></i>Start Routine Timer
+                              </button>
+                            </div>
+
+                            <!-- Stop Routine Button -->
+                            <div class="col-md-6">
+                              <div class="d-flex flex-column h-100 justify-content-center">
+                                <div class="text-center mb-3">
+                                  <div class="h5 mb-1">{{ getCurrentRoutineTimer() }}</div>
+                                  <small class="text-muted">Current Timer</small>
+                                </div>
+                                
+                                <button class="btn btn-danger btn-sm w-100" 
+                                        [disabled]="!isRoutineTimerActive()"
+                                        (click)="stopRoutineTimer()">
+                                  <i class="fas fa-stop me-1"></i>Stop Routine Timer
+                                </button>
+                                
+                                <div class="mt-2 text-center">
+                                  <small class="text-muted">
+                                    *Timer will auto-stop when duration expires
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Quick Player Selection -->
+                          <div class="mt-3">
+                            <label class="form-label small"><i class="fas fa-users me-1"></i>Quick Player Selection</label>
+                            <div class="row g-1">
+                              <ng-container *ngFor="let teamData of teams">
+                                <div class="col-12 mb-2">
+                                  <div class="card bg-light">
+                                    <div class="card-header py-1">
+                                      <small class="text-muted">{{ teamData.team.name }}</small>
+                                    </div>
+                                    <div class="card-body py-2">
+                                      <div class="d-flex flex-wrap gap-1">
+                                        <button 
+                                          *ngFor="let player of playersData[teamData.team.id]?.slice(0, 6)"
+                                          class="btn btn-outline-primary btn-sm"
+                                          [disabled]="isRoutineTimerActive()"
+                                          (click)="quickStartRoutine(player.id, teamData.team.name)">
+                                          {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
+                                          <small>#{{ player.uniform || player.displayid }}</small>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </ng-container>
                             </div>
                           </div>
                         </div>

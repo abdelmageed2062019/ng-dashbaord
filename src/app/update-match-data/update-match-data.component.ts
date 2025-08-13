@@ -121,8 +121,53 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     initialized: false,
     currentRotation: 0,
     currentSubdivision: 0,
+    currentPeriod: 1,
+    currentApparatus: '',
     allRotationsComplete: false,
-    awards_ceremony_ready: false
+    awards_ceremony_ready: false,
+    match_completed: false
+  };
+
+  // Routine management
+  routineState = {
+    activePlayer: null as any,
+    activeApparatus: '',
+    routineStartTime: null as Date | null,
+    routineDuration: 0,
+    isRoutineActive: false
+  };
+
+  // Timeout management
+  timeoutState = {
+    isActive: false,
+    teamId: null as number | null,
+    duration: '',
+    reason: '',
+    startTime: null as Date | null,
+    endTime: null as Date | null
+  };
+
+  // Period and apparatus tracking
+  gymnasticsFlow = {
+    periods: [
+      { number: 1, apparatus: 'floor_exercise', completed: false },
+      { number: 2, apparatus: 'vault', completed: false },
+      { number: 3, apparatus: 'uneven_bars', completed: false },
+      { number: 4, apparatus: 'balance_beam', completed: false }
+    ],
+    currentPeriodIndex: 0,
+    rotationDuration: 120, // seconds
+    routineTimeLimit: 70 // seconds
+  };
+
+  // Match statistics
+  matchStats = {
+    totalRoutines: 0,
+    completedRoutines: 0,
+    totalTimeouts: 0,
+    averageRoutineDuration: 0,
+    highestScore: 0,
+    lowestScore: 0
   };
 
   // Auto-refresh properties
@@ -1404,15 +1449,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     console.log('✅ Default rotations setup:', this.gymnasticsRotations);
   }
 
-  /**
-   * Enhanced clock management with full integration
-   */
+  // Enhanced clock management with API service integration
   startClock(): void {
-    if (!this.competitionState.initialized) {
+    if (!this.match?.id) {
       Swal.fire({
         icon: 'warning',
-        title: 'Competition Not Initialized',
-        text: 'Please initialize the competition first before starting the clock.',
+        title: 'No Match Selected',
+        text: 'Cannot start clock without a valid match.',
         confirmButtonColor: '#ffc107'
       });
       return;
@@ -1428,17 +1471,30 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       confirmButtonText: 'Start Clock',
       cancelButtonText: 'Cancel'
     }).then((result) => {
-      if (result.isConfirmed && this.gymnasticsService) {
-        this.gymnasticsService.start().subscribe({
+      if (result.isConfirmed) {
+        this.apiService.startGymnasticsClock(this.match.id).subscribe({
           next: (response) => {
             console.log('✅ Clock started:', response);
             this.competitionClock.isRunning = true;
-            this.competitionClock.currentTime = 0;
+            
+            // Parse time_remaining_in_period from API response
+            if (response.time_remaining_in_period) {
+              this.competitionClock.currentTime = this.parseTimeToSeconds(response.time_remaining_in_period);
+            } else {
+              this.competitionClock.currentTime = 0;
+            }
+            
+            // Update other clock properties from response
+            this.competitionClock.rotationTime = response.current_rotation || 1;
+            this.competitionClock.warmupTime = 0;
+            this.competitionClock.routineTime = 0;
+            
+            console.log('Clock initialized with time:', this.competitionClock.currentTime, 'seconds');
             
             Swal.fire({
               icon: 'success',
               title: 'Clock Started!',
-              text: 'Competition timing has begun.',
+              text: `Competition timing has begun. Time remaining: ${response.time_remaining_in_period || '00:00'}`,
               timer: 2000,
               showConfirmButton: false
             });
@@ -1448,12 +1504,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('❌ Failed to start clock:', error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Failed to Start Clock',
-              text: 'Could not start the competition clock. Please try again.',
-              confirmButtonColor: '#dc3545'
-            });
+            this.handleApiError(error, 'Failed to start competition clock');
           }
         });
       }
@@ -1461,32 +1512,30 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   stopClock(): void {
-    if (!this.competitionClock.isRunning) {
+    if (!this.competitionClock.isRunning || !this.match?.id) {
       return;
     }
 
-    if (this.gymnasticsService) {
-      
-    }
     console.log('Stopping gymnastics competition clock...');
-      this.apiService.pauseGymnasticsClock(this.match.id).subscribe({
-        next: (response) => {
-          console.log('✅ Clock paused:', response);
-          this.competitionClock.isRunning = false;
-          this.stopClockInterval();
-          
-          Swal.fire({
-            icon: 'info',
-            title: 'Clock Paused',
-            text: 'Competition timing has been paused.',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        },
-        error: (error) => {
-          console.error('❌ Failed to pause clock:', error);
-        }
-      });
+    this.apiService.pauseGymnasticsClock(this.match.id).subscribe({
+      next: (response) => {
+        console.log('✅ Clock paused:', response);
+        this.competitionClock.isRunning = false;
+        this.stopClockInterval();
+        
+        Swal.fire({
+          icon: 'info',
+          title: 'Clock Paused',
+          text: 'Competition timing has been paused.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      },
+      error: (error) => {
+        console.error('❌ Failed to pause clock:', error);
+        this.handleApiError(error, 'Failed to pause competition clock');
+      }
+    });
   }
 
   resumeClock(): void {
@@ -1497,10 +1546,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         console.log('Clock resumed:', response);
         this.competitionClock.isRunning = true;
         
+        // Update current time from API response
+        if (response.time_remaining_in_period) {
+          this.competitionClock.currentTime = this.parseTimeToSeconds(response.time_remaining_in_period);
+        }
+        
+        console.log('Clock resumed with time:', this.competitionClock.currentTime, 'seconds');
+        
         Swal.fire({
           icon: 'success',
           title: 'Competition Clock Resumed!',
-          text: 'The gymnastics competition timer is now running again.',
+          text: `The gymnastics competition timer is now running again. Time remaining: ${response.time_remaining_in_period || '00:00'}`,
           confirmButtonColor: '#198754',
           timer: 2000,
           timerProgressBar: true
@@ -1527,6 +1583,16 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.match?.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Match Selected',
+        text: 'Cannot reset clock without a valid match.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
     Swal.fire({
       title: 'Reset Competition Clock',
       text: 'This will reset all timing data. Are you sure?',
@@ -1537,8 +1603,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       confirmButtonText: 'Reset Clock',
       cancelButtonText: 'Cancel'
     }).then((result) => {
-      if (result.isConfirmed && this.gymnasticsService) {
-        this.gymnasticsService.reset().subscribe({
+      if (result.isConfirmed) {
+        this.apiService.resetGymnasticsClock(this.match.id).subscribe({
           next: (response) => {
             console.log('✅ Clock reset:', response);
             this.resetClockData();
@@ -1553,12 +1619,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('❌ Failed to reset clock:', error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Failed to Reset Clock',
-              text: 'Could not reset the competition clock. Please try again.',
-              confirmButtonColor: '#dc3545'
-            });
+            this.handleApiError(error, 'Failed to reset competition clock');
           }
         });
       }
@@ -1569,11 +1630,11 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Advanced rotation management
    */
   advanceRotation(): void {
-    if (!this.competitionState.initialized) {
+    if (!this.match?.id) {
       Swal.fire({
         icon: 'warning',
-        title: 'Competition Not Initialized',
-        text: 'Please initialize the competition first.',
+        title: 'No Match Selected',
+        text: 'Cannot advance rotation without a valid match.',
         confirmButtonColor: '#ffc107'
       });
       return;
@@ -1610,54 +1671,201 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       confirmButtonText: 'Advance Rotation',
       cancelButtonText: 'Cancel'
     }).then((result) => {
-      if (result.isConfirmed && this.gymnasticsService) {
-        this.gymnasticsService.advanceRotation().subscribe({
-          next: (response) => {
-            console.log('✅ Rotation advanced:', response);
-            this.competitionState.currentRotation = nextRotation;
-            
-            // Update rotation status
-            if (this.gymnasticsRotations.length > 0) {
-              this.gymnasticsRotations.forEach((rotation, index) => {
-                if (index < currentRotation) {
-                  rotation.status = 'completed';
-                } else if (index === currentRotation) {
-                  rotation.status = 'active';
-                } else {
-                  rotation.status = 'pending';
-                }
-              });
-            }
-
-            if (nextRotation >= totalRotations) {
-              this.competitionState.allRotationsComplete = true;
-            }
-
-            Swal.fire({
-              icon: 'success',
-              title: 'Rotation Advanced!',
-              html: `
-                <div class="text-center">
-                  <i class="fas fa-sync-alt fa-2x text-success mb-3"></i>
-                  <p>Now on <strong>Rotation ${nextRotation}</strong> of ${totalRotations}</p>
-                  <p class="text-muted">Apparatus: ${this.getCurrentApparatus()}</p>
-                </div>
-              `,
-              timer: 3000,
-              timerProgressBar: true
-            });
-          },
-          error: (error) => {
-            console.error('❌ Failed to advance rotation:', error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Failed to Advance Rotation',
-              text: 'Could not advance to the next rotation. Please try again.',
-              confirmButtonColor: '#dc3545'
-            });
-          }
-        });
+      if (result.isConfirmed) {
+        this.performApparatusAdvancement(nextRotation);
       }
+    });
+  }
+
+  /**
+   * Handle period end and offer apparatus advancement
+   */
+  private handlePeriodEnd(): void {
+    const currentRotation = this.competitionState.currentRotation;
+    const nextRotation = currentRotation + 1;
+    const totalRotations = this.gymnasticsRotations.length || 8;
+
+    // Show period ended notification with advancement option
+    Swal.fire({
+      title: 'Period Ended!',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-clock fa-2x text-warning mb-3"></i>
+          <p>The current period time has expired.</p>
+          <p class="text-muted">Current apparatus: <strong>${this.getCurrentApparatus()}</strong></p>
+          ${nextRotation <= totalRotations ? 
+            `<p class="text-muted">Next apparatus: <strong>${this.getNextApparatus()}</strong></p>` : 
+            '<p class="text-success"><strong>All rotations completed!</strong></p>'
+          }
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: nextRotation <= totalRotations,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: nextRotation <= totalRotations ? 'Advance to Next Apparatus' : 'Complete Competition',
+      cancelButtonText: 'Stay on Current Apparatus',
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed && nextRotation <= totalRotations) {
+        // Automatically advance to next apparatus
+        this.performApparatusAdvancement(nextRotation, true);
+      } else if (result.isConfirmed && nextRotation > totalRotations) {
+        // Mark competition as complete
+        this.competitionState.allRotationsComplete = true;
+        this.competitionState.match_completed = true;
+        this.showCompetitionCompleteDialog();
+      }
+    });
+  }
+
+  /**
+   * Perform the actual apparatus advancement
+   */
+  private performApparatusAdvancement(nextRotation: number, isAutomatic: boolean = false): void {
+    const nextApparatus = this.getNextApparatus();
+    const nextApparatusKey = this.getNextApparatusKey();
+    
+    this.apiService.advanceApparatusRotation(this.match.id, {
+      next_apparatus: nextApparatusKey,
+      rotation_duration: 120
+    }).subscribe({
+      next: (response) => {
+        console.log('✅ Rotation advanced:', response);
+        this.competitionState.currentRotation = nextRotation;
+        this.competitionState.currentApparatus = nextApparatusKey;
+        
+        // Update rotation status
+        if (this.gymnasticsRotations.length > 0) {
+          this.gymnasticsRotations.forEach((rotation, index) => {
+            if (index < nextRotation - 1) {
+              rotation.status = 'completed';
+            } else if (index === nextRotation - 1) {
+              rotation.status = 'active';
+            } else {
+              rotation.status = 'pending';
+            }
+          });
+        }
+
+        // Update clock with new period time
+        if (response.time_remaining_in_period) {
+          this.competitionClock.currentTime = this.parseTimeToSeconds(response.time_remaining_in_period);
+        } else {
+          this.competitionClock.currentTime = 120; // Default 2 minutes
+        }
+
+        const totalRotations = this.gymnasticsRotations.length || 8;
+        if (nextRotation >= totalRotations) {
+          this.competitionState.allRotationsComplete = true;
+        }
+
+        Swal.fire({
+          icon: 'success',
+          title: isAutomatic ? 'Automatically Advanced!' : 'Rotation Advanced!',
+          html: `
+            <div class="text-center">
+              <i class="fas fa-sync-alt fa-2x text-success mb-3"></i>
+              <p>Now on <strong>Rotation ${nextRotation}</strong> of ${totalRotations}</p>
+              <p class="text-muted">Apparatus: <strong>${nextApparatus}</strong></p>
+              <p class="text-info">Time: ${this.formatTime(this.competitionClock.currentTime)}</p>
+            </div>
+          `,
+          confirmButtonColor: '#198754',
+          timer: 4000,
+          timerProgressBar: true
+        });
+
+        // Auto-restart clock if it was running before
+        if (isAutomatic) {
+          setTimeout(() => {
+            this.competitionClock.isRunning = true;
+            this.startClockInterval();
+          }, 1000);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Failed to advance rotation:', error);
+        this.handleApiError(error, 'Failed to advance to the next rotation');
+      }
+    });
+  }
+
+  /**
+   * Get next apparatus key for API call
+   */
+  private getNextApparatusKey(): string {
+    const nextRotation = this.competitionState.currentRotation + 1;
+    if (this.gymnasticsRotations.length > 0 && nextRotation <= this.gymnasticsRotations.length) {
+      const rotation = this.gymnasticsRotations[nextRotation - 1];
+      return rotation?.apparatus || 'floor_exercise';
+    }
+    
+    // Default apparatus progression for gymnastics
+    const apparatusProgression = [
+      'floor_exercise',
+      'vault', 
+      'uneven_bars',
+      'balance_beam',
+      'pommel_horse',
+      'still_rings',
+      'parallel_bars',
+      'horizontal_bar'
+    ];
+    
+    const currentIndex = this.competitionState.currentRotation - 1;
+    return apparatusProgression[(currentIndex + 1) % apparatusProgression.length] || 'floor_exercise';
+  }
+
+  /**
+   * Show competition complete dialog
+   */
+  private showCompetitionCompleteDialog(): void {
+    Swal.fire({
+      title: 'Competition Complete!',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-trophy fa-3x text-warning mb-3"></i>
+          <p><strong>All apparatus rotations have been completed!</strong></p>
+          <p class="text-muted">The gymnastics competition has ended.</p>
+          <div class="mt-3">
+            <p class="text-info">What would you like to do next?</p>
+          </div>
+        </div>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#007bff',
+      confirmButtonText: 'View Final Results',
+      cancelButtonText: 'Generate Reports',
+      allowOutsideClick: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.viewFinalResults();
+      } else if (result.isDismissed) {
+        this.generateCompetitionReports();
+      }
+    });
+  }
+
+  /**
+   * View final competition results
+   */
+  private viewFinalResults(): void {
+    // Implement final results view
+    this.viewRankings();
+  }
+
+  /**
+   * Generate competition reports
+   */
+  private generateCompetitionReports(): void {
+    Swal.fire({
+      icon: 'info',
+      title: 'Generating Reports',
+      text: 'Competition reports will be generated and made available for download.',
+      confirmButtonColor: '#198754'
     });
   }
 
@@ -1758,7 +1966,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   /**
    * Helper methods for gymnastics management
    */
-  private getCurrentApparatus(): string {
+  getCurrentApparatus(): string {
     const currentRotation = this.competitionState.currentRotation;
     if (this.gymnasticsRotations.length > 0 && currentRotation > 0) {
       const rotation = this.gymnasticsRotations[currentRotation - 1];
@@ -1767,7 +1975,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     return this.selectedApparatus?.replace('_', ' ') || 'Multiple';
   }
 
-  private getNextApparatus(): string {
+  getNextApparatus(): string {
     const nextRotation = this.competitionState.currentRotation + 1;
     if (this.gymnasticsRotations.length > 0 && nextRotation <= this.gymnasticsRotations.length) {
       const rotation = this.gymnasticsRotations[nextRotation - 1];
@@ -1809,10 +2017,513 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
     this.clockIntervalId = setInterval(() => {
       if (this.competitionClock.isRunning) {
-        this.competitionClock.currentTime++;
-        this.competitionClock.rotationTime++;
+        // Count down from the remaining time
+        this.competitionClock.currentTime--;
+        
+        // Stop the clock if time reaches zero
+        if (this.competitionClock.currentTime <= 0) {
+          this.competitionClock.currentTime = 0;
+          this.competitionClock.isRunning = false;
+          this.stopClockInterval();
+          
+          // Handle period end and potential apparatus advancement
+          this.handlePeriodEnd();
+        }
       }
     }, 1000);
+  }
+
+  // Helper method to parse time string (MM:SS) to seconds
+  private parseTimeToSeconds(timeString: string): number {
+    if (!timeString) return 0;
+    
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0]) || 0;
+      const seconds = parseInt(parts[1]) || 0;
+      return (minutes * 60) + seconds;
+    }
+    return 0;
+  }
+
+  // Sync clock with server status
+  private syncClockWithServer(): void {
+    if (!this.match?.id) return;
+    
+    this.apiService.getGymnasticsClockStatus(this.match.id).subscribe({
+      next: (clockStatus) => {
+        // Update local clock state with server data
+        if (clockStatus.time_remaining_in_period) {
+          this.competitionClock.currentTime = this.parseTimeToSeconds(clockStatus.time_remaining_in_period);
+        }
+        this.competitionClock.isRunning = clockStatus.is_running || false;
+        
+        // Update other properties
+        this.competitionState.currentRotation = clockStatus.current_rotation || 1;
+        this.competitionState.currentPeriod = clockStatus.current_period || 1;
+        
+        // Update routine state from clock status
+        if (clockStatus.current_routine_player) {
+          this.routineState.activePlayer = this.getPlayerById(clockStatus.current_routine_player);
+          this.routineState.activeApparatus = clockStatus.current_apparatus || '';
+          this.routineState.isRoutineActive = true;
+          this.routineState.routineStartTime = clockStatus.routine_start_time ? new Date(clockStatus.routine_start_time) : null;
+        } else {
+          this.routineState.activePlayer = null;
+          this.routineState.activeApparatus = '';
+          this.routineState.isRoutineActive = false;
+          this.routineState.routineStartTime = null;
+        }
+        
+        console.log('Clock synced with server:', clockStatus);
+      },
+      error: (error) => {
+        console.warn('Failed to sync clock with server:', error);
+      }
+    });
+  }
+
+  // ============================================================================
+  // 🏃‍♀️ ROUTINE MANAGEMENT METHODS
+  // ============================================================================
+
+  /**
+   * Start routine timer for a specific player
+   */
+  startRoutineTimer(playerId: number, apparatus: string, routineDuration: number = 90): void {
+    if (!this.match?.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Match Selected',
+        text: 'Cannot start routine timer without a valid match.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    if (!playerId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Player Selected',
+        text: 'Please select a player to start their routine timer.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const player = this.getPlayerById(playerId);
+    const playerName = player ? `${player.first_name} ${player.last_name}` : `Player #${playerId}`;
+
+    Swal.fire({
+      title: 'Start Routine Timer',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-stopwatch fa-2x text-primary mb-3"></i>
+          <p><strong>Player:</strong> ${playerName}</p>
+          <p><strong>Apparatus:</strong> ${apparatus.replace('_', ' ').toUpperCase()}</p>
+          <p><strong>Duration:</strong> ${routineDuration} seconds</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Start Routine',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const routineData = {
+          player_id: playerId,
+          apparatus: apparatus,
+          routine_duration: routineDuration
+        };
+
+        this.apiService.startRoutineTimer(this.match.id, routineData).subscribe({
+          next: (response) => {
+            console.log('✅ Routine timer started:', response);
+            
+            // Update routine state
+            this.routineState.activePlayer = player;
+            this.routineState.activeApparatus = apparatus;
+            this.routineState.isRoutineActive = true;
+            this.routineState.routineStartTime = response.routine_start_time ? new Date(response.routine_start_time) : new Date();
+            this.routineState.routineDuration = routineDuration;
+
+            // Update clock state from response
+            this.updateClockFromResponse(response);
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Routine Timer Started!',
+              html: `
+                <div class="text-center">
+                  <i class="fas fa-play-circle fa-2x text-success mb-3"></i>
+                  <p><strong>${playerName}</strong> routine timer is now running</p>
+                  <p class="text-muted">Apparatus: ${apparatus.replace('_', ' ').toUpperCase()}</p>
+                  <p class="text-muted">Timer: ${response.routine_timer || '00:00'}</p>
+                </div>
+              `,
+              confirmButtonColor: '#198754',
+              timer: 3000,
+              timerProgressBar: true
+            });
+          },
+          error: (error) => {
+            console.error('❌ Failed to start routine timer:', error);
+            this.handleApiError(error, 'Failed to start routine timer');
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Stop routine timer for current active player
+   */
+  stopRoutineTimer(playerId?: number): void {
+    if (!this.match?.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Match Selected',
+        text: 'Cannot stop routine timer without a valid match.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const targetPlayerId = playerId || this.routineState.activePlayer?.id;
+    if (!targetPlayerId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Active Routine',
+        text: 'No routine timer is currently running.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const player = this.getPlayerById(targetPlayerId);
+    const playerName = player ? `${player.first_name} ${player.last_name}` : `Player #${targetPlayerId}`;
+
+    Swal.fire({
+      title: 'Stop Routine Timer',
+      html: `
+        <div class="text-center">
+          <i class="fas fa-stop-circle fa-2x text-danger mb-3"></i>
+          <p>Stop routine timer for <strong>${playerName}</strong>?</p>
+          <p class="text-muted">Apparatus: ${this.routineState.activeApparatus.replace('_', ' ').toUpperCase()}</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Stop Timer',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const playerData = { player_id: targetPlayerId };
+
+        this.apiService.stopRoutineTimer(this.match.id, playerData).subscribe({
+          next: (response) => {
+            console.log('✅ Routine timer stopped:', response);
+
+            // Calculate routine duration
+            const routineDuration = this.calculateRoutineDuration(response);
+
+            // Reset routine state
+            this.routineState.activePlayer = null;
+            this.routineState.activeApparatus = '';
+            this.routineState.isRoutineActive = false;
+            this.routineState.routineStartTime = null;
+            this.routineState.routineDuration = 0;
+
+            // Update clock state from response
+            this.updateClockFromResponse(response);
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Routine Timer Stopped!',
+              html: `
+                <div class="text-center">
+                  <i class="fas fa-stop-circle fa-2x text-success mb-3"></i>
+                  <p><strong>${playerName}</strong> routine completed</p>
+                  <p class="text-muted">Duration: ${routineDuration}</p>
+                  <p class="text-muted">Final Timer: ${response.routine_timer || '00:00'}</p>
+                </div>
+              `,
+              confirmButtonColor: '#198754',
+              timer: 3000,
+              timerProgressBar: true
+            });
+          },
+          error: (error) => {
+            console.error('❌ Failed to stop routine timer:', error);
+            this.handleApiError(error, 'Failed to stop routine timer');
+          }
+        });
+      }
+    });
+  }
+
+  /**
+   * Get routine status display text
+   */
+  getRoutineStatusText(): string {
+    if (this.routineState.isRoutineActive && this.routineState.activePlayer) {
+      const playerName = `${this.routineState.activePlayer.first_name} ${this.routineState.activePlayer.last_name}`;
+      const apparatus = this.routineState.activeApparatus.replace('_', ' ').toUpperCase();
+      return `ACTIVE: ${playerName} on ${apparatus}`;
+    } else {
+      return 'No Active Routine';
+    }
+  }
+
+  /**
+   * Get current routine timer display
+   */
+  getCurrentRoutineTimer(): string {
+    if (!this.routineState.isRoutineActive || !this.routineState.routineStartTime) {
+      return '00:00';
+    }
+
+    const now = new Date();
+    const elapsed = Math.floor((now.getTime() - this.routineState.routineStartTime.getTime()) / 1000);
+    const remaining = Math.max(0, this.routineState.routineDuration - elapsed);
+    
+    return this.formatTime(remaining);
+  }
+
+  /**
+   * Check if routine timer is active
+   */
+  isRoutineTimerActive(): boolean {
+    return this.routineState.isRoutineActive;
+  }
+
+  /**
+   * Get active routine player
+   */
+  getActiveRoutinePlayer(): any {
+    return this.routineState.activePlayer;
+  }
+
+  /**
+   * Get active routine apparatus
+   */
+  getActiveRoutineApparatus(): string {
+    return this.routineState.activeApparatus;
+  }
+
+  // ============================================================================
+  // 🔧 HELPER METHODS FOR ROUTINE MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get player by ID from all teams
+   */
+  private getPlayerById(playerId: number): any {
+    for (const teamId in this.playersData) {
+      const players = this.playersData[teamId];
+      const player = players.find(p => p.id === playerId);
+      if (player) {
+        return player;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Update clock state from API response
+   */
+  private updateClockFromResponse(response: any): void {
+    if (response) {
+      // Update main clock properties
+      if (response.time_remaining_in_period) {
+        this.competitionClock.currentTime = this.parseTimeToSeconds(response.time_remaining_in_period);
+      }
+      
+      this.competitionClock.isRunning = response.is_running || false;
+      this.competitionState.currentPeriod = response.current_period || 1;
+      this.competitionState.currentRotation = response.current_rotation || 1;
+      
+      // Update routine state from response
+      if (response.current_routine_player) {
+        this.routineState.activePlayer = this.getPlayerById(response.current_routine_player);
+        this.routineState.activeApparatus = response.current_apparatus || '';
+        this.routineState.isRoutineActive = true;
+        this.routineState.routineStartTime = response.routine_start_time ? new Date(response.routine_start_time) : null;
+      } else {
+        this.routineState.activePlayer = null;
+        this.routineState.activeApparatus = '';
+        this.routineState.isRoutineActive = false;
+        this.routineState.routineStartTime = null;
+      }
+
+      console.log('Clock state updated from API response:', response);
+    }
+  }
+
+  /**
+   * Calculate routine duration from response
+   */
+  private calculateRoutineDuration(response: any): string {
+    if (response.routine_timer) {
+      return response.routine_timer;
+    }
+    
+    if (this.routineState.routineStartTime) {
+      const endTime = new Date();
+      const duration = Math.floor((endTime.getTime() - this.routineState.routineStartTime.getTime()) / 1000);
+      return this.formatTime(duration);
+    }
+    
+    return '00:00';
+  }
+
+  /**
+   * Get current routine player from clock status
+   */
+  getCurrentRoutinePlayerFromClock(): any {
+    if (!this.match?.id) return null;
+    
+    this.apiService.getGymnasticsClockStatus(this.match.id).subscribe({
+      next: (clockStatus) => {
+        if (clockStatus.current_routine_player) {
+          return this.getPlayerById(clockStatus.current_routine_player);
+        }
+        return null;
+      },
+      error: (error) => {
+        console.error('Failed to get current routine player:', error);
+        return null;
+      }
+    });
+  }
+
+  /**
+   * Update routine state from clock status
+   */
+  private updateRoutineStateFromClock(): void {
+    if (!this.match?.id) return;
+    
+    this.apiService.getGymnasticsClockStatus(this.match.id).subscribe({
+      next: (clockStatus) => {
+        if (clockStatus.current_routine_player) {
+          this.routineState.activePlayer = this.getPlayerById(clockStatus.current_routine_player);
+          this.routineState.activeApparatus = clockStatus.current_apparatus || '';
+          this.routineState.isRoutineActive = true;
+          this.routineState.routineStartTime = clockStatus.routine_start_time ? new Date(clockStatus.routine_start_time) : null;
+        } else {
+          this.routineState.activePlayer = null;
+          this.routineState.activeApparatus = '';
+          this.routineState.isRoutineActive = false;
+          this.routineState.routineStartTime = null;
+        }
+        
+        console.log('Routine state updated from clock:', this.routineState);
+      },
+      error: (error) => {
+        console.warn('Failed to update routine state from clock:', error);
+      }
+    });
+  }
+
+  // ============================================================================
+  // 🎯 UI HELPER METHODS FOR ROUTINE MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Start routine from UI form
+   */
+  startRoutineFromUI(): void {
+    const playerSelect = document.getElementById('routinePlayerSelect') as HTMLSelectElement;
+    const apparatusSelect = document.getElementById('routineApparatusSelect') as HTMLSelectElement;
+    const durationInput = document.getElementById('routineDurationInput') as HTMLInputElement;
+
+    const playerId = parseInt(playerSelect.value);
+    const apparatus = apparatusSelect.value;
+    const duration = parseInt(durationInput.value) || 90;
+
+    if (!playerId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Player Required',
+        text: 'Please select a player to start their routine.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    if (!apparatus) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Apparatus Required',
+        text: 'Please select an apparatus for the routine.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    this.startRoutineTimer(playerId, apparatus, duration);
+
+    // Reset form after starting
+    playerSelect.value = '';
+    apparatusSelect.value = '';
+    durationInput.value = '90';
+  }
+
+  /**
+   * Quick start routine for a player with default settings
+   */
+  quickStartRoutine(playerId: number, teamName: string): void {
+    // Use the current apparatus from competition state or default to floor exercise
+    const defaultApparatus = this.competitionState.currentApparatus || 'floor_exercise';
+    
+    Swal.fire({
+      title: 'Quick Start Routine',
+      html: `
+        <div class="text-center">
+          <p>Start routine for player from <strong>${teamName}</strong>?</p>
+          <div class="mt-3">
+            <label class="form-label"><i class="fas fa-dumbbell me-1"></i>Apparatus</label>
+            <select class="form-select" id="quickApparatusSelect">
+              <option value="floor_exercise" ${defaultApparatus === 'floor_exercise' ? 'selected' : ''}>Floor Exercise</option>
+              <option value="vault" ${defaultApparatus === 'vault' ? 'selected' : ''}>Vault</option>
+              <option value="uneven_bars" ${defaultApparatus === 'uneven_bars' ? 'selected' : ''}>Uneven Bars</option>
+              <option value="balance_beam" ${defaultApparatus === 'balance_beam' ? 'selected' : ''}>Balance Beam</option>
+              <option value="pommel_horse" ${defaultApparatus === 'pommel_horse' ? 'selected' : ''}>Pommel Horse</option>
+              <option value="still_rings" ${defaultApparatus === 'still_rings' ? 'selected' : ''}>Still Rings</option>
+              <option value="parallel_bars" ${defaultApparatus === 'parallel_bars' ? 'selected' : ''}>Parallel Bars</option>
+              <option value="horizontal_bar" ${defaultApparatus === 'horizontal_bar' ? 'selected' : ''}>Horizontal Bar</option>
+            </select>
+          </div>
+          <div class="mt-3">
+            <label class="form-label"><i class="fas fa-hourglass-half me-1"></i>Duration (seconds)</label>
+            <input type="number" class="form-control" id="quickDurationInput" value="90" min="30" max="150">
+          </div>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Start Routine',
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        const apparatusSelect = document.getElementById('quickApparatusSelect') as HTMLSelectElement;
+        const durationInput = document.getElementById('quickDurationInput') as HTMLInputElement;
+        
+        return {
+          apparatus: apparatusSelect.value,
+          duration: parseInt(durationInput.value) || 90
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.startRoutineTimer(playerId, result.value.apparatus, result.value.duration);
+      }
+    });
   }
 
   private stopClockInterval(): void {
@@ -1837,6 +2548,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     const remainingSeconds = seconds % 60;
     
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Get current clock display time
+  getCurrentClockDisplay(): string {
+    return this.formatTime(this.competitionClock.currentTime);
+  }
+
+  // Get clock status text
+  getClockStatusText(): string {
+    if (this.competitionClock.isRunning) {
+      return 'RUNNING';
+    } else if (this.competitionClock.currentTime > 0) {
+      return 'PAUSED';
+    } else {
+      return 'STOPPED';
+    }
   }
 
   // Method to get total number of players
@@ -2051,6 +2778,347 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         this.handleApiError(error, 'Failed to export competition results');
       }
     });
+  }
+
+  // ============================================
+  // COMPREHENSIVE GYMNASTICS FLOW MANAGEMENT
+  // ============================================
+
+  // Initialize match with full gymnastics flow setup
+  initializeGymnasticsMatchFlow(): void {
+    if (!this.match?.id) return;
+
+    const competitionData = {
+      match_format: 'gymnastics',
+      total_periods: 4,
+      period_duration: 300,
+      apparatus_rotation_time: this.gymnasticsFlow.rotationDuration,
+      routine_time_limit: this.gymnasticsFlow.routineTimeLimit
+    };
+
+    this.apiService.initializeGymnasticsCompetitionClock(this.match.id, competitionData).subscribe({
+      next: (response) => {
+        console.log('Gymnastics match flow initialized:', response);
+        this.competitionState.initialized = true;
+        this.competitionState.currentPeriod = 1;
+        this.competitionState.currentApparatus = this.gymnasticsFlow.periods[0].apparatus;
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Match Flow Initialized!',
+          text: 'Gymnastics competition is ready to begin.',
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Failed to initialize match flow:', error);
+        this.handleApiError(error, 'Failed to initialize gymnastics match flow');
+      }
+    });
+  }
+
+  // Start routine timer for a specific player
+  startPlayerRoutine(player: any, apparatus: string): void {
+    if (!this.match?.id || this.routineState.isRoutineActive) return;
+
+    const routineData = {
+      player_id: player.id,
+      apparatus: apparatus,
+      routine_duration: this.gymnasticsFlow.routineTimeLimit
+    };
+
+    this.apiService.startRoutineTimer(this.match.id, routineData).subscribe({
+      next: (response) => {
+        console.log('Routine timer started:', response);
+        this.routineState = {
+          activePlayer: player,
+          activeApparatus: apparatus,
+          routineStartTime: new Date(),
+          routineDuration: 0,
+          isRoutineActive: true
+        };
+
+        Swal.fire({
+          icon: 'info',
+          title: 'Routine Started',
+          text: `${player.first_name} ${player.last_name} routine on ${apparatus.replace('_', ' ')} has begun.`,
+          timer: 3000,
+          timerProgressBar: true
+        });
+
+        // Start routine duration tracking
+        this.startRoutineDurationTracking();
+      },
+      error: (error) => {
+        console.error('Failed to start routine timer:', error);
+        this.handleApiError(error, 'Failed to start routine timer');
+      }
+    });
+  }
+
+  // Stop routine timer for active player
+  stopPlayerRoutine(): void {
+    if (!this.match?.id || !this.routineState.isRoutineActive) return;
+
+    const playerData = {
+      player_id: this.routineState.activePlayer?.id
+    };
+
+    this.apiService.stopRoutineTimer(this.match.id, playerData).subscribe({
+      next: (response) => {
+        console.log('Routine timer stopped:', response);
+        
+        const player = this.routineState.activePlayer;
+        const apparatus = this.routineState.activeApparatus;
+        const duration = this.routineState.routineDuration;
+        
+        // Reset routine state
+        this.routineState = {
+          activePlayer: null,
+          activeApparatus: '',
+          routineStartTime: null,
+          routineDuration: 0,
+          isRoutineActive: false
+        };
+
+        // Update match statistics
+        this.updateMatchStats(duration);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Routine Completed',
+          text: `${player?.first_name} ${player?.last_name} routine completed in ${duration} seconds.`,
+          confirmButtonColor: '#198754'
+        });
+
+        this.stopRoutineDurationTracking();
+      },
+      error: (error) => {
+        console.error('Failed to stop routine timer:', error);
+        this.handleApiError(error, 'Failed to stop routine timer');
+      }
+    });
+  }
+
+  // Call timeout for a team
+  callTeamTimeout(teamId: number, reason: string): void {
+    if (!this.match?.id || this.timeoutState.isActive) return;
+
+    const timeoutData = {
+      team_id: teamId,
+      duration: '00:01:00', // 1 minute default
+      reason: reason
+    };
+
+    this.apiService.callTimeout(this.match.id, timeoutData).subscribe({
+      next: (response) => {
+        console.log('Timeout called:', response);
+        this.timeoutState = {
+          isActive: true,
+          teamId: teamId,
+          duration: timeoutData.duration,
+          reason: reason,
+          startTime: new Date(),
+          endTime: new Date(Date.now() + 60000) // 1 minute from now
+        };
+
+        const teamName = this.getTeamName(teamId);
+        Swal.fire({
+          icon: 'warning',
+          title: 'Timeout Called',
+          text: `${teamName} has called a timeout for ${reason.replace('_', ' ')}.`,
+          confirmButtonColor: '#ffc107'
+        });
+      },
+      error: (error) => {
+        console.error('Failed to call timeout:', error);
+        this.handleApiError(error, 'Failed to call timeout');
+      }
+    });
+  }
+
+  // End active timeout
+  endActiveTimeout(): void {
+    if (!this.match?.id || !this.timeoutState.isActive) return;
+
+    this.apiService.endTimeout(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Timeout ended:', response);
+        const teamName = this.getTeamName(this.timeoutState.teamId!);
+        
+        // Reset timeout state
+        this.timeoutState = {
+          isActive: false,
+          teamId: null,
+          duration: '',
+          reason: '',
+          startTime: null,
+          endTime: null
+        };
+
+        this.matchStats.totalTimeouts++;
+
+        Swal.fire({
+          icon: 'info',
+          title: 'Timeout Ended',
+          text: `${teamName} timeout has ended. Competition resumes.`,
+          timer: 2000,
+          timerProgressBar: true
+        });
+      },
+      error: (error) => {
+        console.error('Failed to end timeout:', error);
+        this.handleApiError(error, 'Failed to end timeout');
+      }
+    });
+  }
+
+  // Advance to next apparatus/period
+  advanceToNextApparatus(): void {
+    if (!this.match?.id) return;
+
+    const currentIndex = this.gymnasticsFlow.currentPeriodIndex;
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex >= this.gymnasticsFlow.periods.length) {
+      this.completeMatch();
+      return;
+    }
+
+    const nextPeriod = this.gymnasticsFlow.periods[nextIndex];
+    const periodData = {
+      next_period: nextPeriod.number,
+      apparatus: nextPeriod.apparatus
+    };
+
+    this.apiService.advancePeriod(this.match.id, periodData).subscribe({
+      next: (response) => {
+        console.log('Advanced to next apparatus:', response);
+        
+        // Mark current period as completed
+        this.gymnasticsFlow.periods[currentIndex].completed = true;
+        this.gymnasticsFlow.currentPeriodIndex = nextIndex;
+        
+        // Update competition state
+        this.competitionState.currentPeriod = nextPeriod.number;
+        this.competitionState.currentApparatus = nextPeriod.apparatus;
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Apparatus Changed',
+          text: `Competition has advanced to ${nextPeriod.apparatus.replace('_', ' ').toUpperCase()}.`,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Failed to advance apparatus:', error);
+        this.handleApiError(error, 'Failed to advance to next apparatus');
+      }
+    });
+  }
+
+  // Complete the match
+  completeMatch(): void {
+    if (!this.match?.id) return;
+
+    Swal.fire({
+      title: 'Complete Match?',
+      text: 'This will finalize all results and end the competition.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#198754',
+      cancelButtonColor: '#dc3545',
+      confirmButtonText: 'Complete Match',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.apiService.stopMatch(this.match.id, 'match_completed').subscribe({
+          next: (response) => {
+            console.log('Match completed:', response);
+            this.competitionState.match_completed = true;
+            this.competitionState.allRotationsComplete = true;
+            this.competitionState.awards_ceremony_ready = true;
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Match Completed!',
+              text: 'Gymnastics competition has been successfully completed.',
+              confirmButtonColor: '#198754'
+            });
+          },
+          error: (error) => {
+            console.error('Failed to complete match:', error);
+            this.handleApiError(error, 'Failed to complete match');
+          }
+        });
+      }
+    });
+  }
+
+  // Get comprehensive rankings
+  getComprehensiveRankings(): void {
+    if (!this.match?.id) return;
+
+    Promise.all([
+      this.apiService.getGymnasticsRankings(this.match.id).toPromise(),
+      this.apiService.getAllAroundRankings(this.match.id, { limit: 10 }).toPromise(),
+      this.apiService.getFinalScores(this.match.id).toPromise()
+    ]).then(([rankings, allAround, finalScores]) => {
+      this.displayComprehensiveResults({
+        rankings: rankings,
+        allAround: allAround,
+        finalScores: finalScores
+      });
+    }).catch((error) => {
+      console.error('Failed to load comprehensive rankings:', error);
+      this.handleApiError(error, 'Failed to load competition rankings');
+    });
+  }
+
+  // Utility methods
+  private startRoutineDurationTracking(): void {
+    const startTime = this.routineState.routineStartTime;
+    if (!startTime) return;
+
+    const interval = setInterval(() => {
+      if (!this.routineState.isRoutineActive) {
+        clearInterval(interval);
+        return;
+      }
+      
+      this.routineState.routineDuration = Math.floor((Date.now() - startTime.getTime()) / 1000);
+    }, 1000);
+  }
+
+  // Stop tracking routine duration and return the duration in minutes
+  private stopRoutineDurationTracking(): number {
+    if (this.routineState.routineStartTime) {
+      const endTime = new Date();
+      const duration = (endTime.getTime() - this.routineState.routineStartTime.getTime()) / (1000 * 60); // Convert to minutes
+      this.routineState.routineStartTime = null;
+      return duration;
+    }
+    return 0;
+  }
+
+  private updateMatchStats(routineDuration: number): void {
+    this.matchStats.totalRoutines++;
+    this.matchStats.completedRoutines++;
+    this.matchStats.averageRoutineDuration = 
+      ((this.matchStats.averageRoutineDuration * (this.matchStats.totalRoutines - 1)) + routineDuration) / 
+      this.matchStats.totalRoutines;
+  }
+
+  // Get current apparatus display name
+  getCurrentApparatusName(): string {
+    return this.competitionState.currentApparatus.replace('_', ' ').toUpperCase();
+  }
+
+  // Get current period progress
+  getPeriodProgress(): number {
+    const total = this.gymnasticsFlow.periods.length;
+    const completed = this.gymnasticsFlow.periods.filter(p => p.completed).length;
+    return (completed / total) * 100;
   }
 
   // Utility method to check if current match is gymnastics
@@ -2320,5 +3388,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  // Display comprehensive results
+  displayComprehensiveResults(data?: any): void {
+    console.log('Displaying comprehensive results...', data);
+    // Implementation would show detailed results view
+    if (this.match?.id) {
+      this.apiService.getGymnasticsClockStatus(this.match.id).subscribe({
+        next: (results: any) => {
+          console.log('Match status and results:', results);
+          // Handle displaying results
+        },
+        error: (error: any) => {
+          console.error('Error fetching match status:', error);
+        }
+      });
+    }
   }
 }

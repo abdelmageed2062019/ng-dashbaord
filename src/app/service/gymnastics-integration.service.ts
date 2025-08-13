@@ -295,7 +295,7 @@ export class GymnasticsIntegrationService {
 
       callTimeout: (teamId: number, duration: string) => {
         console.log('⏰ Calling timeout...');
-        return this.apiService.callTimeout(matchId, { team_id: teamId, duration }).pipe(
+        return this.apiService.callTimeout(matchId, { team_id: teamId, duration, reason: 'Competition timeout' }).pipe(
           tap(result => console.log('✅ Timeout called:', result))
         );
       },
@@ -309,7 +309,10 @@ export class GymnasticsIntegrationService {
 
       advanceRotation: () => {
         console.log('🔄 Advancing apparatus rotation...');
-        return this.apiService.advanceApparatusRotation(matchId).pipe(
+        return this.apiService.advanceApparatusRotation(matchId, { 
+          next_apparatus: 'next', 
+          rotation_duration: 90 
+        }).pipe(
           tap(result => console.log('✅ Rotation advanced:', result))
         );
       }

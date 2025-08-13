@@ -256,7 +256,7 @@ export class ApiService {
   }
 
   // 5. ROUTINE AND TIMING METHODS
-  startRoutineTimer(matchId: number, routineData: { player_id: number, apparatus: string }): Observable<any> {
+  startRoutineTimer(matchId: number, routineData: { player_id: number, apparatus: string, routine_duration?: number }): Observable<any> {
     const url = `${this.apiUrl}/matches/${matchId}/clock/start_routine/`;
     console.log('Starting routine timer:', routineData);
     return this.http.post(url, routineData, { headers: this.getHeaders() }).pipe(
@@ -264,16 +264,17 @@ export class ApiService {
     );
   }
 
-  stopRoutineTimer(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/stop_routine/`;
+  stopRoutineTimer(matchId: number, playerData?: { player_id: number }): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/stop_routine/`;
     console.log('Stopping routine timer for match:', matchId);
-    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+    return this.http.post(url, playerData || {}, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Routine timer stopped:', response))
     );
   }
 
-  callTimeout(matchId: number, timeoutData: { team_id: number, duration: string }): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/timeout/`;
+  // 6. TIMEOUT MANAGEMENT METHODS
+  callTimeout(matchId: number, timeoutData: { team_id: number, duration: string, reason: string }): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/timeout/`;
     console.log('Calling timeout:', timeoutData);
     return this.http.post(url, timeoutData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Timeout called:', response))
@@ -281,30 +282,75 @@ export class ApiService {
   }
 
   endTimeout(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/end_timeout/`;
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/end_timeout/`;
     console.log('Ending timeout for match:', matchId);
     return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Timeout ended:', response))
     );
   }
 
-  advancePeriod(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
-    console.log('Advancing period for match:', matchId);
-    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+  // 7. PERIOD AND APPARATUS ADVANCEMENT METHODS
+  advancePeriod(matchId: number, periodData: { next_period: number, apparatus: string }): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/advance_period/`;
+    console.log('Advancing period for match:', matchId, periodData);
+    return this.http.post(url, periodData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Period advanced:', response))
     );
   }
 
-  advanceApparatusRotation(matchId: number): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_rotation/`;
-    console.log('Advancing apparatus rotation for match:', matchId);
-    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+  advanceApparatusRotation(matchId: number, rotationData: { next_apparatus: string, rotation_duration?: number }): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/advance_rotation/`;
+    console.log('Advancing apparatus rotation for match:', matchId, rotationData);
+    return this.http.post(url, rotationData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Apparatus rotation advanced:', response))
     );
   }
 
-  // 6. ENHANCED PLAYER STATS AND SCORING METHODS
+  // 8. MATCH CONTROL METHODS
+  stopMatch(matchId: number, reason?: string): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/matches/${matchId}/clock/stop/`;
+    console.log('Stopping match:', matchId);
+    return this.http.post(url, { reason: reason || 'match_completed' }, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Match stopped:', response))
+    );
+  }
+
+  // 9. SCORING AND STATISTICS METHODS  
+  getFinalScores(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/gymnastics/final-scores/?match_id=${matchId}`;
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Final scores retrieved:', response))
+    );
+  }
+
+  getAllAroundRankings(matchId: number, options?: { limit?: number }): Observable<any> {
+    let url = `${this.apiUrl}/sports-app/gymnastics/all-around-rankings/?match_id=${matchId}`;
+    if (options?.limit) {
+      url += `&limit=${options.limit}`;
+    }
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('All-around rankings retrieved:', response))
+    );
+  }
+
+  getApparatusStats(matchId: number, apparatus?: string): Observable<any> {
+    let url = `${this.apiUrl}/sports-app/gymnastics/apparatus-stats/?match_id=${matchId}`;
+    if (apparatus) {
+      url += `&apparatus=${apparatus}`;
+    }
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Apparatus statistics retrieved:', response))
+    );
+  }
+
+  getLiveScoring(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/sports-app/player-stats/live_scoring/?match_id=${matchId}`;
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Live scoring data retrieved:', response))
+    );
+  }
+
+  // 10. ENHANCED PLAYER STATS AND SCORING METHODS
   createPlayerStats(statsData: any): Observable<any> {
     const url = `${this.apiUrl}/player-stats/`;
     console.log('Creating player stats:', statsData);
