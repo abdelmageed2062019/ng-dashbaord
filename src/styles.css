@@ -25,5 +25,7 @@ body {
 .bg-dark a{
     color: #fff;
 }
-
+.text-muted{
+    color: white !important;
+}
 /* Or your chosen theme */

@@ -912,7 +912,7 @@
 
                 <!-- Players List -->
                 <div *ngIf="selectedTeam && playersData[selectedTeam]" class="row g-4">
-                  <div *ngFor="let player of playersData[selectedTeam]" class="col-md-6 col-xl-4">
+                  <div *ngFor="let player of playersData[selectedTeam]" class="col-md-4 col-xl-3">
                     <div class="player-card">
                       <div class="d-flex align-items-center mb-3">
                         <img 
@@ -928,9 +928,10 @@
                       </div>
                       
                       <!-- Player Stats Display -->
-                      <div class="player-stats">
+                      <!-- <div class="player-stats"> -->
                         <!-- Football Stats -->
-                        <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="row g-2">
+                        <!-- <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="row g-2">
+                          
                           <div class="col-6">
                             <div class="stat-item">
                               <div class="stat-label">Goals</div>
@@ -955,10 +956,10 @@
                               <div class="stat-value">{{ player.red_cards || 0 }}</div>
                             </div>
                           </div>
-                        </div>
+                        </div> -->
                         
                         <!-- Basketball Stats -->
-                        <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="row g-2">
+                        <!-- <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="row g-2">
                           <div class="col-6">
                             <div class="stat-item">
                               <div class="stat-label">Points</div>
@@ -983,10 +984,10 @@
                               <div class="stat-value">{{ player.steals || 0 }}</div>
                             </div>
                           </div>
-                        </div>
+                        </div> -->
                         
                         <!-- Water Polo Stats -->
-                        <div *ngIf="sportConfig?.name === 'Waterpolo'" class="row g-2">
+                        <!-- <div *ngIf="sportConfig?.name === 'Waterpolo'" class="row g-2">
                           <div class="col-6">
                             <div class="stat-item">
                               <div class="stat-label">Goals</div>
@@ -1005,10 +1006,10 @@
                               <div class="stat-value">{{ player.exclusions || 0 }}</div>
                             </div>
                           </div>
-                        </div>
+                        </div> -->
                         
                         <!-- Gymnastics Stats -->
-                        <div *ngIf="sportConfig?.name === 'Gymnastics'" class="row g-2">
+                        <!-- <div *ngIf="sportConfig?.name === 'Gymnastics'" class="row g-2">
                           <div class="col-6">
                             <div class="stat-item">
                               <div class="stat-label">Total</div>
@@ -1033,8 +1034,8 @@
                               <div class="stat-value">{{ player.fall_count || 0 }}</div>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </div> -->
+                      <!-- </div> -->
                       
                       <div class="mt-3">
                         <button 
