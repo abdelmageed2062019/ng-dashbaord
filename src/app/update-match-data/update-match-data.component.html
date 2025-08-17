@@ -137,28 +137,28 @@
             <div class="match-details-bar mt-3">
               <div class="row text-center">
                 <div class="col-2">
-                  <small class="text-muted">Week {{ match.week || '1' }}</small>
+                  <small class="text-muted white-color">Week {{ match.week || '1' }}</small>
                 </div>
                 <div class="col-2">
-                  <small class="text-muted">{{ match.group_name || 'Regular Season' }}</small>
+                  <small class="text-muted white-color">{{ match.group_name || 'Regular Season' }}</small>
                 </div>
                 <div class="col-2">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
                   </small>
                 </div>
                 <div class="col-2">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-stopwatch me-1"></i>{{ match.match_duration || 90 }}'
                   </small>
                 </div>
                 <div class="col-2">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-flag me-1"></i>{{ match.corners || 0 }} Corners
                   </small>
                 </div>
                 <div class="col-2">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-sync-alt me-1"></i>
                     <span class="refresh-indicator" *ngIf="loading">Updating...</span>
                     <span *ngIf="!loading">Live</span>
@@ -169,22 +169,22 @@
               <!-- Additional Stats Row for Football -->
               <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
                 <div class="col-3">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-square text-warning me-1"></i>{{ match.yellow_cards || 0 }} Yellow
                   </small>
                 </div>
                 <div class="col-3">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-square text-danger me-1"></i>{{ match.red_cards || 0 }} Red
                   </small>
                 </div>
                 <div class="col-3">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-exclamation-triangle me-1"></i>{{ match.fouls || 0 }} Fouls
                   </small>
                 </div>
                 <div class="col-3">
-                  <small class="text-muted">
+                  <small class="text-muted white-color">
                     <i class="fas fa-bullseye me-1"></i>{{ match.shots_on_target || 0 }} Shots
                   </small>
                 </div>
@@ -418,7 +418,7 @@
           <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form && !loading">
             <div class="row g-4">
               <div *ngFor="let field of dynamicFields" class="col-md-6">
-                <label class="form-label">
+                <label class="form-label" *ngIf="field.enabled">
                   <i [class]="getFieldIcon(field.type)"></i>
                   {{ field.label }}
                   <span class="text-danger" *ngIf="hasFieldError(field.key)">*</span>
@@ -426,18 +426,20 @@
                 
                 <!-- Text Input -->
                 <input 
-                  *ngIf="field.type === 'text'" 
+                  *ngIf="field.type === 'text' && field.enabled" 
                   type="text" 
                   class="form-control"
+                  [disabled]="!field.enabled"
                   [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key"
                   [placeholder]="'Enter ' + field.label.toLowerCase()">
                 
                 <!-- Number Input -->
                 <input 
-                  *ngIf="field.type === 'number'" 
+                  *ngIf="field.type === 'number' && field.enabled" 
                   type="number" 
                   class="form-control"
+                  [disabled]="true"
                   [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key"
                   [placeholder]="'Enter ' + field.label.toLowerCase()"
@@ -445,14 +447,14 @@
                 
                 <!-- Datetime Input -->
                 <input 
-                  *ngIf="field.type === 'datetime-local'" 
+                  *ngIf="field.type === 'datetime-local' && field.enabled" 
                   type="datetime-local" 
                   class="form-control"
                   [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key">
                 
                 <!-- Checkbox Input -->
-                <div *ngIf="field.type === 'checkbox'" class="form-check">
+                <div *ngIf="field.type === 'checkbox' && field.enabled" class="form-check">
                   <input 
                     type="checkbox" 
                     class="form-check-input"
@@ -466,7 +468,7 @@
                 
                 <!-- Select Input -->
                 <select 
-                  *ngIf="field.type === 'select'" 
+                  *ngIf="field.type === 'select' && field.enabled" 
                   class="form-select"
                   [class.is-invalid]="hasFieldError(field.key)"
                   [formControlName]="field.key">
@@ -477,7 +479,7 @@
                 </select>
                 
                 <!-- Error Message -->
-                <div *ngIf="hasFieldError(field.key)" class="invalid-feedback d-block">
+                <div *ngIf="hasFieldError(field.key) && field.enabled" class="invalid-feedback d-block">
                   <i class="fas fa-exclamation-circle me-1"></i>
                   {{ getFieldErrorMessage(field.key) }}
                 </div>
@@ -499,9 +501,9 @@
                   <i class="fas fa-sync-alt me-2" [class.fa-spin]="loading"></i>
                   Refresh Data
                 </button>
-                <button type="button" class="btn btn-warning" (click)="testPlayerUpdate()" *ngIf="showPlayerStats && selectedTeam">
+                <!-- <button type="button" class="btn btn-warning" (click)="testPlayerUpdate()" *ngIf="showPlayerStats && selectedTeam">
                   <i class="fas fa-bug me-2"></i>Test API
-                </button>
+                </button> -->
                 <button type="submit" class="btn btn-success">
                   <i class="fas fa-save me-2"></i>Update Match
                 </button>

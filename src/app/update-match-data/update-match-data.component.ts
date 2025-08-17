@@ -18,7 +18,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   match: any;
   sportConfig: any;
   form!: FormGroup;
-  dynamicFields: Array<{ key: string, label: string, type: string, options?: string[] }> = [];
+  dynamicFields: Array<{ key: string, label: string, type: string, options?: string[],enabled?: boolean|false }> = [];
   teams: any[] = [];
   playersData: { [teamId: number]: any[] } = {};
   selectedTeam: number | null = null;
@@ -323,7 +323,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       key: 'status', 
       label: 'Status', 
       type: 'select', 
-      options: ['upcoming', 'live', 'finished', 'postponed', 'cancelled'] 
+      options: ['upcoming', 'live', 'finished', 'postponed', 'cancelled'],
+      enabled: true
     });
     this.dynamicFields.push({ key: 'match_date', label: 'Match Date', type: 'datetime-local' });
     this.dynamicFields.push({ key: 'start_date', label: 'Start Date', type: 'datetime-local' });
@@ -348,7 +349,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Basketball specific fields
-    if (this.sportConfig?.name === 'Basketball' || this.sportConfig?.scoring_system === 'points') {
+    if (this.sportConfig?.name === 'Basketball') {
       this.dynamicFields.push({ key: 'total_points', label: 'Total Points', type: 'number' });
       this.dynamicFields.push({ key: 'two_pointers_made', label: 'Two Pointers Made', type: 'number' });
       this.dynamicFields.push({ key: 'two_pointers_attempted', label: 'Two Pointers Attempted', type: 'number' });
@@ -1008,7 +1009,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Basketball specific fields
-    if (this.sportConfig?.name === 'Basketball' || this.sportConfig?.scoring_system === 'points') {
+    if (this.sportConfig?.name === 'Basketball') {
       fields.push({ key: 'points', label: 'Points', type: 'number' });
       fields.push({ key: 'two_pointers_made', label: 'Two Pointers Made', type: 'number' });
       fields.push({ key: 'two_pointers_attempted', label: 'Two Pointers Attempted', type: 'number' });
