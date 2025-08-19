@@ -174,6 +174,168 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   private autoRefreshInterval: any;
   private readonly AUTO_REFRESH_INTERVAL = 30000; // 30 seconds
 
+  // ============================================================================
+  // 🏀 COMPREHENSIVE BASKETBALL PROPERTIES
+  // ============================================================================
+
+  // Basketball clock management
+  basketballClock = {
+    isRunning: false,
+    isPaused: false,
+    timeRemainingInPeriod: '12:00',
+    displayTime: '12:00',
+    currentPeriod: 1,
+    periodType: 'quarter',
+    clockState: 'stopped',
+    totalElapsedTime: '00:00:00',
+    periodDuration: 720, // 12 minutes in seconds
+    totalPeriods: 4,
+    shotClockDuration: 24,
+    shotClockRemaining: 24,
+    shotClockState: 'stopped',
+    timeoutsRemaining: {} as { [teamId: number]: number }
+  };
+
+  // Basketball game state
+  basketballGameState = {
+    status: 'upcoming', // upcoming, live, halftime, quarter_break, finished
+    score: {} as { [teamId: number]: number },
+    leadingTeam: null as number | null,
+    scoreMargin: 0,
+    lastScoreUpdate: null as Date | null,
+    playByPlay: [] as any[],
+    currentPossession: null as number | null
+  };
+
+  // Basketball timeout management
+  basketballTimeouts = {
+    isActive: false,
+    currentTeam: null as number | null,
+    duration: 60, // seconds
+    reason: '',
+    startTime: null as Date | null,
+    endTime: null as Date | null,
+    timeoutsUsed: {} as { [teamId: number]: number }
+  };
+
+  // Basketball player positions
+  basketballPositions = [
+    { value: 'point_guard', label: 'Point Guard (PG)' },
+    { value: 'shooting_guard', label: 'Shooting Guard (SG)' },
+    { value: 'small_forward', label: 'Small Forward (SF)' },
+    { value: 'power_forward', label: 'Power Forward (PF)' },
+    { value: 'center', label: 'Center (C)' }
+  ];
+
+  // Basketball foul types
+  basketballFoulTypes = [
+    { value: 'personal', label: 'Personal Foul' },
+    { value: 'technical', label: 'Technical Foul' },
+    { value: 'flagrant', label: 'Flagrant Foul' },
+    { value: 'team', label: 'Team Foul' },
+    { value: 'offensive', label: 'Offensive Foul' },
+    { value: 'defensive', label: 'Defensive Foul' }
+  ];
+
+  // Basketball shot types
+  basketballShotTypes = [
+    { value: 'two_point', label: '2-Point Shot', points: 2 },
+    { value: 'three_point', label: '3-Point Shot', points: 3 },
+    { value: 'free_throw', label: 'Free Throw', points: 1 }
+  ];
+
+  // Basketball substitution management
+  basketballSubstitutions = {
+    pendingSubstitutions: [] as any[],
+    completedSubstitutions: [] as any[],
+    substituionTimeout: false
+  };
+
+  // Basketball technical fouls
+  basketballTechnicalFouls = {
+    playerTechnicals: [] as any[],
+    coachTechnicals: [] as any[],
+    teamTechnicals: [] as any[]
+  };
+
+  // Basketball advanced statistics
+  basketballAdvancedStats = {
+    possessions: 0,
+    pace: 0,
+    offensiveRating: 0,
+    defensiveRating: 0,
+    reboundingPercentage: {
+      offensive: 0,
+      defensive: 0
+    },
+    turnoversPerGame: 0,
+    assistToTurnoverRatio: 0,
+    trueShootingPercentage: 0,
+    effectiveFieldGoalPercentage: 0
+  };
+
+  // Basketball play-by-play
+  basketballPlayByPlay = {
+    plays: [] as any[],
+    currentPlay: null as any,
+    playTypes: [
+      'made_shot',
+      'missed_shot', 
+      'rebound',
+      'assist',
+      'steal',
+      'block',
+      'foul',
+      'free_throw',
+      'timeout',
+      'substitution',
+      'technical_foul',
+      'quarter_end'
+    ]
+  };
+
+  // Basketball shot chart data
+  basketballShotChart = {
+    shots: [] as any[],
+    zones: [
+      { name: 'Paint', made: 0, attempted: 0 },
+      { name: 'Mid Range', made: 0, attempted: 0 },
+      { name: 'Three Point', made: 0, attempted: 0 },
+      { name: 'Free Throw', made: 0, attempted: 0 }
+    ]
+  };
+
+  // Basketball roster management
+  basketballRoster = {
+    activePlayers: [] as any[],
+    benchPlayers: [] as any[],
+    starters: [] as any[],
+    inactivePlayers: [] as any[]
+  };
+
+  // Basketball quarter management
+  basketballQuarters = [
+    { number: 1, name: '1st Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 2, name: '2nd Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 3, name: '3rd Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 4, name: '4th Quarter', completed: false, score: { home: 0, away: 0 } }
+  ];
+
+  // Basketball overtime periods
+  basketballOvertime = {
+    periods: [] as any[],
+    currentOvertimePeriod: 0,
+    overtimeDuration: 300 // 5 minutes in seconds
+  };
+
+  // Basketball box score
+  basketballBoxScore = {
+    teamStats: {} as any,
+    playerStats: {} as any,
+    teamTotals: {} as any,
+    benchStats: {} as any
+  };
+
   // Gymnastics Integration Service access
   private gymnasticsService: ReturnType<GymnasticsIntegrationService['manageCompetitionClock']> | null = null;
   private realTimeData: ReturnType<GymnasticsIntegrationService['getRealTimeCompetitionData']> | null = null;
@@ -235,12 +397,16 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           console.log(this.isGymnastics());
         // Check if this is a gymnastics match and load competition state
         if (this.isGymnastics()) {
-
-
-          console.log(this);
           console.log('Loading gymnastics competition state...');
           this.checkCompetitionStatus(matchId);
           this.loadClockStatus(matchId);
+        }
+        
+        // Check if this is a basketball match and initialize basketball features
+        if (this.isBasketball()) {
+          console.log('Loading basketball match features...');
+          this.loadBasketballClockStatus();
+          this.initializeBasketballGameState();
         }
         
         this.loading = false;
@@ -2597,6 +2763,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.stopClockInterval();
     // Clean up auto-refresh interval
     this.stopAutoRefresh();
+    // Clean up basketball clock polling
+    if (this.basketballClockPollingInterval) {
+      clearInterval(this.basketballClockPollingInterval);
+    }
   }
 
   // Utility method for formatting time display
@@ -3191,6 +3361,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
            false;
   }
 
+  // Utility method to check if current match is basketball
+  isBasketball(): boolean {
+    console.log('Checking if match is basketball...');
+    console.log(this.match);
+    return this.match?.sport?.name?.toLowerCase().includes('basketball') || 
+           this.match?.sport?.toLowerCase().includes('basketball') ||
+           this.sportConfig?.name?.toLowerCase() === 'basketball' ||
+           this.match?.league_obj?.sport === 2 || // Assuming basketball sport ID is 2
+           false;
+  }
+
   // Check competition status and restore state
   checkCompetitionStatus(matchId: number): void {
     if (!matchId) return;
@@ -3450,4 +3631,656 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       });
     }
   }
+
+  // ============================================================================
+  // 🏀 BASKETBALL MANAGEMENT METHODS
+  // ============================================================================
+
+  // Initialize Basketball Clock
+  initializeBasketballClock(): void {
+    if (!this.match?.id) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'No match ID found',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Initialize Basketball Clock',
+      html: `
+        <div class="text-center">
+          <p>Initialize the basketball clock for this match?</p>
+          <div class="row mt-3">
+            <div class="col-6">
+              <label class="form-label">Quarter Duration (minutes)</label>
+              <input type="number" class="form-control" id="quarterDuration" value="12" min="1" max="20">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Overtime Duration (minutes)</label>
+              <input type="number" class="form-control" id="overtimeDuration" value="5" min="1" max="10">
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-6">
+              <label class="form-label">Shot Clock (seconds)</label>
+              <input type="number" class="form-control" id="shotClock" value="24" min="14" max="35">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Total Quarters</label>
+              <input type="number" class="form-control" id="totalQuarters" value="4" min="2" max="6">
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Initialize Clock',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#198754',
+      preConfirm: () => {
+        const quarterDuration = parseInt((document.getElementById('quarterDuration') as HTMLInputElement).value);
+        const overtimeDuration = parseInt((document.getElementById('overtimeDuration') as HTMLInputElement).value);
+        const shotClock = parseInt((document.getElementById('shotClock') as HTMLInputElement).value);
+        const totalQuarters = parseInt((document.getElementById('totalQuarters') as HTMLInputElement).value);
+
+        return {
+          total_periods: totalQuarters,
+          period_duration: quarterDuration * 60, // Convert to seconds
+          overtime_duration: overtimeDuration * 60, // Convert to seconds
+          shot_clock_duration: shotClock
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.apiService.initializeBasketballClock(this.match.id, result.value).subscribe({
+          next: (response) => {
+            console.log('Basketball clock initialized:', response);
+            this.basketballClock = { ...this.basketballClock, ...response };
+            this.basketballGameState.status = 'initialized';
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'Clock Initialized!',
+              text: 'Basketball clock has been successfully initialized.',
+              confirmButtonColor: '#198754'
+            });
+
+            // Start polling for clock updates
+            this.startBasketballClockPolling();
+          },
+          error: (error) => {
+            console.error('Error initializing basketball clock:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Initialization Failed',
+              text: error.error?.error || 'Failed to initialize basketball clock',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Start Basketball Clock
+  startBasketballClock(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.startBasketballClock(this.match.id, this.basketballClock.currentPeriod).subscribe({
+      next: (response) => {
+        console.log('Basketball clock started:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        this.basketballGameState.status = 'live';
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Clock Started!',
+          text: `Quarter ${this.basketballClock.currentPeriod} has started.`,
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Error starting basketball clock:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Start Failed',
+          text: error.error?.error || 'Failed to start basketball clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Stop Basketball Clock
+  stopBasketballClock(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.stopBasketballClock(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Basketball clock stopped:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        Swal.fire({
+          icon: 'info',
+          title: 'Clock Stopped',
+          text: 'Basketball clock has been stopped.',
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#0d6efd'
+        });
+      },
+      error: (error) => {
+        console.error('Error stopping basketball clock:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Stop Failed',
+          text: error.error?.error || 'Failed to stop basketball clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Pause Basketball Clock
+  pauseBasketballClock(reason: string = 'timeout'): void {
+    if (!this.match?.id) return;
+
+    this.apiService.pauseBasketballClock(this.match.id, reason).subscribe({
+      next: (response) => {
+        console.log('Basketball clock paused:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        Swal.fire({
+          icon: 'warning',
+          title: 'Clock Paused',
+          text: `Basketball clock paused: ${reason}`,
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#ffc107'
+        });
+      },
+      error: (error) => {
+        console.error('Error pausing basketball clock:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Pause Failed',
+          text: error.error?.error || 'Failed to pause basketball clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Resume Basketball Clock
+  resumeBasketballClock(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.resumeBasketballClock(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Basketball clock resumed:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Clock Resumed',
+          text: 'Basketball clock has been resumed.',
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Error resuming basketball clock:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Resume Failed',
+          text: error.error?.error || 'Failed to resume basketball clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Advance to Next Quarter
+  advanceToNextQuarter(): void {
+    if (!this.match?.id) return;
+
+    const nextQuarter = this.basketballClock.currentPeriod + 1;
+    
+    Swal.fire({
+      title: 'Advance Quarter',
+      text: `Advance to Quarter ${nextQuarter}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Advance',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#198754'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.apiService.advanceQuarter(this.match.id, nextQuarter).subscribe({
+          next: (response) => {
+            console.log('Advanced to next quarter:', response);
+            this.basketballClock = { ...this.basketballClock, ...response };
+            
+            // Update quarter status
+            if (this.basketballQuarters[this.basketballClock.currentPeriod - 2]) {
+              this.basketballQuarters[this.basketballClock.currentPeriod - 2].completed = true;
+            }
+            
+            Swal.fire({
+              icon: 'success',
+              title: `Quarter ${nextQuarter}`,
+              text: `Successfully advanced to Quarter ${nextQuarter}`,
+              confirmButtonColor: '#198754'
+            });
+          },
+          error: (error) => {
+            console.error('Error advancing quarter:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Advance Failed',
+              text: error.error?.error || 'Failed to advance quarter',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Reset Shot Clock
+  resetShotClock(duration: number = 24): void {
+    if (!this.match?.id) return;
+
+    this.apiService.resetShotClock(this.match.id, duration).subscribe({
+      next: (response) => {
+        console.log('Shot clock reset:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Shot Clock Reset',
+          text: `Shot clock reset to ${duration} seconds`,
+          timer: 1500,
+          timerProgressBar: true,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Error resetting shot clock:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Reset Failed',
+          text: error.error?.error || 'Failed to reset shot clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Call Basketball Team Timeout
+  callBasketballTeamTimeout(teamId: number): void {
+    if (!this.match?.id) return;
+
+    // Check if team has timeouts remaining
+    const timeoutsRemaining = this.basketballClock.timeoutsRemaining[teamId] || 0;
+    if (timeoutsRemaining <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Timeouts Remaining',
+        text: 'This team has no timeouts remaining.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const teamName = this.getTeamName(teamId);
+    
+    Swal.fire({
+      title: 'Call Timeout',
+      html: `
+        <div class="text-center">
+          <p>Call timeout for <strong>${teamName}</strong>?</p>
+          <div class="mt-3">
+            <label class="form-label">Timeout Duration (seconds)</label>
+            <select class="form-select" id="timeoutDuration">
+              <option value="60">1 Minute (Full Timeout)</option>
+              <option value="30">30 Seconds (20-Second Timeout)</option>
+            </select>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">Reason</label>
+            <select class="form-select" id="timeoutReason">
+              <option value="coach_strategy">Coach Strategy</option>
+              <option value="injury">Injury</option>
+              <option value="substitution">Substitution</option>
+              <option value="official_timeout">Official Timeout</option>
+            </select>
+          </div>
+          <p class="mt-2 text-muted">Timeouts remaining: ${timeoutsRemaining}</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Call Timeout',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#ffc107',
+      preConfirm: () => {
+        const duration = (document.getElementById('timeoutDuration') as HTMLSelectElement).value;
+        const reason = (document.getElementById('timeoutReason') as HTMLSelectElement).value;
+        
+        return {
+          duration: `00:0${duration === '60' ? '1' : '0'}:${duration === '60' ? '00' : '30'}`,
+          reason
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const timeoutData = {
+          team_id: teamId,
+          duration: result.value.duration,
+          reason: result.value.reason
+        };
+
+        this.apiService.callBasketballTimeout(this.match.id, timeoutData).subscribe({
+          next: (response) => {
+            console.log('Timeout called:', response);
+            this.basketballClock = { ...this.basketballClock, ...response };
+            this.basketballTimeouts.isActive = true;
+            this.basketballTimeouts.currentTeam = teamId;
+            
+            Swal.fire({
+              icon: 'info',
+              title: 'Timeout Called',
+              text: `Timeout called for ${teamName}`,
+              confirmButtonColor: '#0d6efd'
+            });
+          },
+          error: (error) => {
+            console.error('Error calling timeout:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Timeout Failed',
+              text: error.error?.error || 'Failed to call timeout',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // End Team Timeout
+  endTimeout(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.endBasketballTimeout(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Timeout ended:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        this.basketballTimeouts.isActive = false;
+        this.basketballTimeouts.currentTeam = null;
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Timeout Ended',
+          text: 'Timeout has been ended',
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Error ending timeout:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'End Timeout Failed',
+          text: error.error?.error || 'Failed to end timeout',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Load Basketball Clock Status
+  loadBasketballClockStatus(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.getBasketballClockStatus(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Basketball clock status loaded:', response);
+        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        // Update game state based on clock status
+        if (response.clock_state === 'running') {
+          this.basketballGameState.status = 'live';
+        } else if (response.clock_state === 'stopped' && response.current_period >= 4) {
+          this.basketballGameState.status = 'finished';
+        }
+      },
+      error: (error) => {
+        console.error('Error loading basketball clock status:', error);
+      }
+    });
+  }
+
+  // Start Basketball Clock Polling for Real-time Updates
+  startBasketballClockPolling(): void {
+    // Clear any existing interval
+    if (this.basketballClockPollingInterval) {
+      clearInterval(this.basketballClockPollingInterval);
+    }
+
+    this.basketballClockPollingInterval = setInterval(() => {
+      if (this.isBasketball() && this.basketballClock.isRunning) {
+        this.loadBasketballClockStatus();
+      }
+    }, 1000); // Update every second when clock is running
+  }
+
+  // Initialize Basketball Game State
+  initializeBasketballGameState(): void {
+    // Initialize team scores
+    this.teams.forEach(team => {
+      const teamId = team.team?.id;
+      if (teamId) {
+        this.basketballGameState.score[teamId] = this.getTeamScore(teamId);
+        this.basketballClock.timeoutsRemaining[teamId] = 3; // Each team starts with 3 timeouts
+      }
+    });
+
+    // Update leading team
+    this.updateBasketballTeamScores();
+  }
+
+  // Update Basketball Player Score
+  updateBasketballPlayerScore(playerId: number, teamId: number, scoreData: any): void {
+    const playerStatsData = {
+      match: this.match.id,
+      team: teamId,
+      player: playerId,
+      ...scoreData
+    };
+
+    this.apiService.updateBasketballPlayerStats(playerStatsData).subscribe({
+      next: (response) => {
+        console.log('Basketball player stats updated:', response);
+        
+        // Update local player data
+        this.updateLocalPlayerData(playerId, teamId, scoreData);
+        
+        // Update team scores
+        this.updateBasketballTeamScores();
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Score Updated!',
+          text: `Player stats updated successfully`,
+          timer: 1500,
+          timerProgressBar: true,
+          confirmButtonColor: '#198754'
+        });
+      },
+      error: (error) => {
+        console.error('Error updating basketball player stats:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Update Failed',
+          text: error.error?.error || 'Failed to update player stats',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Quick Score Buttons
+  addBasketballScore(playerId: number, teamId: number, scoreType: 'two_point' | 'three_point' | 'free_throw'): void {
+    const scoreMap = {
+      'two_point': { points: 2, field_goals_made: 1, field_goals_attempted: 1, two_pointers_made: 1, two_pointers_attempted: 1 },
+      'three_point': { points: 3, field_goals_made: 1, field_goals_attempted: 1, three_pointers_made: 1, three_pointers_attempted: 1 },
+      'free_throw': { points: 1, free_throws_made: 1, free_throws_attempted: 1 }
+    };
+
+    const scoreData = {
+      ...scoreMap[scoreType],
+      minutes_played: 1, // Increment by 1 minute
+      plus_minus: scoreMap[scoreType].points
+    };
+
+    this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // Add Basketball Assist
+  addBasketballAssist(playerId: number, teamId: number): void {
+    const scoreData = {
+      assists: 1,
+      minutes_played: 1,
+      plus_minus: 0
+    };
+
+    this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // Add Basketball Rebound
+  addBasketballRebound(playerId: number, teamId: number, reboundType: 'offensive' | 'defensive'): void {
+    const scoreData = {
+      rebounds: 1,
+      [reboundType + '_rebounds']: 1,
+      minutes_played: 1,
+      plus_minus: 0
+    };
+
+    this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // Add Basketball Foul
+  addBasketballFoul(playerId: number, teamId: number, foulType: 'personal' | 'technical'): void {
+    const scoreData = {
+      fouls: 1,
+      [foulType + '_fouls']: 1,
+      minutes_played: 1,
+      plus_minus: foulType === 'technical' ? -1 : -0.5
+    };
+
+    this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // Add Basketball General Stat
+  addBasketballStat(playerId: number, teamId: number, statType: string, value: number): void {
+    const scoreData = {
+      [statType]: value,
+      minutes_played: 1,
+      plus_minus: statType === 'turnovers' ? -0.5 : (statType === 'steals' || statType === 'blocks' ? 1 : 0)
+    };
+
+    this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // Update local player data
+  private updateLocalPlayerData(playerId: number, teamId: number, scoreData: any): void {
+    if (this.playersData[teamId]) {
+      const playerIndex = this.playersData[teamId].findIndex(p => p.id === playerId);
+      if (playerIndex !== -1) {
+        Object.keys(scoreData).forEach(key => {
+          if (key !== 'match' && key !== 'team' && key !== 'player') {
+            this.playersData[teamId][playerIndex][key] = 
+              (this.playersData[teamId][playerIndex][key] || 0) + (scoreData[key] || 0);
+          }
+        });
+      }
+    }
+  }
+
+  // Update basketball team scores
+  private updateBasketballTeamScores(): void {
+    this.teams.forEach(team => {
+      const teamId = team.team?.id;
+      if (teamId && this.playersData[teamId]) {
+        const teamScore = this.playersData[teamId].reduce((sum, player) => sum + (player.points || 0), 0);
+        this.basketballGameState.score[teamId] = teamScore;
+      }
+    });
+    
+    // Update leading team
+    const scores = Object.entries(this.basketballGameState.score);
+    if (scores.length >= 2) {
+      const [team1Score, team2Score] = scores.map(([_, score]) => score);
+      if (team1Score > team2Score) {
+        this.basketballGameState.leadingTeam = parseInt(scores[0][0]);
+        this.basketballGameState.scoreMargin = team1Score - team2Score;
+      } else if (team2Score > team1Score) {
+        this.basketballGameState.leadingTeam = parseInt(scores[1][0]);
+        this.basketballGameState.scoreMargin = team2Score - team1Score;
+      } else {
+        this.basketballGameState.leadingTeam = null;
+        this.basketballGameState.scoreMargin = 0;
+      }
+    }
+  }
+
+  // Get Basketball Clock Status (for checking if initialized)
+  checkBasketballClockInitialized(): boolean {
+    return this.basketballClock.clockState !== 'stopped' || this.basketballGameState.status !== 'upcoming';
+  }
+
+  // Basketball Team Statistics Methods
+  getTeamFieldGoals(teamId: number): string {
+    if (!this.playersData[teamId]) return '0/0';
+    const players = this.playersData[teamId];
+    const made = players.reduce((sum, player) => sum + (player.field_goals_made || 0), 0);
+    const attempted = players.reduce((sum, player) => sum + (player.field_goals_attempted || 0), 0);
+    return `${made}/${attempted}`;
+  }
+
+  getTeamThreePointers(teamId: number): string {
+    if (!this.playersData[teamId]) return '0/0';
+    const players = this.playersData[teamId];
+    const made = players.reduce((sum, player) => sum + (player.three_pointers_made || 0), 0);
+    const attempted = players.reduce((sum, player) => sum + (player.three_pointers_attempted || 0), 0);
+    return `${made}/${attempted}`;
+  }
+
+  getTeamAssists(teamId: number): number {
+    if (!this.playersData[teamId]) return 0;
+    const players = this.playersData[teamId];
+    return players.reduce((sum, player) => sum + (player.assists || 0), 0);
+  }
+
+  getTeamRebounds(teamId: number): number {
+    if (!this.playersData[teamId]) return 0;
+    const players = this.playersData[teamId];
+    return players.reduce((sum, player) => sum + (player.rebounds || 0), 0);
+  }
+
+  getTeamFouls(teamId: number): number {
+    if (!this.playersData[teamId]) return 0;
+    const players = this.playersData[teamId];
+    return players.reduce((sum, player) => sum + (player.fouls || 0), 0);
+  }
+
+  // Basketball Clock Polling Interval
+  private basketballClockPollingInterval: any;
 }

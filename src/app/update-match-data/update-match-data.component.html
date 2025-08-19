@@ -394,6 +394,273 @@
             </div>
           </div>
         </div>
+
+        <!-- 🏀 LIVE BASKETBALL MATCH SCORE DISPLAY -->
+        <div *ngIf="isBasketball() && teams.length >= 2 && match" class="live-score-container basketball-scoreboard">
+          <div class="live-score-board">
+            <div class="row align-items-center">
+              <!-- Team 1 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-basketball-ball fa-2x text-primary"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
+                  <div class="team-score">{{ basketballGameState.score[teams[0]?.team?.id] || getTeamScore(teams[0]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-bullseye text-success"></i>
+                          <span title="Field Goals">{{ getTeamFieldGoals(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-dot-circle text-warning"></i>
+                          <span title="3-Pointers">{{ getTeamThreePointers(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-hands-helping text-info"></i>
+                          <span title="Assists">{{ getTeamAssists(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-redo text-primary"></i>
+                          <span title="Rebounds">{{ getTeamRebounds(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Game Clock Center -->
+              <div class="col-4 text-center">
+                <div class="match-status basketball-clock">
+                  <div class="quarter-info">
+                    <span class="quarter-number">Q{{ basketballClock.currentPeriod || 1 }}</span>
+                    <span class="quarter-type">{{ basketballClock.periodType || 'Quarter' | titlecase }}</span>
+                  </div>
+                  
+                  <div class="main-clock" [ngClass]="{
+                    'live-pulse': basketballClock.isRunning,
+                    'paused': basketballClock.isPaused,
+                    'stopped': !basketballClock.isRunning
+                  }">
+                    {{ basketballClock.displayTime || basketballClock.timeRemainingInPeriod || '12:00' }}
+                  </div>
+                  
+                  <div class="shot-clock" *ngIf="basketballClock.shotClockRemaining">
+                    <i class="fas fa-clock me-1"></i>
+                    Shot Clock: {{ basketballClock.shotClockRemaining }}
+                  </div>
+                  
+                  <div class="clock-controls mt-2">
+                    <button 
+                      *ngIf="!checkBasketballClockInitialized()" 
+                      class="btn btn-primary btn-sm me-1" 
+                      (click)="initializeBasketballClock()">
+                      <i class="fas fa-play"></i> Initialize
+                    </button>
+                    
+                    <button 
+                      *ngIf="checkBasketballClockInitialized() && !basketballClock.isRunning" 
+                      class="btn btn-success btn-sm me-1" 
+                      (click)="startBasketballClock()">
+                      <i class="fas fa-play"></i>
+                    </button>
+                    
+                    <button 
+                      *ngIf="basketballClock.isRunning" 
+                      class="btn btn-warning btn-sm me-1" 
+                      (click)="stopBasketballClock()">
+                      <i class="fas fa-pause"></i>
+                    </button>
+                    
+                    <button 
+                      *ngIf="basketballClock.currentPeriod < 4" 
+                      class="btn btn-info btn-sm" 
+                      (click)="advanceToNextQuarter()">
+                      <i class="fas fa-forward"></i> Q{{ (basketballClock.currentPeriod || 1) + 1 }}
+                    </button>
+                  </div>
+                  
+                  <div class="game-status mt-2">
+                    <span class="badge" [ngClass]="{
+                      'bg-danger live-badge': basketballGameState.status === 'live',
+                      'bg-success': basketballGameState.status === 'finished',
+                      'bg-warning text-dark': basketballGameState.status === 'upcoming',
+                      'bg-info': basketballGameState.status === 'quarter_break' || basketballGameState.status === 'halftime'
+                    }">
+                      <i class="fas" [ngClass]="{
+                        'fa-circle fa-pulse': basketballGameState.status === 'live',
+                        'fa-flag-checkered': basketballGameState.status === 'finished',
+                        'fa-clock': basketballGameState.status === 'upcoming',
+                        'fa-coffee': basketballGameState.status === 'quarter_break',
+                        'fa-pause': basketballGameState.status === 'halftime'
+                      }"></i>
+                      {{ basketballGameState.status | titlecase }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Team 2 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-basketball-ball fa-2x text-danger"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
+                  <div class="team-score">{{ basketballGameState.score[teams[1]?.team?.id] || getTeamScore(teams[1]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-bullseye text-success"></i>
+                          <span title="Field Goals">{{ getTeamFieldGoals(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-dot-circle text-warning"></i>
+                          <span title="3-Pointers">{{ getTeamThreePointers(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-hands-helping text-info"></i>
+                          <span title="Assists">{{ getTeamAssists(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat basketball-stat">
+                          <i class="fas fa-redo text-primary"></i>
+                          <span title="Rebounds">{{ getTeamRebounds(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Basketball Game Details Bar -->
+            <div class="match-details-bar mt-3">
+              <div class="row text-center">
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-clock me-1"></i>{{ basketballClock.shotClockDuration || 24 }}s Shot Clock
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-history me-1"></i>{{ basketballClock.periodDuration / 60 || 12 }}min Quarters
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-exchange-alt me-1"></i>{{ (basketballTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + (basketballTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} Timeouts
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-trophy me-1"></i>{{ basketballGameState.leadingTeam ? 'Leading: ' + getTeamName(basketballGameState.leadingTeam) : 'Tied' }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
+                    <span *ngIf="!loading">Live</span>
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Quarter Progress and Timeouts Row -->
+              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="col-3" *ngFor="let quarter of basketballQuarters; let i = index">
+                  <small class="text-muted" [ngClass]="{
+                    'text-warning': basketballClock.currentPeriod === quarter.number,
+                    'text-success': quarter.completed
+                  }">
+                    <i class="fas" [ngClass]="{
+                      'fa-play text-warning': basketballClock.currentPeriod === quarter.number && basketballClock.isRunning,
+                      'fa-pause text-warning': basketballClock.currentPeriod === quarter.number && !basketballClock.isRunning,
+                      'fa-check text-success': quarter.completed,
+                      'fa-circle text-muted': basketballClock.currentPeriod < quarter.number
+                    }"></i>
+                    Q{{ quarter.number }}
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Team Timeouts Row -->
+              <div class="row text-center mt-2">
+                <div class="col-6">
+                  <small class="text-muted">
+                    <strong>{{ getTeamName(teams[0]?.team?.id) }}</strong>
+                    <span class="ms-2">
+                      <i class="fas fa-pause-circle me-1"></i>
+                      {{ basketballClock.timeoutsRemaining[teams[0]?.team?.id] || 3 }} timeouts left
+                    </span>
+                    <button 
+                      class="btn btn-warning btn-sm ms-2" 
+                      (click)="callBasketballTeamTimeout(teams[0]?.team?.id)"
+                      [disabled]="!basketballClock.isRunning || (basketballClock.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
+                      <i class="fas fa-hand-paper"></i> Timeout
+                    </button>
+                  </small>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">
+                    <strong>{{ getTeamName(teams[1]?.team?.id) }}</strong>
+                    <span class="ms-2">
+                      <i class="fas fa-pause-circle me-1"></i>
+                      {{ basketballClock.timeoutsRemaining[teams[1]?.team?.id] || 3 }} timeouts left
+                    </span>
+                    <button 
+                      class="btn btn-warning btn-sm ms-2" 
+                      (click)="callBasketballTeamTimeout(teams[1]?.team?.id)"
+                      [disabled]="!basketballClock.isRunning || (basketballClock.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
+                      <i class="fas fa-hand-paper"></i> Timeout
+                    </button>
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Shot Clock Controls -->
+              <div class="row text-center mt-2" *ngIf="basketballClock.isRunning">
+                <div class="col-12">
+                  <button 
+                    class="btn btn-info btn-sm me-2" 
+                    (click)="resetShotClock(24)">
+                    <i class="fas fa-redo"></i> Reset Shot Clock (24s)
+                  </button>
+                  <button 
+                    class="btn btn-info btn-sm" 
+                    (click)="resetShotClock(14)">
+                    <i class="fas fa-redo"></i> Reset Shot Clock (14s)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card-body">
           <!-- Loading State -->
           <div *ngIf="loading" class="loading-container">
@@ -1038,6 +1305,135 @@
                           </div>
                         </div> -->
                       <!-- </div> -->
+                      
+                      <!-- Basketball Quick Actions -->
+                      <div *ngIf="isBasketball()" class="basketball-quick-actions mb-3">
+                        <div class="row g-1">
+                          <!-- Scoring Buttons -->
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-success btn-sm w-100" 
+                              (click)="addBasketballScore(player.id, selectedTeam, 'two_point')"
+                              title="2-Point Shot">
+                              <i class="fas fa-basketball-ball"></i> 2PT
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-warning btn-sm w-100" 
+                              (click)="addBasketballScore(player.id, selectedTeam, 'three_point')"
+                              title="3-Point Shot">
+                              <i class="fas fa-dot-circle"></i> 3PT
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-info btn-sm w-100" 
+                              (click)="addBasketballScore(player.id, selectedTeam, 'free_throw')"
+                              title="Free Throw">
+                              <i class="fas fa-circle"></i> FT
+                            </button>
+                          </div>
+                          
+                          <!-- Additional Stats Buttons -->
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-primary btn-sm w-100" 
+                              (click)="addBasketballAssist(player.id, selectedTeam)"
+                              title="Assist">
+                              <i class="fas fa-hands-helping"></i> AST
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-secondary btn-sm w-100" 
+                              (click)="addBasketballRebound(player.id, selectedTeam, 'defensive')"
+                              title="Defensive Rebound">
+                              <i class="fas fa-redo"></i> REB
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-dark btn-sm w-100" 
+                              (click)="addBasketballRebound(player.id, selectedTeam, 'offensive')"
+                              title="Offensive Rebound">
+                              <i class="fas fa-redo-alt"></i> O-REB
+                            </button>
+                          </div>
+                          
+                          <!-- Defensive Stats -->
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-success btn-sm w-100" 
+                              (click)="addBasketballStat(player.id, selectedTeam, 'steals', 1)"
+                              title="Steal">
+                              <i class="fas fa-user-ninja"></i> STL
+                            </button>
+                          </div>
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-info btn-sm w-100" 
+                              (click)="addBasketballStat(player.id, selectedTeam, 'blocks', 1)"
+                              title="Block">
+                              <i class="fas fa-hand-paper"></i> BLK
+                            </button>
+                          </div>
+                          
+                          <!-- Negative Stats -->
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-warning btn-sm w-100" 
+                              (click)="addBasketballFoul(player.id, selectedTeam, 'personal')"
+                              title="Personal Foul">
+                              <i class="fas fa-exclamation-triangle"></i> FOUL
+                            </button>
+                          </div>
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-danger btn-sm w-100" 
+                              (click)="addBasketballStat(player.id, selectedTeam, 'turnovers', 1)"
+                              title="Turnover">
+                              <i class="fas fa-exchange-alt"></i> TO
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <!-- Player Current Stats Display -->
+                        <div class="mt-2 p-2 bg-light rounded">
+                          <div class="row g-1 text-center">
+                            <div class="col-3">
+                              <small class="text-muted d-block">PTS</small>
+                              <strong>{{ player.points || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">REB</small>
+                              <strong>{{ player.rebounds || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">AST</small>
+                              <strong>{{ player.assists || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">FLS</small>
+                              <strong>{{ player.fouls || 0 }}</strong>
+                            </div>
+                          </div>
+                          <div class="row g-1 text-center mt-1">
+                            <div class="col-4">
+                              <small class="text-muted d-block">FG</small>
+                              <strong>{{ (player.field_goals_made || 0) }}/{{ (player.field_goals_attempted || 0) }}</strong>
+                            </div>
+                            <div class="col-4">
+                              <small class="text-muted d-block">3PT</small>
+                              <strong>{{ (player.three_pointers_made || 0) }}/{{ (player.three_pointers_attempted || 0) }}</strong>
+                            </div>
+                            <div class="col-4">
+                              <small class="text-muted d-block">FT</small>
+                              <strong>{{ (player.free_throws_made || 0) }}/{{ (player.free_throws_attempted || 0) }}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       
                       <div class="mt-3">
                         <button 

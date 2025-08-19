@@ -298,6 +298,142 @@ export class ApiService {
     );
   }
 
+  // ============================================================================
+  // 🏀 BASKETBALL MANAGEMENT METHODS
+  // ============================================================================
+
+  // Basketball Clock Management
+  initializeBasketballClock(matchId: number, clockData?: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/initialize/`;
+    const basketballClockConfig = {
+      match_format: 'basketball',
+      total_periods: 4,
+      period_duration: 720, // 12 minutes in seconds
+      overtime_duration: 300, // 5 minutes in seconds
+      shot_clock_duration: 24,
+      ...clockData
+    };
+    console.log('Initializing basketball clock:', matchId, basketballClockConfig);
+    return this.http.post(url, basketballClockConfig, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock initialized:', response))
+    );
+  }
+
+  startBasketballClock(matchId: number, period?: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/start/`;
+    const data = period ? { period } : {};
+    console.log('Starting basketball clock:', matchId);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock started:', response))
+    );
+  }
+
+  stopBasketballClock(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop/`;
+    console.log('Stopping basketball clock:', matchId);
+    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock stopped:', response))
+    );
+  }
+
+  pauseBasketballClock(matchId: number, reason?: string): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/pause/`;
+    const data = { reason: reason || 'quarter_break' };
+    console.log('Pausing basketball clock:', matchId);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock paused:', response))
+    );
+  }
+
+  resumeBasketballClock(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/resume/`;
+    console.log('Resuming basketball clock:', matchId);
+    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock resumed:', response))
+    );
+  }
+
+  getBasketballClockStatus(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/`;
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock status retrieved:', response))
+    );
+  }
+
+  // Basketball Quarter Management
+  advanceQuarter(matchId: number, nextQuarter: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
+    const data = { next_period: nextQuarter };
+    console.log('Advancing to quarter:', nextQuarter);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Quarter advanced:', response))
+    );
+  }
+
+  // Basketball Shot Clock Management
+  resetShotClock(matchId: number, shotClockDuration: number = 24): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/reset_shot_clock/`;
+    const data = { shot_clock_duration: shotClockDuration };
+    console.log('Resetting shot clock:', shotClockDuration);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Shot clock reset:', response))
+    );
+  }
+
+  getShotClockStatus(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/shot_clock/`;
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Shot clock status retrieved:', response))
+    );
+  }
+
+  // Basketball Timeout Management
+  callBasketballTimeout(matchId: number, timeoutData: { team_id: number, duration?: string, reason?: string }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/timeout/`;
+    const data = {
+      team_id: timeoutData.team_id,
+      duration: timeoutData.duration || '00:01:00',
+      reason: timeoutData.reason || 'coach_strategy'
+    };
+    console.log('Calling basketball timeout:', data);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball timeout called:', response))
+    );
+  }
+
+  endBasketballTimeout(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/end_timeout/`;
+    console.log('Ending basketball timeout for match:', matchId);
+    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball timeout ended:', response))
+    );
+  }
+
+  // Basketball Player Statistics
+  updateBasketballPlayerStats(playerStatsData: any): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/custom_update/`;
+    console.log('Updating basketball player stats:', playerStatsData);
+    return this.http.put(url, playerStatsData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball player stats updated:', response))
+    );
+  }
+
+  getBasketballLiveScoring(matchId: number, teamId?: number, playerId?: number): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/live_scoring/`;
+    let params = new HttpParams().set('match_id', matchId.toString());
+    
+    if (teamId) {
+      params = params.set('team_id', teamId.toString());
+    }
+    if (playerId) {
+      params = params.set('player_id', playerId.toString());
+    }
+
+    return this.http.get(url, { params, headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball live scoring retrieved:', response))
+    );
+  }
+
   advanceApparatusRotation(matchId: number, rotationData: { next_apparatus: string, rotation_duration?: number }): Observable<any> {
     const url = `${this.apiUrl}/matches/${matchId}/clock/advance_rotation/`;
     console.log('Advancing apparatus rotation for match:', matchId, rotationData);
