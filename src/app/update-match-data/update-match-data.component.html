@@ -456,11 +456,6 @@
                     {{ basketballClock.displayTime || basketballClock.timeRemainingInPeriod || '12:00' }}
                   </div>
                   
-                  <div class="shot-clock" *ngIf="basketballClock.shotClockRemaining">
-                    <i class="fas fa-clock me-1"></i>
-                    Shot Clock: {{ basketballClock.shotClockRemaining }}
-                  </div>
-                  
                   <div class="clock-controls mt-2">
                     <button 
                       *ngIf="!checkBasketballClockInitialized()" 
@@ -470,17 +465,31 @@
                     </button>
                     
                     <button 
-                      *ngIf="checkBasketballClockInitialized() && !basketballClock.isRunning" 
+                      *ngIf="checkBasketballClockInitialized() && !basketballClock.isRunning && !basketballClock.isPaused" 
                       class="btn btn-success btn-sm me-1" 
                       (click)="startBasketballClock()">
-                      <i class="fas fa-play"></i>
+                      <i class="fas fa-play"></i> Start
                     </button>
                     
                     <button 
                       *ngIf="basketballClock.isRunning" 
                       class="btn btn-warning btn-sm me-1" 
+                      (click)="pauseBasketballClock('manual')">
+                      <i class="fas fa-pause"></i> Pause
+                    </button>
+                    
+                    <button 
+                      *ngIf="basketballClock.isPaused" 
+                      class="btn btn-success btn-sm me-1" 
+                      (click)="resumeBasketballClock()">
+                      <i class="fas fa-play"></i> Resume
+                    </button>
+                    
+                    <button 
+                      *ngIf="(basketballClock.isRunning || basketballClock.isPaused) && checkBasketballClockInitialized()" 
+                      class="btn btn-danger btn-sm me-1" 
                       (click)="stopBasketballClock()">
-                      <i class="fas fa-pause"></i>
+                      <i class="fas fa-stop"></i> Stop
                     </button>
                     
                     <button 
@@ -563,11 +572,6 @@
                 </div>
                 <div class="col-2">
                   <small class="text-muted">
-                    <i class="fas fa-clock me-1"></i>{{ basketballClock.shotClockDuration || 24 }}s Shot Clock
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
                     <i class="fas fa-history me-1"></i>{{ basketballClock.periodDuration / 60 || 12 }}min Quarters
                   </small>
                 </div>
@@ -643,20 +647,6 @@
               </div>
               
               <!-- Shot Clock Controls -->
-              <div class="row text-center mt-2" *ngIf="basketballClock.isRunning">
-                <div class="col-12">
-                  <button 
-                    class="btn btn-info btn-sm me-2" 
-                    (click)="resetShotClock(24)">
-                    <i class="fas fa-redo"></i> Reset Shot Clock (24s)
-                  </button>
-                  <button 
-                    class="btn btn-info btn-sm" 
-                    (click)="resetShotClock(14)">
-                    <i class="fas fa-redo"></i> Reset Shot Clock (14s)
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -190,9 +190,6 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     totalElapsedTime: '00:00:00',
     periodDuration: 720, // 12 minutes in seconds
     totalPeriods: 4,
-    shotClockDuration: 24,
-    shotClockRemaining: 24,
-    shotClockState: 'stopped',
     timeoutsRemaining: {} as { [teamId: number]: number }
   };
 
@@ -405,6 +402,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         // Check if this is a basketball match and initialize basketball features
         if (this.isBasketball()) {
           console.log('Loading basketball match features...');
+          console.log('Initial basketball clock state:', this.basketballClock);
           this.loadBasketballClockStatus();
           this.initializeBasketballGameState();
         }
@@ -2258,15 +2256,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  // Helper method to parse time string (MM:SS) to seconds
+  // Helper method to parse time string (MM:SS or HH:MM:SS) to seconds
   private parseTimeToSeconds(timeString: string): number {
     if (!timeString) return 0;
     
     const parts = timeString.split(':');
     if (parts.length === 2) {
+      // MM:SS format
       const minutes = parseInt(parts[0]) || 0;
       const seconds = parseInt(parts[1]) || 0;
       return (minutes * 60) + seconds;
+    } else if (parts.length === 3) {
+      // HH:MM:SS format
+      const hours = parseInt(parts[0]) || 0;
+      const minutes = parseInt(parts[1]) || 0;
+      const seconds = parseInt(parts[2]) || 0;
+      return (hours * 3600) + (minutes * 60) + seconds;
     }
     return 0;
   }
@@ -2767,6 +2772,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     if (this.basketballClockPollingInterval) {
       clearInterval(this.basketballClockPollingInterval);
     }
+    // Clean up countdown timer
+    this.stopCountdownTimer();
   }
 
   // Utility method for formatting time display
@@ -3363,8 +3370,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Utility method to check if current match is basketball
   isBasketball(): boolean {
-    console.log('Checking if match is basketball...');
-    console.log(this.match);
+    //console.log('Checking if match is basketball...');
+    //console.log(this.match);
     return this.match?.sport?.name?.toLowerCase().includes('basketball') || 
            this.match?.sport?.toLowerCase().includes('basketball') ||
            this.sportConfig?.name?.toLowerCase() === 'basketball' ||
@@ -3731,8 +3738,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.startBasketballClock(this.match.id, this.basketballClock.currentPeriod).subscribe({
       next: (response) => {
         console.log('Basketball clock started:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        // Map response properly
+        this.updateBasketballClockFromResponse(response);
         this.basketballGameState.status = 'live';
+        this.startBasketballClockPolling();
+        // Start countdown timer for smooth display
+        this.startCountdownTimer();
         
         Swal.fire({
           icon: 'success',
@@ -3762,7 +3773,14 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.stopBasketballClock(this.match.id).subscribe({
       next: (response) => {
         console.log('Basketball clock stopped:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        this.updateBasketballClockFromResponse(response);
+        
+        // Stop polling when clock is stopped
+        if (this.basketballClockPollingInterval) {
+          clearInterval(this.basketballClockPollingInterval);
+        }
+        // Stop countdown timer
+        this.stopCountdownTimer();
         
         Swal.fire({
           icon: 'info',
@@ -3792,7 +3810,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.pauseBasketballClock(this.match.id, reason).subscribe({
       next: (response) => {
         console.log('Basketball clock paused:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        this.updateBasketballClockFromResponse(response);
+        // Stop countdown timer when paused
+        this.stopCountdownTimer();
         
         Swal.fire({
           icon: 'warning',
@@ -3822,7 +3842,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.resumeBasketballClock(this.match.id).subscribe({
       next: (response) => {
         console.log('Basketball clock resumed:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        this.updateBasketballClockFromResponse(response);
+        this.startBasketballClockPolling();
+        // Resume countdown timer with current time
+        this.startCountdownTimer();
         
         Swal.fire({
           icon: 'success',
@@ -3899,7 +3922,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.resetShotClock(this.match.id, duration).subscribe({
       next: (response) => {
         console.log('Shot clock reset:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        this.updateBasketballClockFromResponse(response);
         
         Swal.fire({
           icon: 'success',
@@ -4052,18 +4075,151 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.getBasketballClockStatus(this.match.id).subscribe({
       next: (response) => {
         console.log('Basketball clock status loaded:', response);
-        this.basketballClock = { ...this.basketballClock, ...response };
+        
+        // Map API response to component properties using helper method
+        this.updateBasketballClockFromResponse(response);
         
         // Update game state based on clock status
-        if (response.clock_state === 'running') {
+        if (response.clock_state === 'running' || response.is_running) {
           this.basketballGameState.status = 'live';
+          this.basketballClock.isRunning = true;
+          // Start polling for real-time updates when clock is running
+          this.startBasketballClockPolling();
+          // Start local countdown timer for smooth display
+          this.startCountdownTimer();
         } else if (response.clock_state === 'stopped' && response.current_period >= 4) {
           this.basketballGameState.status = 'finished';
+          this.basketballClock.isRunning = false;
+          this.stopCountdownTimer();
+        } else {
+          this.basketballClock.isRunning = false;
+          this.stopCountdownTimer();
         }
+        
+        console.log('Mapped basketball clock:', this.basketballClock);
       },
       error: (error) => {
         console.error('Error loading basketball clock status:', error);
       }
+    });
+  }
+
+  // Helper method to update basketball clock from API response
+  private updateBasketballClockFromResponse(response: any): void {
+    // Map API response to component properties with proper naming convention
+    this.basketballClock = {
+      ...this.basketballClock,
+      isRunning: response.is_running || response.clock_state === 'running',
+      isPaused: response.clock_state === 'paused',
+      timeRemainingInPeriod: response.time_remaining_in_period || response.display_time || this.basketballClock.timeRemainingInPeriod || '12:00',
+      displayTime: response.display_time || response.time_remaining_in_period || this.basketballClock.displayTime || '12:00',
+      currentPeriod: response.current_period || this.basketballClock.currentPeriod || 1,
+      periodType: response.period_type || this.basketballClock.periodType || 'quarter',
+      clockState: response.clock_state || this.basketballClock.clockState || 'stopped',
+      totalElapsedTime: response.total_elapsed_time || this.basketballClock.totalElapsedTime || '00:00:00',
+      periodDuration: response.period_duration ? this.parseTimeToSeconds(response.period_duration) : (this.basketballClock.periodDuration || 720),
+      totalPeriods: response.total_periods || this.basketballClock.totalPeriods || 4,
+      timeoutsRemaining: response.timeouts_remaining || this.basketballClock.timeoutsRemaining || {}
+    };
+    
+    // Sync local countdown timer with server data
+    if (response.time_remaining_in_period || response.display_time) {
+      const serverTimeRemaining = this.parseTimeToSeconds(response.time_remaining_in_period || response.display_time);
+      
+      // Only sync with server if:
+      // 1. Clock is not currently running (to avoid disrupting active countdown)
+      // 2. OR there's a very significant difference (more than 15 seconds)
+      // 3. OR this is the first initialization and countdown is not yet set up
+      const isClockStopped = !this.basketballClock.isRunning;
+      const hasSignificantDrift = Math.abs(this.localTimeRemaining - serverTimeRemaining) > 15;
+      const needsInitialization = !this.isCountdownInitialized;
+      
+      if (isClockStopped || hasSignificantDrift || needsInitialization) {
+        console.log(`Syncing local timer: ${this.localTimeRemaining}s -> ${serverTimeRemaining}s (Clock running: ${this.basketballClock.isRunning}, Drift: ${Math.abs(this.localTimeRemaining - serverTimeRemaining)}s, Needs Init: ${needsInitialization})`);
+        this.localTimeRemaining = serverTimeRemaining;
+        this.lastServerSync = new Date();
+        this.isCountdownInitialized = true;
+        
+        // Update display immediately when syncing
+        this.basketballClock.displayTime = this.formatSecondsToTime(this.localTimeRemaining);
+        this.basketballClock.timeRemainingInPeriod = this.basketballClock.displayTime;
+      } else {
+        console.log(`Skipping sync - Clock is running with acceptable drift: ${Math.abs(this.localTimeRemaining - serverTimeRemaining)}s`);
+      }
+    }
+    
+    console.log('Updated basketball clock:', this.basketballClock);
+  }
+
+  // Start local countdown timer for real-time display
+  private startCountdownTimer(): void {
+    // Clear any existing countdown interval
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+
+    // Initialize local time remaining from the current display time if not already initialized
+    if (!this.isCountdownInitialized || this.localTimeRemaining === 0) {
+      this.localTimeRemaining = this.parseTimeToSeconds(this.basketballClock.timeRemainingInPeriod || '12:00');
+      this.isCountdownInitialized = true;
+    }
+    this.lastServerSync = new Date();
+
+    console.log(`Starting countdown timer with ${this.localTimeRemaining} seconds remaining (initialized: ${this.isCountdownInitialized})`);
+
+    this.countdownInterval = setInterval(() => {
+      if (this.basketballClock.isRunning && this.localTimeRemaining > 0) {
+        this.localTimeRemaining--;
+        
+        // Update the display time
+        this.basketballClock.displayTime = this.formatSecondsToTime(this.localTimeRemaining);
+        this.basketballClock.timeRemainingInPeriod = this.basketballClock.displayTime;
+        
+        // Log countdown every 10 seconds for debugging
+        if (this.localTimeRemaining % 10 === 0) {
+          console.log(`Countdown: ${this.localTimeRemaining} seconds remaining`);
+        }
+        
+        // Check if period ended
+        if (this.localTimeRemaining <= 0) {
+          this.onPeriodEnd();
+        }
+      }
+    }, 1000); // Update every second
+  }
+
+  // Stop countdown timer
+  private stopCountdownTimer(): void {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      console.log('Countdown timer stopped');
+    }
+    // Reset initialization flag when stopping
+    this.isCountdownInitialized = false;
+  }
+
+  // Format seconds to MM:SS format
+  private formatSecondsToTime(seconds: number): string {
+    if (seconds < 0) seconds = 0;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Handle period end
+  private onPeriodEnd(): void {
+    console.log('Period ended!');
+    this.stopCountdownTimer();
+    this.basketballClock.isRunning = false;
+    this.basketballClock.clockState = 'stopped';
+    
+    // Show period end notification
+    Swal.fire({
+      icon: 'info',
+      title: 'Period Ended!',
+      text: `Quarter ${this.basketballClock.currentPeriod} has ended.`,
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#0d6efd'
     });
   }
 
@@ -4078,7 +4234,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       if (this.isBasketball() && this.basketballClock.isRunning) {
         this.loadBasketballClockStatus();
       }
-    }, 1000); // Update every second when clock is running
+    }, 30000); // Update every 30 seconds to reduce interference with local countdown
   }
 
   // Initialize Basketball Game State
@@ -4243,7 +4399,11 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Get Basketball Clock Status (for checking if initialized)
   checkBasketballClockInitialized(): boolean {
-    return this.basketballClock.clockState !== 'stopped' || this.basketballGameState.status !== 'upcoming';
+    // Clock is considered initialized if we have valid clock data from the API
+    return this.basketballClock.clockState !== 'stopped' || 
+           this.basketballClock.currentPeriod > 0 || 
+           this.basketballGameState.status !== 'upcoming' ||
+           this.basketballClock.timeRemainingInPeriod !== '12:00';
   }
 
   // Basketball Team Statistics Methods
@@ -4283,4 +4443,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Basketball Clock Polling Interval
   private basketballClockPollingInterval: any;
+  private countdownInterval: any;
+  private lastServerSync: Date = new Date();
+  private localTimeRemaining: number = 0; // Time remaining in seconds for countdown
+  private isCountdownInitialized: boolean = false; // Track if countdown has been properly set up
 }

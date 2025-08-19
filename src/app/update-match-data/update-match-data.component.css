@@ -1271,17 +1271,6 @@
   51%, 100% { opacity: 0.7; }
 }
 
-.basketball-clock .shot-clock {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(220, 53, 69, 0.8);
-  padding: 0.25rem 0.75rem;
-  border-radius: 15px;
-  display: inline-block;
-  margin-top: 0.5rem;
-}
-
 .basketball-clock .clock-controls {
   display: flex;
   justify-content: center;
