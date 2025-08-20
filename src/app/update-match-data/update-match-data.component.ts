@@ -574,6 +574,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
     this.apiService.getMatchDetails(matchId).subscribe({
       next: (match) => {
+        console.log('Loading match data', match);
         this.match = match;
         this.teams = match.matchteams || [];
         this.buildDynamicForm();
@@ -1099,11 +1100,11 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     // Fallback: calculate from player stats if match score is not available
     const players = this.playersData[teamId] || [];
     let totalScore = 0;
-
-    if (this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals') {
+    
+    if (this.sportConfig?.name.toLowerCase() === 'football' || this.sportConfig?.scoring_system === 'goals') {
       // For football, sum up all goals from players
       totalScore = players.reduce((sum, player) => sum + (player.goals || 0), 0);
-    } else if (this.sportConfig?.name === 'Basketball' || this.sportConfig?.scoring_system === 'points') {
+    } else if (this.sportConfig?.name.toLowerCase() === 'basketball' || this.sportConfig?.scoring_system === 'points') {
       // For basketball, sum up all points from players
       totalScore = players.reduce((sum, player) => sum + (player.points || 0), 0);
     } else if (this.sportConfig?.name === 'Gymnastics') {

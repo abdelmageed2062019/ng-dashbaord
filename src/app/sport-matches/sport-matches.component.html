@@ -108,7 +108,8 @@
                       [alt]="match.matchteams[0].team?.name"
                       class="team-logo mb-2">
                     <h6 class="team-name mb-1">{{ match.matchteams[0].team?.name || 'Team 1' }}</h6>
-                    <div class="team-score">{{ match.matchteams[0].score || 0 }}</div>
+                    <div class="team-score" *ngIf="IsFootballMatch()">{{ match.matchteams[0].score || 0 }}</div>
+                     <div class="team-score" *ngIf="IsBasketBallMatch()">{{ match.matchteams[0].points || 0 }}</div>
                   </div>
 
                   <!-- VS / Score Separator -->
@@ -116,6 +117,7 @@
                     <div class="vs-text">{{ getMatchScore(match) }}</div>
                     <small class="text-muted" *ngIf="match.status === 'live'">
                       <i class="fas fa-clock me-1"></i>{{ match.match_duration || 0 }}'
+                      
                     </small>
                   </div>
 
@@ -126,7 +128,8 @@
                       [alt]="match.matchteams[1].team?.name"
                       class="team-logo mb-2">
                     <h6 class="team-name mb-1">{{ match.matchteams[1].team?.name || 'Team 2' }}</h6>
-                    <div class="team-score">{{ match.matchteams[1].score || 0 }}</div>
+                    <div class="team-score" *ngIf="IsFootballMatch()">{{ match.matchteams[1].score || 0 }}</div>
+                     <div class="team-score" *ngIf="IsBasketBallMatch()">{{ match.matchteams[1].point || 0 }}</div>
                   </div>
                 </div>
               </div>
@@ -157,8 +160,8 @@
             </ng-template>
           </div>
 
-          <!-- Match Stats (if available) -->
-          <div class="match-stats mt-3" *ngIf="match.status === 'finished' || match.status === 'live'">
+          <!-- Match Stats (if available)  match.status === 'finished' || match.status === 'live' &&-->
+          <div class="match-stats mt-3" *ngIf=" IsFootballMatch()">
             <div class="row g-2">
               <div class="col-4" *ngIf="match.total_goals > 0">
                 <div class="stat-item">

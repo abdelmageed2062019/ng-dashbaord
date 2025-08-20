@@ -52,6 +52,12 @@ export class SportMatchesComponent implements OnInit {
     this.sportConfig = history.state.sportConfig;
     this.loadMatches();
   }
+  IsBasketBallMatch(){
+    return this.sportConfig && this.sportConfig.name.toLowerCase() === 'basketball';
+  }
+  IsFootballMatch(){
+    return this.sportConfig && this.sportConfig.name.toLowerCase() === 'football';
+  }
 
   loadMatches(): void {
     if (this.sportId) {

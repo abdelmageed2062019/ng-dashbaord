@@ -406,8 +406,8 @@
                     <i class="fas fa-basketball-ball fa-2x text-primary"></i>
                   </div>
                   <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="team-score">{{ basketballGameState.score[teams[0]?.team?.id] || getTeamScore(teams[0]?.team?.id) }}</div>
-                  
+                  <div class="team-score">{{ match?.matchteams[0]?.points || getTeamScore(teams[0]?.team?.id) }}</div>
+
                   <!-- Team Stats -->
                   <div class="team-stats mt-2">
                     <div class="row g-1">
@@ -527,8 +527,8 @@
                     <i class="fas fa-basketball-ball fa-2x text-danger"></i>
                   </div>
                   <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="team-score">{{ basketballGameState.score[teams[1]?.team?.id] || getTeamScore(teams[1]?.team?.id) }}</div>
-                  
+                  <div class="team-score">{{ match?.matchteams[1]?.points || getTeamScore(teams[1]?.team?.id) }}</div>
+
                   <!-- Team Stats -->
                   <div class="team-stats mt-2">
                     <div class="row g-1">
