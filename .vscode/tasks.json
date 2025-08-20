@@ -10,6 +10,13 @@
 			"problemMatcher": [
 				"$tsc"
 			]
+		},
+		{
+			"label": "Angular Development Server Alt Port",
+			"type": "shell",
+			"command": "ng serve --port 4201",
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }

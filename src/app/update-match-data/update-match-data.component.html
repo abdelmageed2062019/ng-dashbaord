@@ -414,25 +414,25 @@
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-bullseye text-success"></i>
-                          <span title="Field Goals">{{ getTeamFieldGoals(teams[0]?.team?.id) }}</span>
+                          <span title="Field Goals">{{ match?.matchteams[0]?.two_pointers_made || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-dot-circle text-warning"></i>
-                          <span title="3-Pointers">{{ getTeamThreePointers(teams[0]?.team?.id) }}</span>
+                          <span title="3-Pointers">{{ match?.matchteams[0]?.three_pointers_made || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-hands-helping text-info"></i>
-                          <span title="Assists">{{ getTeamAssists(teams[0]?.team?.id) }}</span>
+                          <span title="Assists">{{ match?.matchteams[0]?.assists || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-redo text-primary"></i>
-                          <span title="Rebounds">{{ getTeamRebounds(teams[0]?.team?.id) }}</span>
+                          <span title="Rebounds">{{ match?.matchteams[0]?.rebounds || 0 }}</span>
                         </div>
                       </div>
                     </div>
@@ -535,25 +535,25 @@
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-bullseye text-success"></i>
-                          <span title="Field Goals">{{ getTeamFieldGoals(teams[1]?.team?.id) }}</span>
+                          <span title="Field Goals">{{ match?.matchteams[1]?.two_pointers_made || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-dot-circle text-warning"></i>
-                          <span title="3-Pointers">{{ getTeamThreePointers(teams[1]?.team?.id) }}</span>
+                          <span title="3-Pointers">{{ match?.matchteams[1]?.three_pointers_made || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-hands-helping text-info"></i>
-                          <span title="Assists">{{ getTeamAssists(teams[1]?.team?.id) }}</span>
+                          <span title="Assists">{{ match?.matchteams[1]?.assists || 0 }}</span>
                         </div>
                       </div>
                       <div class="col-6">
                         <div class="mini-stat basketball-stat">
                           <i class="fas fa-redo text-primary"></i>
-                          <span title="Rebounds">{{ getTeamRebounds(teams[1]?.team?.id) }}</span>
+                          <span title="Rebounds">{{ match?.matchteams[1]?.rebounds || 0 }}</span>
                         </div>
                       </div>
                     </div>
@@ -1733,7 +1733,7 @@
                         </div>
                         
                         <!-- Player Current Stats Display -->
-                        <div class="mt-2 p-2 bg-light rounded">
+                        <!-- <div class="mt-2 p-2 bg-light rounded">
                           <div class="row g-1 text-center">
                             <div class="col-3">
                               <small class="text-muted d-block">PTS</small>
@@ -1766,7 +1766,7 @@
                               <strong>{{ (player.free_throws_made || 0) }}/{{ (player.free_throws_attempted || 0) }}</strong>
                             </div>
                           </div>
-                        </div>
+                        </div> -->
                       </div>
 
                       <!-- Water Polo Quick Actions -->

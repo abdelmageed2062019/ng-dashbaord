@@ -4757,39 +4757,115 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Update Basketball Player Score
   updateBasketballPlayerScore(playerId: number, teamId: number, scoreData: any): void {
-    const playerStatsData = {
-      match: this.match.id,
-      team: teamId,
-      player: playerId,
-      ...scoreData
-    };
+    // First get the current player stats
+    this.apiService.getPlayerStats(this.match.id, teamId, playerId).subscribe({
+      next: (currentStats) => {
+        console.log('Current player stats:', currentStats);
+        
+        // Merge current stats with new score data, adding values together
+        const updatedStats = {
+          match: this.match.id,
+          team: teamId,
+          player: playerId,
+          // Add existing stats to new stats values
+          points: (currentStats.points || 0) + (scoreData.points || 0),
+          field_goals_made: (currentStats.field_goals_made || 0) + (scoreData.field_goals_made || 0),
+          field_goals_attempted: (currentStats.field_goals_attempted || 0) + (scoreData.field_goals_attempted || 0),
+          three_pointers_made: (currentStats.three_pointers_made || 0) + (scoreData.three_pointers_made || 0),
+          three_pointers_attempted: (currentStats.three_pointers_attempted || 0) + (scoreData.three_pointers_attempted || 0),
+          two_pointers_made: (currentStats.two_pointers_made || 0) + (scoreData.two_pointers_made || 0),
+          two_pointers_attempted: (currentStats.two_pointers_attempted || 0) + (scoreData.two_pointers_attempted || 0),
+          free_throws_made: (currentStats.free_throws_made || 0) + (scoreData.free_throws_made || 0),
+          free_throws_attempted: (currentStats.free_throws_attempted || 0) + (scoreData.free_throws_attempted || 0),
+          assists: (currentStats.assists || 0) + (scoreData.assists || 0),
+          rebounds: (currentStats.rebounds || 0) + (scoreData.rebounds || 0),
+          offensive_rebounds: (currentStats.offensive_rebounds || 0) + (scoreData.offensive_rebounds || 0),
+          defensive_rebounds: (currentStats.defensive_rebounds || 0) + (scoreData.defensive_rebounds || 0),
+          steals: (currentStats.steals || 0) + (scoreData.steals || 0),
+          blocks: (currentStats.blocks || 0) + (scoreData.blocks || 0),
+          turnovers: (currentStats.turnovers || 0) + (scoreData.turnovers || 0),
+          fouls: (currentStats.fouls || 0) + (scoreData.fouls || 0),
+          personal_fouls: (currentStats.personal_fouls || 0) + (scoreData.personal_fouls || 0),
+          technical_fouls: (currentStats.technical_fouls || 0) + (scoreData.technical_fouls || 0),
+          minutes_played: (currentStats.minutes_played || 0) + (scoreData.minutes_played || 0),
+          plus_minus: (currentStats.plus_minus || 0) + (scoreData.plus_minus || 0),
+          // Preserve any other existing stats that aren't being updated
+          ...Object.keys(currentStats)
+            .filter(key => !scoreData.hasOwnProperty(key) && !['match', 'team', 'player'].includes(key))
+            .reduce((obj: any, key: string) => {
+              obj[key] = (currentStats as any)[key];
+              return obj;
+            }, {})
+        };
 
-    this.apiService.updateBasketballPlayerStats(playerStatsData).subscribe({
-      next: (response) => {
-        console.log('Basketball player stats updated:', response);
-        
-        // Update local player data
-        this.updateLocalPlayerData(playerId, teamId, scoreData);
-        
-        // Update team scores
-        this.updateBasketballTeamScores();
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Score Updated!',
-          text: `Player stats updated successfully`,
-          timer: 1500,
-          timerProgressBar: true,
-          confirmButtonColor: '#198754'
+        console.log('Updated player stats to send:', updatedStats);
+
+        // Send the updated stats to the API
+        this.apiService.updateBasketballPlayerStats(updatedStats).subscribe({
+          next: (response) => {
+            console.log('Basketball player stats updated:', response);
+            
+            // Update local player data with the updated stats
+            this.updateLocalPlayerData(playerId, teamId, updatedStats);
+            this.loadMatchData(this.match.id);
+            // Update team scores
+            this.updateBasketballTeamScores();
+            Swal.fire({
+              icon: 'success',
+              title: 'Score Updated!',
+              text: `Player stats updated successfully`,
+              timer: 1500,
+              timerProgressBar: true,
+              confirmButtonColor: '#198754'
+            });
+          },
+          error: (error) => {
+            console.error('Error updating basketball player stats:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: error.error?.error || 'Failed to update player stats',
+              confirmButtonColor: '#dc3545'
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error updating basketball player stats:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Update Failed',
-          text: error.error?.error || 'Failed to update player stats',
-          confirmButtonColor: '#dc3545'
+        console.error('Error fetching current player stats:', error);
+        
+        // If we can't get current stats, try to update with just the new data
+        console.log('Falling back to direct update without current stats');
+        const playerStatsData = {
+          match: this.match.id,
+          team: teamId,
+          player: playerId,
+          ...scoreData
+        };
+
+        this.apiService.updateBasketballPlayerStats(playerStatsData).subscribe({
+          next: (response) => {
+            console.log('Basketball player stats updated (fallback):', response);
+            this.updateLocalPlayerData(playerId, teamId, scoreData);
+            this.updateBasketballTeamScores();
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'Score Updated!',
+              text: `Player stats updated successfully`,
+              timer: 1500,
+              timerProgressBar: true,
+              confirmButtonColor: '#198754'
+            });
+          },
+          error: (updateError) => {
+            console.error('Error updating basketball player stats (fallback):', updateError);
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: updateError.error?.error || 'Failed to update player stats',
+              confirmButtonColor: '#dc3545'
+            });
+          }
         });
       }
     });
@@ -4859,16 +4935,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   // Update local player data
-  private updateLocalPlayerData(playerId: number, teamId: number, scoreData: any): void {
+  private updateLocalPlayerData(playerId: number, teamId: number, updatedStats: any): void {
     if (this.playersData[teamId]) {
       const playerIndex = this.playersData[teamId].findIndex(p => p.id === playerId);
       if (playerIndex !== -1) {
-        Object.keys(scoreData).forEach(key => {
+        // Replace the entire stats object with the updated stats from the server
+        Object.keys(updatedStats).forEach(key => {
           if (key !== 'match' && key !== 'team' && key !== 'player') {
-            this.playersData[teamId][playerIndex][key] = 
-              (this.playersData[teamId][playerIndex][key] || 0) + (scoreData[key] || 0);
+            this.playersData[teamId][playerIndex][key] = updatedStats[key];
           }
         });
+        console.log('Local player data updated for player:', playerId, this.playersData[teamId][playerIndex]);
       }
     }
   }
