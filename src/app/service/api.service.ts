@@ -723,4 +723,129 @@ export class ApiService {
     const url = `${this.apiUrl}/player-stats/custom_update/`;
     return this.http.patch(url, data, { headers: this.getHeaders() });
   }
+
+  // ============================================================================
+  // 🏊 WATER POLO API METHODS
+  // ============================================================================
+
+  // Initialize Water Polo Clock
+  initializeWaterPoloClock(matchId: number, clockData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/initialize/`;
+    return this.http.post(url, clockData, { headers: this.getHeaders() });
+  }
+
+  // Start Water Polo Match
+  startWaterPoloMatch(matchId: number, startData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/start/`;
+    return this.http.post(url, startData, { headers: this.getHeaders() });
+  }
+
+  // Stop Water Polo Match
+  stopWaterPoloMatch(matchId: number, stopData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop/`;
+    return this.http.post(url, stopData, { headers: this.getHeaders() });
+  }
+
+  // Pause Water Polo Match
+  pauseWaterPoloMatch(matchId: number, pauseData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/pause/`;
+    return this.http.post(url, pauseData, { headers: this.getHeaders() });
+  }
+
+  // Resume Water Polo Match
+  resumeWaterPoloMatch(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/resume/`;
+    return this.http.post(url, {}, { headers: this.getHeaders() });
+  }
+
+  // Advance Water Polo Period
+  advanceWaterPoloPeriod(matchId: number, periodData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
+    return this.http.post(url, periodData, { headers: this.getHeaders() });
+  }
+
+  // Start Water Polo Shot Clock
+  startWaterPoloShotClock(matchId: number, shotClockData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/start_shot_clock/`;
+    return this.http.post(url, shotClockData, { headers: this.getHeaders() });
+  }
+
+  // Stop Water Polo Shot Clock
+  stopWaterPoloShotClock(matchId: number, shotClockData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop_shot_clock/`;
+    return this.http.post(url, shotClockData, { headers: this.getHeaders() });
+  }
+
+  // Call Water Polo Timeout
+  callWaterPoloTimeout(matchId: number, timeoutData: any): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/timeout/`;
+    return this.http.post(url, timeoutData, { headers: this.getHeaders() });
+  }
+
+  // End Water Polo Timeout
+  endWaterPoloTimeout(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/end_timeout/`;
+    return this.http.post(url, {}, { headers: this.getHeaders() });
+  }
+
+  // Get Water Polo Clock Status
+  getWaterPoloClockStatus(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/`;
+    return this.http.get(url, { headers: this.getHeaders() });
+  }
+
+  // Update Water Polo Player Stats
+  updateWaterPoloPlayerStats(statsData: any): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/custom_update/`;
+    return this.http.put(url, statsData, { headers: this.getHeaders() });
+  }
+
+  // Get Water Polo Rankings
+  getWaterPoloRankings(matchId: number, limit: number = 10): Observable<any> {
+    const url = `${this.apiUrl}/water-polo/rankings/`;
+    const params = new HttpParams()
+      .set('match_id', matchId.toString())
+      .set('limit', limit.toString());
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
+
+  // Get Water Polo Final Scores
+  getWaterPoloFinalScores(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/water-polo/final-scores/`;
+    const params = new HttpParams().set('match_id', matchId.toString());
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
+
+  // Get Water Polo Team Rankings
+  getWaterPoloTeamRankings(matchId: number, limit: number = 5): Observable<any> {
+    const url = `${this.apiUrl}/water-polo/team-rankings/`;
+    const params = new HttpParams()
+      .set('match_id', matchId.toString())
+      .set('limit', limit.toString());
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
+
+  // Get Water Polo Player Stats
+  getWaterPoloPlayerStats(matchId: number, category?: string): Observable<any> {
+    const url = `${this.apiUrl}/water-polo/player-stats/`;
+    let params = new HttpParams().set('match_id', matchId.toString());
+    if (category) {
+      params = params.set('category', category);
+    }
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
+
+  // Get Water Polo Live Scoring Data
+  getWaterPoloLiveScoring(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/player-stats/live_scoring/`;
+    const params = new HttpParams().set('match_id', matchId.toString());
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
+
+  // Get Water Polo Match Players
+  getWaterPoloMatchPlayers(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/players/`;
+    const params = new HttpParams().set('match_id', matchId.toString());
+    return this.http.get(url, { headers: this.getHeaders(), params });
+  }
 }

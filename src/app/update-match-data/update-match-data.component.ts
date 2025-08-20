@@ -338,6 +338,194 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   private realTimeData: ReturnType<GymnasticsIntegrationService['getRealTimeCompetitionData']> | null = null;
   private competitionResults: ReturnType<GymnasticsIntegrationService['getCompetitionResults']> | null = null;
 
+  // ============================================================================
+  // 🏊 COMPREHENSIVE WATER POLO PROPERTIES
+  // ============================================================================
+
+  // Water Polo clock management
+  waterPoloClock = {
+    isRunning: false,
+    isPaused: false,
+    timeRemainingInPeriod: '8:00',
+    displayTime: '8:00',
+    currentPeriod: 1,
+    periodType: 'quarter',
+    clockState: 'stopped',
+    totalElapsedTime: '00:00:00',
+    periodDuration: 480, // 8 minutes in seconds
+    totalPeriods: 4,
+    matchFormat: 'water_polo',
+    shotClockDuration: 30,
+    ejectionDuration: 20,
+    timeoutDuration: 60,
+    isInitialized: false, // Track if clock has been initialized
+    initializationInProgress: false // Prevent multiple initialization attempts
+  };
+
+  // Water Polo shot clock management
+  waterPoloShotClock = {
+    isRunning: false,
+    timeRemaining: 30,
+    displayTime: '30',
+    teamInPossession: null as number | null,
+    duration: 30,
+    reason: '',
+    violations: 0
+  };
+
+  // Water Polo game state
+  waterPoloGameState = {
+    status: 'upcoming', // upcoming, live, quarter_break, halftime, finished
+    score: {} as { [teamId: number]: number },
+    leadingTeam: null as number | null,
+    scoreMargin: 0,
+    lastScoreUpdate: null as Date | null,
+    playByPlay: [] as any[],
+    currentPossession: null as number | null,
+    isInitialized: false
+  };
+
+  // Water Polo timeout management
+  waterPoloTimeouts = {
+    isActive: false,
+    currentTeam: null as number | null,
+    duration: '00:01:00',
+    reason: '',
+    startTime: null as Date | null,
+    endTime: null as Date | null,
+    timeoutsUsed: {} as { [teamId: number]: number },
+    timeoutsRemaining: {} as { [teamId: number]: number }
+  };
+
+  // Water Polo timeout reasons
+  waterPoloTimeoutReasons = [
+    { value: 'strategy_meeting', label: 'Strategy Meeting' },
+    { value: 'injury_assessment', label: 'Injury Assessment' },
+    { value: 'technical_issue', label: 'Technical Issue' },
+    { value: 'equipment_check', label: 'Equipment Check' },
+    { value: 'referee_discussion', label: 'Referee Discussion' }
+  ];
+
+  // Water Polo player positions
+  waterPoloPositions = [
+    { value: 'goalkeeper', label: 'Goalkeeper (GK)' },
+    { value: 'center_forward', label: 'Center Forward (CF)' },
+    { value: 'center_back', label: 'Center Back (CB)' },
+    { value: 'wing', label: 'Wing' },
+    { value: 'utility', label: 'Utility' },
+    { value: 'defender', label: 'Defender' },
+    { value: 'driver', label: 'Driver' }
+  ];
+
+  // Water Polo shot outcomes
+  waterPoloShotOutcomes = [
+    { value: 'goal_scored', label: 'Goal Scored' },
+    { value: 'shot_saved', label: 'Shot Saved' },
+    { value: 'shot_missed', label: 'Shot Missed' },
+    { value: 'shot_blocked', label: 'Shot Blocked' },
+    { value: 'post_crossbar', label: 'Post/Crossbar' },
+    { value: 'turnover', label: 'Turnover' }
+  ];
+
+  // Water Polo ejection management
+  waterPoloEjections = {
+    activeEjections: [] as any[],
+    completedEjections: [] as any[],
+    ejectionDuration: 20,
+    exclusionTypes: [
+      { value: 'ordinary_foul', label: 'Ordinary Foul' },
+      { value: 'major_foul', label: 'Major Foul' },
+      { value: 'misconduct', label: 'Misconduct' },
+      { value: 'brutality', label: 'Brutality' }
+    ]
+  };
+
+  // Water Polo periods
+  waterPoloPeriods = [
+    { number: 1, name: '1st Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 2, name: '2nd Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 3, name: '3rd Quarter', completed: false, score: { home: 0, away: 0 } },
+    { number: 4, name: '4th Quarter', completed: false, score: { home: 0, away: 0 } }
+  ];
+
+  // Water Polo overtime management
+  waterPoloOvertime = {
+    periods: [] as any[],
+    currentOvertimePeriod: 0,
+    overtimeDuration: 180, // 3 minutes in seconds
+    hasShootout: false,
+    shootoutRounds: [] as any[]
+  };
+
+  // Water Polo substitution management
+  waterPoloSubstitutions = {
+    pendingSubstitutions: [] as any[],
+    completedSubstitutions: [] as any[],
+    reentryRestrictions: {} as any,
+    maxPlayersInWater: 7 // including goalkeeper
+  };
+
+  // Water Polo play-by-play
+  waterPoloPlayByPlay = {
+    plays: [] as any[],
+    currentPlay: null as any,
+    playTypes: [
+      'goal',
+      'shot_attempt',
+      'save',
+      'block',
+      'steal',
+      'turnover',
+      'ejection',
+      'timeout',
+      'substitution',
+      'quarter_end',
+      'shot_clock_violation',
+      'penalty_shot'
+    ]
+  };
+
+  // Water Polo advanced statistics
+  waterPoloAdvancedStats = {
+    possessions: 0,
+    shotEfficiency: 0,
+    goalConversionRate: 0,
+    manAdvantageEfficiency: 0,
+    penaltyKillEfficiency: 0,
+    swimmingDistance: {} as { [playerId: number]: number },
+    playerEfficiencyRating: {} as { [playerId: number]: number }
+  };
+
+  // Water Polo penalty shots
+  waterPoloPenaltyShots = {
+    awarded: [] as any[],
+    taken: [] as any[],
+    converted: [] as any[],
+    missed: [] as any[]
+  };
+
+  // Water Polo match statistics
+  waterPoloMatchStats = {
+    totalShots: {} as { [teamId: number]: number },
+    totalGoals: {} as { [teamId: number]: number },
+    totalSaves: {} as { [teamId: number]: number },
+    totalEjections: {} as { [teamId: number]: number },
+    totalTimeouts: {} as { [teamId: number]: number },
+    shotOnTargetPercentage: {} as { [teamId: number]: number },
+    goalConversionPercentage: {} as { [teamId: number]: number }
+  };
+
+  // Water Polo field zones for shot tracking
+  waterPoloFieldZones = [
+    { name: 'Goal Area', made: 0, attempted: 0 },
+    { name: '2m Line', made: 0, attempted: 0 },
+    { name: '5m Line', made: 0, attempted: 0 },
+    { name: 'Center Field', made: 0, attempted: 0 },
+    { name: 'Wing Position', made: 0, attempted: 0 },
+    { name: 'Penalty Shot', made: 0, attempted: 0 }
+  ];
+
+
   constructor(
     private fb: FormBuilder, 
     private route: ActivatedRoute, 
@@ -391,7 +579,6 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         this.buildDynamicForm();
         this.loadPlayersForAllTeams();
         
-          console.log(this.isGymnastics());
         // Check if this is a gymnastics match and load competition state
         if (this.isGymnastics()) {
           console.log('Loading gymnastics competition state...');
@@ -406,7 +593,16 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.loadBasketballClockStatus();
           this.initializeBasketballGameState();
         }
-        
+
+        // Check if this is a water polo match and initialize water polo features
+        if (this.isWaterPolo()) {
+          console.log('Loading water polo match features...');
+          console.log('Initial water polo clock state:', this.waterPoloClock);
+          this.getWaterPoloClockStatus();
+          this.initializeWaterPoloGameState();
+        }
+
+
         this.loading = false;
         
         if (showLoadingDialog) {
@@ -498,7 +694,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.dynamicFields.push({ key: 'group_name', label: 'Group Name', type: 'text' });
 
     // Football specific fields
-    if (this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals') {
+    if (this.sportConfig?.name === 'Football') {
       this.dynamicFields.push({ key: 'red_cards', label: 'Red Cards', type: 'number' });
       this.dynamicFields.push({ key: 'yellow_cards', label: 'Yellow Cards', type: 'number' });
       this.dynamicFields.push({ key: 'fouls', label: 'Fouls', type: 'number' });
@@ -534,13 +730,32 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
     // Water Polo specific fields
     if (this.sportConfig?.name === 'Waterpolo') {
-      this.dynamicFields.push({ key: 'total_goals', label: 'Total Goals', type: 'number' });
-      this.dynamicFields.push({ key: 'total_saves', label: 'Total Saves', type: 'number' });
-      this.dynamicFields.push({ key: 'total_exclusions', label: 'Total Exclusions', type: 'number' });
-      this.dynamicFields.push({ key: 'total_exclusion_time', label: 'Exclusion Time', type: 'number' });
-      this.dynamicFields.push({ key: 'major_fouls_committed', label: 'Major Fouls', type: 'number' });
-      this.dynamicFields.push({ key: 'minor_fouls_committed', label: 'Minor Fouls', type: 'number' });
-      this.dynamicFields.push({ key: 'quarters_played_water_polo', label: 'Quarters Played', type: 'number' });
+      // Basic scoring fields
+      this.dynamicFields.push({ key: 'goals_scored', label: 'Goals Scored', type: 'number' });
+      this.dynamicFields.push({ key: 'assists', label: 'Assists', type: 'number' });
+      this.dynamicFields.push({ key: 'shots_attempted', label: 'Shots Attempted', type: 'number' });
+      this.dynamicFields.push({ key: 'shots_on_target', label: 'Shots on Target', type: 'number' });
+      
+      // Defensive statistics
+      this.dynamicFields.push({ key: 'saves', label: 'Saves (Goalkeeper)', type: 'number' });
+      this.dynamicFields.push({ key: 'blocks', label: 'Blocks', type: 'number' });
+      this.dynamicFields.push({ key: 'steals', label: 'Steals', type: 'number' });
+      
+      // Disciplinary actions
+      this.dynamicFields.push({ key: 'ejections', label: 'Ejections', type: 'number' });
+      this.dynamicFields.push({ key: 'ejection_time', label: 'Ejection Time (seconds)', type: 'number' });
+      this.dynamicFields.push({ key: 'major_fouls', label: 'Major Fouls', type: 'number' });
+      this.dynamicFields.push({ key: 'minor_fouls', label: 'Minor Fouls', type: 'number' });
+      
+      // Additional statistics
+      this.dynamicFields.push({ key: 'turnovers', label: 'Turnovers', type: 'number' });
+      this.dynamicFields.push({ key: 'swimming_distance', label: 'Swimming Distance (meters)', type: 'number' });
+      this.dynamicFields.push({ key: 'playing_time', label: 'Playing Time (seconds)', type: 'number' });
+      this.dynamicFields.push({ key: 'field_position', label: 'Field Position', type: 'select', options: this.waterPoloPositions.map(p => p.value) });
+      this.dynamicFields.push({ key: 'efficiency_rating', label: 'Efficiency Rating (0-10)', type: 'number' });
+      this.dynamicFields.push({ key: 'defensive_plays', label: 'Defensive Plays', type: 'number' });
+      this.dynamicFields.push({ key: 'offensive_plays', label: 'Offensive Plays', type: 'number' });
+      this.dynamicFields.push({ key: 'quarters_played', label: 'Quarters Played', type: 'number' });
     }
 
     // Gymnastics specific fields
@@ -959,7 +1174,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns true if sport is football
    */
   isFootballMatch(): boolean {
-    return this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals';
+    return this.sportConfig?.name === 'Football';
   }
 
   /**
@@ -1193,14 +1408,21 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
     // Water Polo specific fields
     if (this.sportConfig?.name === 'Waterpolo') {
-      fields.push({ key: 'goals', label: 'Goals', type: 'number' });
-      fields.push({ key: 'saves', label: 'Saves', type: 'number' });
-      fields.push({ key: 'exclusions', label: 'Exclusions', type: 'number' });
-      fields.push({ key: 'penalty_goals', label: 'Penalty Goals', type: 'number' });
-      fields.push({ key: 'power_play_goals', label: 'Power Play Goals', type: 'number' });
+      fields.push({ key: 'goals_scored', label: 'Goals Scored', type: 'number' });
+      fields.push({ key: 'assists', label: 'Assists', type: 'number' });
       fields.push({ key: 'shots_attempted', label: 'Shots Attempted', type: 'number' });
       fields.push({ key: 'shots_on_target', label: 'Shots on Target', type: 'number' });
-      fields.push({ key: 'exclusion_time', label: 'Exclusion Time', type: 'number' });
+      fields.push({ key: 'saves', label: 'Saves', type: 'number' });
+      fields.push({ key: 'blocks', label: 'Blocks', type: 'number' });
+      fields.push({ key: 'steals', label: 'Steals', type: 'number' });
+      fields.push({ key: 'ejections', label: 'Ejections', type: 'number' });
+      fields.push({ key: 'ejection_time', label: 'Ejection Time', type: 'number' });
+      fields.push({ key: 'turnovers', label: 'Turnovers', type: 'number' });
+      fields.push({ key: 'swimming_distance', label: 'Swimming Distance', type: 'number' });
+      fields.push({ key: 'playing_time', label: 'Playing Time', type: 'number' });
+      fields.push({ key: 'efficiency_rating', label: 'Efficiency Rating', type: 'number' });
+      fields.push({ key: 'defensive_plays', label: 'Defensive Plays', type: 'number' });
+      fields.push({ key: 'offensive_plays', label: 'Offensive Plays', type: 'number' });
       fields.push({ key: 'major_fouls', label: 'Major Fouls', type: 'number' });
       fields.push({ key: 'minor_fouls', label: 'Minor Fouls', type: 'number' });
     }
@@ -2772,6 +2994,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     if (this.basketballClockPollingInterval) {
       clearInterval(this.basketballClockPollingInterval);
     }
+    // Clean up water polo clock polling
+    this.stopWaterPoloClockPolling();
+    // Clean up water polo timer
+    this.stopWaterPoloTimer();
     // Clean up countdown timer
     this.stopCountdownTimer();
   }
@@ -2784,6 +3010,247 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     const remainingSeconds = seconds % 60;
     
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Parse time string "MM:SS" to seconds
+  private parseTimeString(timeString: string | number): number {
+    console.log('Parsing time string:', timeString, 'Type:', typeof timeString);
+    
+    // Handle if it's already a number
+    if (typeof timeString === 'number') {
+      console.log('Time is already a number:', timeString);
+      return timeString;
+    }
+    
+    if (!timeString || typeof timeString !== 'string') {
+      console.log('Invalid time string, returning 0');
+      return 0;
+    }
+    
+    const parts = timeString.split(':');
+    
+    if (parts.length === 2) {
+      const minutes = parseInt(parts[0]) || 0;
+      const seconds = parseInt(parts[1]) || 0;
+      return (minutes * 60) + seconds;
+    } else if (parts.length === 3) {
+      // Handle "HH:MM:SS" format
+      const hours = parseInt(parts[0]) || 0;
+      const minutes = parseInt(parts[1]) || 0;
+      const seconds = parseInt(parts[2]) || 0;
+      return (hours * 3600) + (minutes * 60) + seconds;
+    }
+    
+    // Try to parse as a direct number string
+    const directNumber = parseInt(timeString);
+    if (!isNaN(directNumber)) {
+      return directNumber;
+    }
+    
+    return 0;
+  }
+
+  // ============================================================================
+  // 🏊‍♂️ REBUILT WATER POLO TIMER SYSTEM
+  // ============================================================================
+
+  // Water Polo Timer Properties
+  private waterPoloTimer: any = null;
+  private waterPoloCurrentSeconds: number = 480; // 8 minutes default
+  private waterPoloTimerRunning: boolean = false;
+  private waterPoloShotClockTimer: any = null;
+  private waterPoloShotClockSeconds: number = 30;
+
+  // Initialize Water Polo Timer
+  initializeWaterPoloTimer(): void {
+    console.log('🏊‍♂️ Initializing Water Polo Timer');
+    this.stopWaterPoloTimer();
+    
+    // Set initial time (8 minutes = 480 seconds)
+    this.waterPoloCurrentSeconds = 480;
+    this.waterPoloTimerRunning = false;
+    
+    // Update display
+    this.updateWaterPoloTimerDisplay();
+    
+    console.log('Water Polo Timer initialized with', this.waterPoloCurrentSeconds, 'seconds');
+  }
+
+  // Start Water Polo Timer
+  startWaterPoloTimer(): void {
+    console.log('🏊‍♂️ Starting Water Polo Timer');
+    
+    if (this.waterPoloTimerRunning) {
+      console.log('Timer already running');
+      return;
+    }
+
+    this.waterPoloTimerRunning = true;
+    this.waterPoloClock.isRunning = true;
+    this.waterPoloClock.clockState = 'running';
+    this.waterPoloClock.isPaused = false;
+
+    this.waterPoloTimer = setInterval(() => {
+      if (this.waterPoloCurrentSeconds > 0) {
+        this.waterPoloCurrentSeconds--;
+        this.updateWaterPoloTimerDisplay();
+        
+        // Update shot clock if running
+        if (this.waterPoloShotClock.isRunning && this.waterPoloShotClockSeconds > 0) {
+          this.waterPoloShotClockSeconds--;
+          this.waterPoloShotClock.timeRemaining = this.waterPoloShotClockSeconds;
+          this.waterPoloShotClock.displayTime = this.waterPoloShotClockSeconds.toString();
+          
+          if (this.waterPoloShotClockSeconds <= 0) {
+            this.stopWaterPoloShotClock();
+            this.showShotClockViolation();
+          }
+        }
+        
+        console.log('⏰ Timer tick:', this.formatTime(this.waterPoloCurrentSeconds));
+      } else {
+        this.stopWaterPoloTimer();
+        this.showPeriodEnd();
+      }
+    }, 1000);
+
+    console.log('Water Polo Timer started successfully');
+  }
+
+  // Stop Water Polo Timer
+  stopWaterPoloTimer(): void {
+    console.log('🏊‍♂️ Stopping Water Polo Timer');
+    
+    if (this.waterPoloTimer) {
+      clearInterval(this.waterPoloTimer);
+      this.waterPoloTimer = null;
+    }
+    
+    this.waterPoloTimerRunning = false;
+    this.waterPoloClock.isRunning = false;
+    this.waterPoloClock.clockState = 'stopped';
+    
+    console.log('Water Polo Timer stopped');
+  }
+
+  // Pause Water Polo Timer
+  pauseWaterPoloTimer(): void {
+    console.log('🏊‍♂️ Pausing Water Polo Timer');
+    
+    if (this.waterPoloTimer) {
+      clearInterval(this.waterPoloTimer);
+      this.waterPoloTimer = null;
+    }
+    
+    this.waterPoloTimerRunning = false;
+    this.waterPoloClock.isRunning = false;
+    this.waterPoloClock.isPaused = true;
+    this.waterPoloClock.clockState = 'paused';
+    
+    console.log('Water Polo Timer paused');
+  }
+
+  // Resume Water Polo Timer
+  resumeWaterPoloTimer(): void {
+    console.log('🏊‍♂️ Resuming Water Polo Timer');
+    
+    this.waterPoloClock.isPaused = false;
+    this.startWaterPoloTimer();
+  }
+
+  // Update Timer Display
+  private updateWaterPoloTimerDisplay(): void {
+    const timeString = this.formatTime(this.waterPoloCurrentSeconds);
+    this.waterPoloClock.displayTime = timeString;
+    this.waterPoloClock.timeRemainingInPeriod = timeString;
+    
+    // Force change detection
+    setTimeout(() => {
+      // Trigger change detection if needed
+    }, 0);
+  }
+
+  // Start Shot Clock
+  startWaterPoloShotClock(teamId?: number): void {
+    console.log('🎯 Starting Water Polo Shot Clock for team:', teamId);
+    
+    this.waterPoloShotClockSeconds = this.waterPoloClock.shotClockDuration || 30;
+    this.waterPoloShotClock.isRunning = true;
+    this.waterPoloShotClock.timeRemaining = this.waterPoloShotClockSeconds;
+    this.waterPoloShotClock.displayTime = this.waterPoloShotClockSeconds.toString();
+    this.waterPoloShotClock.teamInPossession = teamId || null;
+  }
+
+  // Stop Shot Clock
+  stopWaterPoloShotClock(team?: number, action?: string): void {
+    this.waterPoloShotClock.isRunning = false;
+    this.waterPoloShotClock.timeRemaining = 0;
+    this.waterPoloShotClock.teamInPossession = null;
+    
+    // If action is provided, we could log it or handle specific actions
+    if (action && team) {
+      console.log(`Shot clock stopped: Team ${team} - ${action}`);
+      // You could add specific logic here based on the action
+      // For example, updating stats for goals, saves, etc.
+    }
+  }
+
+  // Reset Shot Clock
+  resetWaterPoloShotClock(): void {
+    this.waterPoloShotClockSeconds = this.waterPoloClock.shotClockDuration || 30;
+    this.waterPoloShotClock.timeRemaining = this.waterPoloShotClockSeconds;
+    this.waterPoloShotClock.displayTime = this.waterPoloShotClockSeconds.toString();
+  }
+
+  // Show Shot Clock Violation
+  private showShotClockViolation(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Shot Clock Violation!',
+      text: 'Shot clock has expired',
+      timer: 3000,
+      timerProgressBar: true,
+      confirmButtonColor: '#ffc107'
+    });
+  }
+
+  // Show Period End
+  private showPeriodEnd(): void {
+    Swal.fire({
+      icon: 'info',
+      title: 'End of Period!',
+      text: `Period ${this.waterPoloClock.currentPeriod} has ended`,
+      confirmButtonColor: '#0ea5e9'
+    });
+  }
+
+  // Set Timer (for manual adjustment)
+  setWaterPoloTimer(minutes: number, seconds: number): void {
+    this.waterPoloCurrentSeconds = (minutes * 60) + seconds;
+    this.updateWaterPoloTimerDisplay();
+    console.log('Timer set to:', this.formatTime(this.waterPoloCurrentSeconds));
+  }
+
+  // Get Current Timer Status
+  getWaterPoloTimerStatus(): any {
+    return {
+      isRunning: this.waterPoloTimerRunning,
+      currentSeconds: this.waterPoloCurrentSeconds,
+      displayTime: this.formatTime(this.waterPoloCurrentSeconds),
+      isPaused: this.waterPoloClock.isPaused,
+      period: this.waterPoloClock.currentPeriod
+    };
+  }
+
+  // Manual trigger for water polo countdown (for testing/debugging)
+  triggerWaterPoloCountdown(): void {
+    console.log('🚀 Manually triggering water polo countdown');
+    if (!this.waterPoloTimerRunning) {
+      this.initializeWaterPoloTimer();
+      this.startWaterPoloTimer();
+    } else {
+      console.log('Timer already running');
+    }
   }
 
   // Get current clock display time
@@ -3376,6 +3843,18 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
            this.match?.sport?.toLowerCase().includes('basketball') ||
            this.sportConfig?.name?.toLowerCase() === 'basketball' ||
            this.match?.league_obj?.sport === 2 || // Assuming basketball sport ID is 2
+           false;
+  }
+
+  // Utility method to check if current match is water polo
+  isWaterPolo(): boolean {
+    console.log('Checking if match is water polo...');
+    console.log(this.match);
+    return this.match?.sport?.name?.toLowerCase().includes('waterpolo') || 
+           this.match?.sport?.name?.toLowerCase().includes('water polo') ||
+           this.match?.sport?.toLowerCase().includes('waterpolo') ||
+           this.sportConfig?.name?.toLowerCase() === 'waterpolo' ||
+           this.match?.league_obj?.sport === 3 || // Assuming water polo sport ID is 3
            false;
   }
 
@@ -4252,6 +4731,29 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.updateBasketballTeamScores();
   }
 
+  // Initialize Water Polo Game State
+  initializeWaterPoloGameState(): void {
+    // Initialize team scores and stats
+    this.teams.forEach(team => {
+      const teamId = team.team?.id;
+      if (teamId) {
+        this.waterPoloGameState.score[teamId] = this.getTeamWaterPoloGoals(teamId);
+        this.waterPoloTimeouts.timeoutsRemaining[teamId] = 3; // Each team starts with 3 timeouts
+        this.waterPoloTimeouts.timeoutsUsed[teamId] = 0;
+        
+        // Initialize team stats
+        this.waterPoloMatchStats.totalGoals[teamId] = 0;
+        this.waterPoloMatchStats.totalShots[teamId] = 0;
+        this.waterPoloMatchStats.totalSaves[teamId] = 0;
+        this.waterPoloMatchStats.totalEjections[teamId] = 0;
+        this.waterPoloMatchStats.totalTimeouts[teamId] = 0;
+      }
+    });
+
+    // Update leading team
+    this.updateWaterPoloGameLeader();
+  }
+
   // Update Basketball Player Score
   updateBasketballPlayerScore(playerId: number, teamId: number, scoreData: any): void {
     const playerStatsData = {
@@ -4397,6 +4899,20 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ============================================================================
+  // 🏊 WATER POLO CLOCK STATUS METHODS
+  // ============================================================================
+
+  // Check if Water Polo clock is initialized
+  checkWaterPoloClockInitialized(): boolean {
+    return this.waterPoloClock.isInitialized;
+  }
+
+  // Check if Water Polo clock initialization is in progress
+  isWaterPoloInitializationInProgress(): boolean {
+    return this.waterPoloClock.initializationInProgress;
+  }
+
   // Get Basketball Clock Status (for checking if initialized)
   checkBasketballClockInitialized(): boolean {
     // Clock is considered initialized if we have valid clock data from the API
@@ -4447,4 +4963,821 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   private lastServerSync: Date = new Date();
   private localTimeRemaining: number = 0; // Time remaining in seconds for countdown
   private isCountdownInitialized: boolean = false; // Track if countdown has been properly set up
+
+  // ============================================================================
+  // 🏊 WATER POLO MANAGEMENT METHODS
+  // ============================================================================
+
+  // Initialize Water Polo Match Clock
+  initializeWaterPoloClock(): void {
+    if (!this.match?.id) {
+      console.error('Match ID is required to initialize water polo clock');
+      Swal.fire({
+        icon: 'error',
+        title: 'Initialization Failed',
+        text: 'Match ID is required to initialize water polo clock',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    // Prevent multiple initialization attempts
+    if (this.waterPoloClock.isInitialized) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Already Initialized',
+        text: 'Water polo clock has already been initialized for this match',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    if (this.waterPoloClock.initializationInProgress) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Initialization in Progress',
+        text: 'Clock initialization is already in progress. Please wait...',
+        confirmButtonColor: '#0ea5e9'
+      });
+      return;
+    }
+
+    // Set initialization in progress
+    this.waterPoloClock.initializationInProgress = true;
+
+    const clockData = {
+      match_format: 'water_polo',
+      total_periods: 4,
+      period_duration: 480, // 8 minutes in seconds
+      shot_clock_duration: 30,
+      ejection_duration: 20,
+      timeout_duration: 60
+    };
+
+    this.apiService.initializeWaterPoloClock(this.match.id, clockData).subscribe({
+      next: (response) => {
+        console.log('Water Polo clock initialized:', response);
+        this.waterPoloClock.isInitialized = true;
+        this.waterPoloClock.initializationInProgress = false;
+        this.waterPoloGameState.isInitialized = true;
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Clock Initialized!',
+          text: 'Water polo match clock has been successfully initialized',
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#0ea5e9'
+        });
+        
+        // Get initial clock status after initialization
+        this.getWaterPoloClockStatus();
+      },
+      error: (error) => {
+        console.error('Error initializing water polo clock:', error);
+        this.waterPoloClock.initializationInProgress = false;
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Initialization Failed',
+          text: error.error?.error || 'Failed to initialize water polo clock',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Start Water Polo Match
+  startWaterPoloMatch(): void {
+    if (!this.match?.id) {
+      console.error('Match ID is required to start water polo match');
+      Swal.fire({
+        icon: 'error',
+        title: 'Start Failed',
+        text: 'Match ID is required to start water polo match',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    // Check if clock is initialized before starting
+    if (!this.waterPoloClock.isInitialized) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Clock Not Initialized',
+        text: 'Please initialize the water polo clock before starting the match',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const startData = {
+      period: this.waterPoloClock.currentPeriod
+    };
+
+    this.apiService.startWaterPoloMatch(this.match.id, startData).subscribe({
+      next: (response) => {
+        console.log('Water Polo match started:', response);
+        this.waterPoloGameState.status = 'live';
+        
+        // Initialize and start the new timer system
+        this.initializeWaterPoloTimer();
+        this.startWaterPoloTimer();
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Match Started!',
+          text: 'Water polo match has been started successfully',
+          timer: 2000,
+          timerProgressBar: true,
+          confirmButtonColor: '#0ea5e9'
+        });
+      },
+      error: (error) => {
+        console.error('Error starting water polo match:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Start Failed',
+          text: error.error?.error || 'Failed to start water polo match',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Stop Water Polo Match
+  stopWaterPoloMatch(reason: string = 'match_completed'): void {
+    if (!this.match?.id) {
+      console.error('Match ID is required to stop water polo match');
+      Swal.fire({
+        icon: 'error',
+        title: 'Stop Failed',
+        text: 'Match ID is required to stop water polo match',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    // Check if clock is initialized before stopping
+    if (!this.waterPoloClock.isInitialized) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Clock Not Initialized',
+        text: 'Cannot stop a match that hasn\'t been initialized',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    const stopData = { reason };
+
+    this.apiService.stopWaterPoloMatch(this.match.id, stopData).subscribe({
+      next: (response) => {
+        console.log('Water Polo match stopped:', response);
+        this.waterPoloClock.isRunning = false;
+        this.waterPoloClock.clockState = 'stopped';
+        this.waterPoloGameState.status = 'finished';
+        this.stopWaterPoloClockPolling();
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Match Stopped',
+          text: 'Water polo match has been stopped successfully',
+          confirmButtonColor: '#0ea5e9'
+        });
+      },
+      error: (error) => {
+        console.error('Error stopping water polo match:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Stop Failed',
+          text: error.error?.error || 'Failed to stop water polo match',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Pause Water Polo Match
+  pauseWaterPoloMatch(reason: string = 'period_break'): void {
+    if (!this.match?.id) return;
+
+    const pauseData = { reason };
+
+    this.apiService.pauseWaterPoloMatch(this.match.id, pauseData).subscribe({
+      next: (response) => {
+        console.log('Water Polo match paused:', response);
+        this.waterPoloClock.isPaused = true;
+        this.waterPoloClock.clockState = 'paused';
+        this.showSuccessMessage('Water Polo match paused successfully');
+      },
+      error: (error) => {
+        console.error('Error pausing water polo match:', error);
+        this.showErrorMessage('Failed to pause water polo match');
+      }
+    });
+  }
+
+  // Resume Water Polo Match
+  resumeWaterPoloMatch(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.resumeWaterPoloMatch(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo match resumed:', response);
+        this.waterPoloClock.isPaused = false;
+        this.waterPoloClock.clockState = 'running';
+        this.showSuccessMessage('Water Polo match resumed successfully');
+      },
+      error: (error) => {
+        console.error('Error resuming water polo match:', error);
+        this.showErrorMessage('Failed to resume water polo match');
+      }
+    });
+  }
+
+  // Advance Water Polo Period
+  advanceWaterPoloPeriod(): void {
+    if (!this.match?.id || this.waterPoloClock.currentPeriod >= 4) return;
+
+    const nextPeriod = this.waterPoloClock.currentPeriod + 1;
+    const advanceData = { next_period: nextPeriod };
+
+    this.apiService.advanceWaterPoloPeriod(this.match.id, advanceData).subscribe({
+      next: (response) => {
+        console.log('Water Polo period advanced:', response);
+        this.waterPoloClock.currentPeriod = nextPeriod;
+        this.waterPoloClock.timeRemainingInPeriod = '8:00';
+        this.waterPoloClock.displayTime = '8:00';
+        
+        // Mark previous period as completed
+        if (this.waterPoloPeriods[nextPeriod - 2]) {
+          this.waterPoloPeriods[nextPeriod - 2].completed = true;
+        }
+        
+        this.showSuccessMessage(`Advanced to ${this.getWaterPoloPeriodName(nextPeriod)}`);
+      },
+      error: (error) => {
+        console.error('Error advancing water polo period:', error);
+        this.showErrorMessage('Failed to advance period');
+      }
+    });
+  }
+
+  // Call Timeout
+  callWaterPoloTimeout(teamId: number, duration: string = '00:01:00', reason: string = 'strategy_meeting'): void {
+    if (!this.match?.id) return;
+
+    const timeoutData = {
+      team_id: teamId,
+      duration: duration,
+      reason: reason
+    };
+
+    this.apiService.callWaterPoloTimeout(this.match.id, timeoutData).subscribe({
+      next: (response) => {
+        console.log('Water Polo timeout called:', response);
+        this.waterPoloTimeouts.isActive = true;
+        this.waterPoloTimeouts.currentTeam = teamId;
+        this.waterPoloTimeouts.duration = duration;
+        this.waterPoloTimeouts.reason = reason;
+        this.waterPoloTimeouts.startTime = new Date();
+        
+        // Increment timeouts used
+        if (!this.waterPoloTimeouts.timeoutsUsed[teamId]) {
+          this.waterPoloTimeouts.timeoutsUsed[teamId] = 0;
+        }
+        this.waterPoloTimeouts.timeoutsUsed[teamId]++;
+        
+        this.showSuccessMessage(`Timeout called for Team ${teamId}: ${reason.replace('_', ' ')}`);
+      },
+      error: (error) => {
+        console.error('Error calling water polo timeout:', error);
+        this.showErrorMessage('Failed to call timeout');
+      }
+    });
+  }
+
+  // End Timeout
+  endWaterPoloTimeout(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.endWaterPoloTimeout(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo timeout ended:', response);
+        this.waterPoloTimeouts.isActive = false;
+        this.waterPoloTimeouts.endTime = new Date();
+        this.showSuccessMessage('Timeout ended successfully');
+      },
+      error: (error) => {
+        console.error('Error ending water polo timeout:', error);
+        this.showErrorMessage('Failed to end timeout');
+      }
+    });
+  }
+
+  // Update Water Polo Player Stats
+  updateWaterPoloPlayerStats(playerId: number, teamId: number, statsData: any): void {
+    if (!this.match?.id) return;
+
+    const playerStatsData = {
+      match: this.match.id,
+      team: teamId,
+      player: playerId,
+      ...statsData
+    };
+
+    this.apiService.updateWaterPoloPlayerStats(playerStatsData).subscribe({
+      next: (response) => {
+        console.log('Water Polo player stats updated:', response);
+        
+        // Update local player data
+        this.updateLocalWaterPoloPlayerStats(playerId, teamId, statsData);
+        
+        // Update team stats
+        this.updateWaterPoloTeamStats(teamId);
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Stats Updated!',
+          text: `Player stats updated successfully`,
+          timer: 1500,
+          timerProgressBar: true,
+          confirmButtonColor: '#0ea5e9'
+        });
+      },
+      error: (error) => {
+        console.error('Error updating water polo player stats:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Update Failed',
+          text: error.error?.error || 'Failed to update player stats',
+          confirmButtonColor: '#dc3545'
+        });
+      }
+    });
+  }
+
+  // Get Water Polo Clock Status
+  getWaterPoloClockStatus(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.getWaterPoloClockStatus(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo clock status:', response);
+        this.waterPoloClock.isInitialized = true; // Clock exists, so it's initialized
+        this.updateWaterPoloClockDisplay(response);
+      },
+      error: (error) => {
+        console.error('Error getting water polo clock status:', error);
+        
+        // Handle 404 "Clock not initialized" error specifically
+        if (error.status === 404 && error.error?.error === 'Clock not initialized') {
+          console.log('Water polo clock not yet initialized for this match');
+          this.waterPoloClock.isInitialized = false;
+          this.waterPoloGameState.isInitialized = false;
+          
+          // Reset clock to default state
+          this.waterPoloClock.isRunning = false;
+          this.waterPoloClock.isPaused = false;
+          this.waterPoloClock.timeRemainingInPeriod = '8:00';
+          this.waterPoloClock.displayTime = '8:00';
+          this.waterPoloClock.currentPeriod = 1;
+          this.waterPoloClock.clockState = 'stopped';
+          
+          // Show info message only if user is actively trying to access clock features
+          if (this.isWaterPolo()) {
+            console.info('Clock initialization required for water polo match');
+          }
+        } else {
+          // Handle other types of errors
+          Swal.fire({
+            icon: 'error',
+            title: 'Clock Status Error',
+            text: error.error?.error || 'Failed to get water polo clock status',
+            confirmButtonColor: '#dc3545'
+          });
+        }
+      }
+    });
+  }
+
+  // Get Water Polo Rankings
+  getWaterPoloRankings(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.getWaterPoloRankings(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo rankings:', response);
+        // Handle rankings data
+      },
+      error: (error) => {
+        console.error('Error getting water polo rankings:', error);
+      }
+    });
+  }
+
+  // Get Water Polo Final Scores
+  getWaterPoloFinalScores(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.getWaterPoloFinalScores(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo final scores:', response);
+        // Handle final scores data
+      },
+      error: (error) => {
+        console.error('Error getting water polo final scores:', error);
+      }
+    });
+  }
+
+  // Get Water Polo Player Statistics
+  getWaterPoloPlayerStats(): void {
+    if (!this.match?.id) return;
+
+    this.apiService.getWaterPoloPlayerStats(this.match.id).subscribe({
+      next: (response) => {
+        console.log('Water Polo player stats:', response);
+        // Handle player stats data
+      },
+      error: (error) => {
+        console.error('Error getting water polo player stats:', error);
+      }
+    });
+  }
+
+  // Update local Water Polo player stats
+  private updateLocalWaterPoloPlayerStats(playerId: number, teamId: number, statsData: any): void {
+    if (this.playersData[teamId]) {
+      const player = this.playersData[teamId].find(p => p.id === playerId);
+      if (player) {
+        Object.assign(player, statsData);
+        this.updateWaterPoloTeamStats(teamId);
+      }
+    }
+  }
+
+  // Update Water Polo team statistics
+  private updateWaterPoloTeamStats(teamId: number): void {
+    if (!this.playersData[teamId]) return;
+
+    const players = this.playersData[teamId];
+    
+    // Calculate team totals
+    this.waterPoloMatchStats.totalGoals[teamId] = players.reduce((sum, player) => sum + (player.goals_scored || 0), 0);
+    this.waterPoloMatchStats.totalShots[teamId] = players.reduce((sum, player) => sum + (player.shots_attempted || 0), 0);
+    this.waterPoloMatchStats.totalSaves[teamId] = players.reduce((sum, player) => sum + (player.saves || 0), 0);
+    this.waterPoloMatchStats.totalEjections[teamId] = players.reduce((sum, player) => sum + (player.ejections || 0), 0);
+
+    // Calculate percentages
+    const shots = this.waterPoloMatchStats.totalShots[teamId];
+    const goals = this.waterPoloMatchStats.totalGoals[teamId];
+    
+    if (shots > 0) {
+      this.waterPoloMatchStats.goalConversionPercentage[teamId] = (goals / shots) * 100;
+    }
+
+    // Update game state
+    this.waterPoloGameState.score[teamId] = goals;
+    this.updateWaterPoloGameLeader();
+  }
+
+  // Update Water Polo game leader
+  private updateWaterPoloGameLeader(): void {
+    const teams = Object.keys(this.waterPoloGameState.score);
+    if (teams.length < 2) return;
+
+    const team1Id = parseInt(teams[0]);
+    const team2Id = parseInt(teams[1]);
+    const score1 = this.waterPoloGameState.score[team1Id] || 0;
+    const score2 = this.waterPoloGameState.score[team2Id] || 0;
+
+    if (score1 > score2) {
+      this.waterPoloGameState.leadingTeam = team1Id;
+      this.waterPoloGameState.scoreMargin = score1 - score2;
+    } else if (score2 > score1) {
+      this.waterPoloGameState.leadingTeam = team2Id;
+      this.waterPoloGameState.scoreMargin = score2 - score1;
+    } else {
+      this.waterPoloGameState.leadingTeam = null;
+      this.waterPoloGameState.scoreMargin = 0;
+    }
+  }
+
+  // Update Water Polo clock display
+  private updateWaterPoloClockDisplay(clockData: any): void {
+    if (clockData) {
+      console.log('🏊‍♂️ Updating Water Polo clock display from server:', clockData);
+      
+      // Update basic clock state
+      this.waterPoloClock.currentPeriod = clockData.current_period || 1;
+      this.waterPoloClock.clockState = clockData.clock_state || 'stopped';
+      
+      // Handle time_remaining_in_period
+      if (clockData.time_remaining_in_period !== undefined && clockData.time_remaining_in_period !== null) {
+        let serverTime: string;
+        
+        if (typeof clockData.time_remaining_in_period === 'string') {
+          serverTime = clockData.time_remaining_in_period;
+        } else if (typeof clockData.time_remaining_in_period === 'number') {
+          serverTime = this.formatTime(clockData.time_remaining_in_period);
+        } else {
+          serverTime = '8:00';
+        }
+        
+        // Sync server time with local timer if not running
+        if (!this.waterPoloTimerRunning) {
+          const serverSeconds = this.parseTimeString(serverTime);
+          this.waterPoloCurrentSeconds = serverSeconds;
+          this.updateWaterPoloTimerDisplay();
+          console.log('Synced server time:', serverTime, 'to local timer');
+        }
+      }
+
+      // Update shot clock data
+      if (clockData.shot_clock_remaining !== undefined && clockData.shot_clock_remaining !== null) {
+        this.waterPoloShotClock.timeRemaining = clockData.shot_clock_remaining;
+        this.waterPoloShotClock.isRunning = clockData.shot_clock_remaining > 0;
+        this.waterPoloShotClockSeconds = clockData.shot_clock_remaining;
+      }
+
+      // Handle shot clock duration
+      if (clockData.shot_clock_duration) {
+        if (typeof clockData.shot_clock_duration === 'string') {
+          const timeParts = clockData.shot_clock_duration.split(':');
+          const totalSeconds = parseInt(timeParts[2]) + (parseInt(timeParts[1]) * 60) + (parseInt(timeParts[0]) * 3600);
+          this.waterPoloClock.shotClockDuration = totalSeconds;
+        } else {
+          this.waterPoloClock.shotClockDuration = clockData.shot_clock_duration;
+        }
+      }
+
+      // Update timeouts remaining
+      if (clockData.timeouts_remaining) {
+        this.waterPoloTimeouts.timeoutsRemaining = { ...clockData.timeouts_remaining };
+      }
+
+      // Update timeout state
+      if (clockData.current_timeout_team) {
+        this.waterPoloTimeouts.isActive = true;
+        this.waterPoloTimeouts.currentTeam = clockData.current_timeout_team;
+      } else {
+        this.waterPoloTimeouts.isActive = false;
+        this.waterPoloTimeouts.currentTeam = null;
+      }
+
+      // Handle period information
+      if (clockData.total_periods) {
+        this.waterPoloClock.totalPeriods = clockData.total_periods;
+      }
+
+      // Update period duration
+      if (clockData.period_duration) {
+        if (typeof clockData.period_duration === 'string') {
+          const timeParts = clockData.period_duration.split(':');
+          const totalSeconds = parseInt(timeParts[2]) + (parseInt(timeParts[1]) * 60) + (parseInt(timeParts[0]) * 3600);
+          this.waterPoloClock.periodDuration = totalSeconds;
+        } else {
+          this.waterPoloClock.periodDuration = clockData.period_duration;
+        }
+      }
+
+      console.log('Water Polo Clock Updated:', {
+        isRunning: this.waterPoloTimerRunning,
+        currentPeriod: this.waterPoloClock.currentPeriod,
+        displayTime: this.waterPoloClock.displayTime,
+        clockState: this.waterPoloClock.clockState,
+        shotClockRemaining: this.waterPoloShotClock.timeRemaining,
+        timeoutsRemaining: this.waterPoloTimeouts.timeoutsRemaining
+      });
+    }
+  }
+
+  // Start Water Polo clock polling
+  private startWaterPoloClockPolling(): void {
+    this.stopWaterPoloClockPolling(); // Clear any existing interval
+    
+    // Poll server every 10 seconds for water polo (less frequent since we have local countdown)
+    this.waterPoloClockPollingInterval = setInterval(() => {
+      this.getWaterPoloClockStatus();
+    }, 10000); // 10 seconds instead of 1 second
+  }
+
+  // Stop Water Polo clock polling
+  private stopWaterPoloClockPolling(): void {
+    if (this.waterPoloClockPollingInterval) {
+      clearInterval(this.waterPoloClockPollingInterval);
+      this.waterPoloClockPollingInterval = null;
+    }
+  }
+
+  // Get Water Polo period name
+  getWaterPoloPeriodName(period: number): string {
+    const periodNames = ['1st Quarter', '2nd Quarter', '3rd Quarter', '4th Quarter'];
+    return periodNames[period - 1] || `Period ${period}`;
+  }
+
+  // Format Water Polo time display
+  private formatWaterPoloTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  // Get team Water Polo stats
+  getTeamWaterPoloGoals(teamId: number): number {
+    return this.waterPoloMatchStats.totalGoals[teamId] || 0;
+  }
+
+  getTeamWaterPoloShots(teamId: number): number {
+    return this.waterPoloMatchStats.totalShots[teamId] || 0;
+  }
+
+  getTeamWaterPoloSaves(teamId: number): number {
+    return this.waterPoloMatchStats.totalSaves[teamId] || 0;
+  }
+
+  getTeamWaterPoloEjections(teamId: number): number {
+    return this.waterPoloMatchStats.totalEjections[teamId] || 0;
+  }
+
+  getTeamWaterPoloTimeouts(teamId: number): number {
+    return this.waterPoloTimeouts.timeoutsUsed[teamId] || 0;
+  }
+
+  // Water Polo Clock Polling Interval
+  private waterPoloClockPollingInterval: any;
+
+  // ============================================================================
+  // 🏊‍♂️ WATER POLO PLAYER STATE UPDATES (Basketball-style)
+  // ============================================================================
+
+  // Quick Goal Button
+  addWaterPoloGoal(playerId: number, teamId: number): void {
+    const statsData = {
+      goals_scored: 1,
+      shots_attempted: 1,
+      points: 1,
+      plus_minus: 1
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Shot Button (without goal)
+  addWaterPoloShot(playerId: number, teamId: number): void {
+    const statsData = {
+      shots_attempted: 1,
+      plus_minus: 0
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Assist Button
+  addWaterPoloAssist(playerId: number, teamId: number): void {
+    const statsData = {
+      assists: 1,
+      plus_minus: 0.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Save Button (for goalkeepers)
+  addWaterPoloSave(playerId: number, teamId: number): void {
+    const statsData = {
+      saves: 1,
+      plus_minus: 1
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Steal Button
+  addWaterPoloSteal(playerId: number, teamId: number): void {
+    const statsData = {
+      steals: 1,
+      plus_minus: 0.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Turnover Button
+  addWaterPoloTurnover(playerId: number, teamId: number): void {
+    const statsData = {
+      turnovers: 1,
+      plus_minus: -0.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Ejection Button
+  addWaterPoloEjection(playerId: number, teamId: number, ejectionType: 'ordinary' | 'major' | 'misconduct' = 'ordinary'): void {
+    const ejectionPenalty = ejectionType === 'major' ? -2 : ejectionType === 'misconduct' ? -3 : -1;
+    const statsData = {
+      ejections: 1,
+      [ejectionType + '_ejections']: 1,
+      plus_minus: ejectionPenalty
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Block Button
+  addWaterPoloBlock(playerId: number, teamId: number): void {
+    const statsData = {
+      blocks: 1,
+      plus_minus: 0.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Sprint Win Button
+  addWaterPoloSprintWin(playerId: number, teamId: number): void {
+    const statsData = {
+      sprints_won: 1,
+      plus_minus: 0.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Penalty Shot Button
+  addWaterPoloPenaltyShot(playerId: number, teamId: number, scored: boolean): void {
+    const statsData = {
+      penalty_shots_attempted: 1,
+      penalty_shots_scored: scored ? 1 : 0,
+      goals_scored: scored ? 1 : 0,
+      points: scored ? 1 : 0,
+      plus_minus: scored ? 2 : -1
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Man-Up Goal Button
+  addWaterPoloManUpGoal(playerId: number, teamId: number): void {
+    const statsData = {
+      goals_scored: 1,
+      man_up_goals: 1,
+      shots_attempted: 1,
+      points: 1,
+      plus_minus: 1.5
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Quick Man-Down Goal Button
+  addWaterPoloManDownGoal(playerId: number, teamId: number): void {
+    const statsData = {
+      goals_scored: 1,
+      man_down_goals: 1,
+      shots_attempted: 1,
+      points: 1,
+      plus_minus: 2
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // Add Water Polo General Stat
+  addWaterPoloStat(playerId: number, teamId: number, statType: string, value: number): void {
+    const plusMinusMap: { [key: string]: number } = {
+      'goals_scored': 1,
+      'assists': 0.5,
+      'saves': 1,
+      'steals': 0.5,
+      'blocks': 0.5,
+      'turnovers': -0.5,
+      'ejections': -1,
+      'sprints_won': 0.5,
+      'shots_attempted': 0
+    };
+
+    const statsData = {
+      [statType]: value,
+      plus_minus: (plusMinusMap[statType] || 0) * value
+    };
+    this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // ============================================================================
+  // 🔧 UTILITY METHODS
+  // ============================================================================
+
+  // Show success message
+  private showSuccessMessage(message: string): void {
+    Swal.fire({
+      title: 'Success!',
+      text: message,
+      icon: 'success',
+      timer: 3000,
+      showConfirmButton: false
+    });
+  }
+
+  // Show error message
+  private showErrorMessage(message: string): void {
+    Swal.fire({
+      title: 'Error!',
+      text: message,
+      icon: 'error',
+      timer: 5000,
+      showConfirmButton: true
+    });
+  }
 }

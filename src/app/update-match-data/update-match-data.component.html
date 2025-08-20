@@ -651,6 +651,350 @@
           </div>
         </div>
 
+        <!-- 🏊 LIVE WATER POLO MATCH SCORE DISPLAY -->
+        <div *ngIf="isWaterPolo() && teams.length >= 2 && match" class="live-score-container water-polo-scoreboard">
+          <div class="live-score-board">
+            <div class="row align-items-center">
+              <!-- Team 1 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-swimmer fa-2x text-primary"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
+                  <div class="team-score">{{ waterPoloGameState.score[teams[0]?.team?.id] || getTeamWaterPoloGoals(teams[0]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-bullseye text-success"></i>
+                          <span title="Goals">{{ getTeamWaterPoloGoals(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-crosshairs text-warning"></i>
+                          <span title="Shots">{{ getTeamWaterPoloShots(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-shield-alt text-info"></i>
+                          <span title="Saves">{{ getTeamWaterPoloSaves(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-exclamation-triangle text-danger"></i>
+                          <span title="Ejections">{{ getTeamWaterPoloEjections(teams[0]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Match Clock and Controls -->
+              <div class="col-4 text-center">
+                <div class="match-status water-polo-clock">
+                  <div class="clock-display">
+                    <span class="quarter-number">Q{{ waterPoloClock.currentPeriod || 1 }}</span>
+                    <span class="quarter-type">{{ waterPoloClock.periodType || 'Quarter' | titlecase }}</span>
+                  </div>
+                  
+                  <div class="time-display" [ngClass]="{
+                    'live-pulse': waterPoloClock.isRunning,
+                    'paused': waterPoloClock.isPaused,
+                    'stopped': !waterPoloClock.isRunning
+                  }">
+                    {{ waterPoloClock.displayTime || waterPoloClock.timeRemainingInPeriod || '8:00' }}
+                  </div>
+
+                  <!-- Shot Clock Display -->
+                  <div class="shot-clock-display mt-2" *ngIf="waterPoloShotClock.isRunning">
+                    <div class="shot-clock-info">
+                      <span class="shot-clock-label">Shot Clock</span>
+                      <span class="shot-clock-time" [ngClass]="{
+                        'text-danger': waterPoloShotClock.timeRemaining <= 10,
+                        'text-warning': waterPoloShotClock.timeRemaining <= 20 && waterPoloShotClock.timeRemaining > 10
+                      }">{{ waterPoloShotClock.timeRemaining }}s</span>
+                      <small class="possession-team" *ngIf="waterPoloShotClock.teamInPossession">
+                        {{ getTeamName(waterPoloShotClock.teamInPossession) }}
+                      </small>
+                    </div>
+                  </div>
+                  
+                  <div class="clock-controls mt-2">
+                    <!-- Initialize Button - Only show when NOT initialized and NOT in progress -->
+                    <button 
+                      class="btn btn-success btn-sm me-1" 
+                      *ngIf="!checkWaterPoloClockInitialized() && !isWaterPoloInitializationInProgress()" 
+                      title="Initialize Water Polo Clock"
+                      (click)="initializeWaterPoloClock()">
+                      <i class="fas fa-cog"></i> Initialize
+                    </button>
+                    
+                    <!-- Initialization in Progress Button - Show loading state -->
+                    <button 
+                      class="btn btn-success btn-sm me-1" 
+                      *ngIf="isWaterPoloInitializationInProgress()" 
+                      disabled
+                      title="Initializing Clock...">
+                      <i class="fas fa-spinner fa-spin"></i> Initializing...
+                    </button>
+                    
+                    <!-- Start Button - Only show when initialized and NOT running -->
+                    <button 
+                      class="btn btn-primary btn-sm me-1" 
+                      *ngIf="checkWaterPoloClockInitialized() && !waterPoloClock.isRunning && !waterPoloClock.isPaused" 
+                      title="Start Match"
+                      (click)="startWaterPoloMatch()">
+                      <i class="fas fa-play"></i> Start
+                    </button>
+                    
+                    <!-- Pause Button - Only show when running -->
+                    <button 
+                      class="btn btn-warning btn-sm me-1" 
+                      *ngIf="waterPoloClock.isRunning" 
+                      title="Pause Match"
+                      (click)="pauseWaterPoloMatch()">
+                      <i class="fas fa-pause"></i> Pause
+                    </button>
+                    
+                    <!-- Resume Button - Only show when paused -->
+                    <button 
+                      class="btn btn-success btn-sm me-1" 
+                      *ngIf="waterPoloClock.isPaused" 
+                      title="Resume Match"
+                      (click)="resumeWaterPoloMatch()">
+                      <i class="fas fa-play"></i> Resume
+                    </button>
+                    
+                    <!-- Next Quarter Button - Only show when initialized and before final period -->
+                    <button 
+                      class="btn btn-info btn-sm me-1" 
+                      *ngIf="checkWaterPoloClockInitialized() && waterPoloClock.currentPeriod < 4" 
+                      title="Advance Period"
+                      (click)="advanceWaterPoloPeriod()">
+                      <i class="fas fa-forward"></i> Next Quarter
+                    </button>
+                    
+                    <!-- Stop Button - Only show when initialized and (running or paused) -->
+                    <button 
+                      class="btn btn-danger btn-sm" 
+                      *ngIf="checkWaterPoloClockInitialized() && (waterPoloClock.isRunning || waterPoloClock.isPaused)" 
+                      title="Stop Match"
+                      (click)="stopWaterPoloMatch()">
+                      <i class="fas fa-stop"></i> Stop
+                    </button>
+                  </div>
+                  
+                  <div class="game-status mt-2">
+                    <span class="badge" [ngClass]="{
+                      'bg-danger live-badge': waterPoloGameState.status === 'live',
+                      'bg-success': waterPoloGameState.status === 'finished',
+                      'bg-warning text-dark': waterPoloGameState.status === 'upcoming',
+                      'bg-info': waterPoloGameState.status === 'quarter_break'
+                    }">
+                      <i class="fas" [ngClass]="{
+                        'fa-circle fa-pulse': waterPoloGameState.status === 'live',
+                        'fa-flag-checkered': waterPoloGameState.status === 'finished',
+                        'fa-clock': waterPoloGameState.status === 'upcoming',
+                        'fa-coffee': waterPoloGameState.status === 'quarter_break'
+                      }"></i>
+                      {{ waterPoloGameState.status | titlecase }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Team 2 -->
+              <div class="col-4 text-center">
+                <div class="team-info">
+                  <div class="team-logo">
+                    <i class="fas fa-swimmer fa-2x text-danger"></i>
+                  </div>
+                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
+                  <div class="team-score">{{ waterPoloGameState.score[teams[1]?.team?.id] || getTeamWaterPoloGoals(teams[1]?.team?.id) }}</div>
+                  
+                  <!-- Team Stats -->
+                  <div class="team-stats mt-2">
+                    <div class="row g-1">
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-bullseye text-success"></i>
+                          <span title="Goals">{{ getTeamWaterPoloGoals(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-crosshairs text-warning"></i>
+                          <span title="Shots">{{ getTeamWaterPoloShots(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-shield-alt text-info"></i>
+                          <span title="Saves">{{ getTeamWaterPoloSaves(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="mini-stat water-polo-stat">
+                          <i class="fas fa-exclamation-triangle text-danger"></i>
+                          <span title="Ejections">{{ getTeamWaterPoloEjections(teams[1]?.team?.id) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Water Polo Game Details Bar -->
+            <div class="match-details-bar mt-3">
+              <div class="row text-center">
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-history me-1"></i>{{ waterPoloClock.periodDuration / 60 || 8 }}min Quarters
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-exchange-alt me-1"></i>{{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} Timeouts
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-trophy me-1"></i>{{ waterPoloGameState.leadingTeam ? 'Leading: ' + getTeamName(waterPoloGameState.leadingTeam) : 'Tied' }}
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-stopwatch me-1"></i>Shot Clock: {{ waterPoloClock.shotClockDuration }}s
+                  </small>
+                </div>
+                <div class="col-2">
+                  <small class="text-muted">
+                    <i class="fas fa-sync-alt me-1"></i>
+                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
+                    <span *ngIf="!loading">Live</span>
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Quarter Progress Row -->
+              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <div class="col-3" *ngFor="let quarter of waterPoloPeriods; let i = index">
+                  <small class="text-muted" [ngClass]="{
+                    'text-warning': waterPoloClock.currentPeriod === quarter.number,
+                    'text-success': quarter.completed
+                  }">
+                    <i class="fas" [ngClass]="{
+                      'fa-play text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isRunning,
+                      'fa-pause text-warning': waterPoloClock.currentPeriod === quarter.number && !waterPoloClock.isRunning,
+                      'fa-check text-success': quarter.completed,
+                      'fa-circle text-muted': waterPoloClock.currentPeriod < quarter.number
+                    }"></i>
+                    Q{{ quarter.number }}
+                  </small>
+                </div>
+              </div>
+              
+              <!-- Team Controls Row -->
+              <div class="row text-center mt-2">
+                <div class="col-6">
+                  <small class="text-muted">
+                    <strong>{{ getTeamName(teams[0]?.team?.id) }}</strong>
+                    <span class="ms-2">
+                      <i class="fas fa-pause-circle me-1"></i>
+                      {{ waterPoloTimeouts.timeoutsRemaining[teams[0]?.team?.id] || 3 }} timeouts left
+                    </span>
+                    <button 
+                      class="btn btn-warning btn-sm ms-2" 
+                      (click)="callWaterPoloTimeout(teams[0]?.team?.id)"
+                      [disabled]="!waterPoloClock.isRunning || (waterPoloTimeouts.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
+                      <i class="fas fa-hand-paper"></i> Timeout
+                    </button>
+                    <button 
+                      class="btn btn-info btn-sm ms-1" 
+                      (click)="startWaterPoloShotClock(teams[0]?.team?.id)"
+                      [disabled]="!waterPoloClock.isRunning || waterPoloShotClock.isRunning">
+                      <i class="fas fa-play-circle"></i> Shot Clock
+                    </button>
+                  </small>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted">
+                    <strong>{{ getTeamName(teams[1]?.team?.id) }}</strong>
+                    <span class="ms-2">
+                      <i class="fas fa-pause-circle me-1"></i>
+                      {{ waterPoloTimeouts.timeoutsRemaining[teams[1]?.team?.id] || 3 }} timeouts left
+                    </span>
+                    <button 
+                      class="btn btn-warning btn-sm ms-2" 
+                      (click)="callWaterPoloTimeout(teams[1]?.team?.id)"
+                      [disabled]="!waterPoloClock.isRunning || (waterPoloTimeouts.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
+                      <i class="fas fa-hand-paper"></i> Timeout
+                    </button>
+                    <button 
+                      class="btn btn-info btn-sm ms-1" 
+                      (click)="startWaterPoloShotClock(teams[1]?.team?.id)"
+                      [disabled]="!waterPoloClock.isRunning || waterPoloShotClock.isRunning">
+                      <i class="fas fa-play-circle"></i> Shot Clock
+                    </button>
+                  </small>
+                </div>
+              </div>
+
+              <!-- Shot Clock Controls Row -->
+              <div class="row text-center mt-2" *ngIf="waterPoloShotClock.isRunning">
+                <div class="col-12">
+                  <small class="text-muted">
+                    <strong>Shot Clock Controls</strong>
+                    <div class="btn-group ms-3" role="group">
+                      <button 
+                        class="btn btn-success btn-sm" 
+                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'goal_scored')"
+                        [disabled]="!waterPoloShotClock.teamInPossession"
+                        title="Goal Scored">
+                        <i class="fas fa-bullseye"></i> Goal
+                      </button>
+                      <button 
+                        class="btn btn-warning btn-sm" 
+                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_saved')"
+                        [disabled]="!waterPoloShotClock.teamInPossession"
+                        title="Shot Saved">
+                        <i class="fas fa-shield-alt"></i> Save
+                      </button>
+                      <button 
+                        class="btn btn-secondary btn-sm" 
+                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_missed')"
+                        [disabled]="!waterPoloShotClock.teamInPossession"
+                        title="Shot Missed">
+                        <i class="fas fa-times"></i> Miss
+                      </button>
+                      <button 
+                        class="btn btn-info btn-sm" 
+                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_blocked')"
+                        [disabled]="!waterPoloShotClock.teamInPossession"
+                        title="Shot Blocked">
+                        <i class="fas fa-hand-paper"></i> Block
+                      </button>
+                    </div>
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card-body">
           <!-- Loading State -->
           <div *ngIf="loading" class="loading-container">
@@ -1420,6 +1764,177 @@
                             <div class="col-4">
                               <small class="text-muted d-block">FT</small>
                               <strong>{{ (player.free_throws_made || 0) }}/{{ (player.free_throws_attempted || 0) }}</strong>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Water Polo Quick Actions -->
+                      <div *ngIf="isWaterPolo()" class="water-polo-quick-actions mb-3">
+                        <div class="row g-1">
+                          <!-- Primary Scoring Buttons -->
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-success btn-sm w-100" 
+                              (click)="addWaterPoloGoal(player.id, selectedTeam)"
+                              title="Goal Scored">
+                              <i class="fas fa-bullseye"></i> GOAL
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-warning btn-sm w-100" 
+                              (click)="addWaterPoloShot(player.id, selectedTeam)"
+                              title="Shot Attempt">
+                              <i class="fas fa-hockey-puck"></i> SHOT
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-info btn-sm w-100" 
+                              (click)="addWaterPoloAssist(player.id, selectedTeam)"
+                              title="Assist">
+                              <i class="fas fa-hands-helping"></i> AST
+                            </button>
+                          </div>
+                          
+                          <!-- Goalkeeper & Defensive Stats -->
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-primary btn-sm w-100" 
+                              (click)="addWaterPoloSave(player.id, selectedTeam)"
+                              title="Save (Goalkeeper)">
+                              <i class="fas fa-hand-paper"></i> SAVE
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-secondary btn-sm w-100" 
+                              (click)="addWaterPoloSteal(player.id, selectedTeam)"
+                              title="Steal">
+                              <i class="fas fa-user-ninja"></i> STEAL
+                            </button>
+                          </div>
+                          <div class="col-4">
+                            <button 
+                              class="btn btn-dark btn-sm w-100" 
+                              (click)="addWaterPoloBlock(player.id, selectedTeam)"
+                              title="Block">
+                              <i class="fas fa-shield-alt"></i> BLOCK
+                            </button>
+                          </div>
+                          
+                          <!-- Special Situations -->
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-success btn-sm w-100" 
+                              (click)="addWaterPoloManUpGoal(player.id, selectedTeam)"
+                              title="Man-Up Goal">
+                              <i class="fas fa-plus-circle"></i> MAN-UP
+                            </button>
+                          </div>
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-info btn-sm w-100" 
+                              (click)="addWaterPoloSprintWin(player.id, selectedTeam)"
+                              title="Sprint Win">
+                              <i class="fas fa-running"></i> SPRINT
+                            </button>
+                          </div>
+                          
+                          <!-- Negative Stats -->
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-warning btn-sm w-100" 
+                              (click)="addWaterPoloTurnover(player.id, selectedTeam)"
+                              title="Turnover">
+                              <i class="fas fa-exchange-alt"></i> TO
+                            </button>
+                          </div>
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-danger btn-sm w-100" 
+                              (click)="addWaterPoloEjection(player.id, selectedTeam, 'ordinary')"
+                              title="Ejection">
+                              <i class="fas fa-exclamation-triangle"></i> EJECT
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <!-- Advanced Actions Row -->
+                        <div class="row g-1 mt-2">
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-primary btn-sm w-100" 
+                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, true)"
+                              title="Penalty Shot Scored">
+                              <i class="fas fa-target"></i> PEN+
+                            </button>
+                          </div>
+                          <div class="col-6">
+                            <button 
+                              class="btn btn-outline-secondary btn-sm w-100" 
+                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, false)"
+                              title="Penalty Shot Missed">
+                              <i class="fas fa-times-circle"></i> PEN-
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <!-- Player Current Stats Display -->
+                        <div class="mt-2 p-2 bg-light rounded water-polo-stats">
+                          <div class="row g-1 text-center">
+                            <div class="col-3">
+                              <small class="text-muted d-block">GOALS</small>
+                              <strong>{{ player.goals_scored || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">SHOTS</small>
+                              <strong>{{ player.shots_attempted || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">SAVES</small>
+                              <strong>{{ player.saves || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">AST</small>
+                              <strong>{{ player.assists || 0 }}</strong>
+                            </div>
+                          </div>
+                          <div class="row g-1 text-center mt-1">
+                            <div class="col-3">
+                              <small class="text-muted d-block">STEALS</small>
+                              <strong>{{ player.steals || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">BLOCKS</small>
+                              <strong>{{ player.blocks || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">EJECT</small>
+                              <strong>{{ player.ejections || 0 }}</strong>
+                            </div>
+                            <div class="col-3">
+                              <small class="text-muted d-block">+/-</small>
+                              <strong [ngClass]="{
+                                'text-success': (player.plus_minus || 0) > 0,
+                                'text-danger': (player.plus_minus || 0) < 0,
+                                'text-muted': (player.plus_minus || 0) === 0
+                              }">{{ player.plus_minus || 0 }}</strong>
+                            </div>
+                          </div>
+                          <div class="row g-1 text-center mt-1">
+                            <div class="col-4">
+                              <small class="text-muted d-block">SPRINTS</small>
+                              <strong>{{ player.sprints_won || 0 }}</strong>
+                            </div>
+                            <div class="col-4">
+                              <small class="text-muted d-block">PEN</small>
+                              <strong>{{ (player.penalty_shots_scored || 0) }}/{{ (player.penalty_shots_attempted || 0) }}</strong>
+                            </div>
+                            <div class="col-4">
+                              <small class="text-muted d-block">TO</small>
+                              <strong>{{ player.turnovers || 0 }}</strong>
                             </div>
                           </div>
                         </div>
