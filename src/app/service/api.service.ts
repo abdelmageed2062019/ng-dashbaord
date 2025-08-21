@@ -298,6 +298,54 @@ export class ApiService {
     );
   }
 
+  // Enhanced gymnastics methods with reason parameter
+  pauseGymnasticsClockWithReason(matchId: number, pauseData: { reason: string }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/pause/`;
+    console.log('Pausing gymnastics clock with reason:', matchId, pauseData);
+    return this.http.post(url, pauseData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Gymnastics clock paused:', response))
+    );
+  }
+
+  // Gymnastics Routine Management
+  startGymnasticsRoutine(matchId: number, routineData: { player_id: number, apparatus: string, routine_duration?: number }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/start_routine/`;
+    console.log('Starting gymnastics routine:', routineData);
+    return this.http.post(url, routineData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Gymnastics routine started:', response))
+    );
+  }
+
+  stopGymnasticsRoutine(matchId: number, routineData: { player_id: number }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop_routine/`;
+    console.log('Stopping gymnastics routine:', routineData);
+    return this.http.post(url, routineData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Gymnastics routine stopped:', response))
+    );
+  }
+
+  // Gymnastics Rotation Management using advance_period
+  advanceGymnasticsRotation(matchId: number, rotationData: { next_apparatus: string, rotation_duration?: number }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
+    const periodData = {
+      next_period: rotationData.rotation_duration ? Math.ceil(rotationData.rotation_duration / 60) : 1,
+      apparatus: rotationData.next_apparatus
+    };
+    console.log('Advancing gymnastics rotation:', matchId, periodData);
+    return this.http.post(url, periodData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Gymnastics rotation advanced:', response))
+    );
+  }
+
+  // Gymnastics Timeout Management
+  callGymnasticsTimeout(matchId: number, timeoutData: { team_id: number, duration: string, reason: string }): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/timeout/`;
+    console.log('Calling gymnastics timeout:', timeoutData);
+    return this.http.post(url, timeoutData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Gymnastics timeout called:', response))
+    );
+  }
+
   // ============================================================================
   // 🏀 BASKETBALL MANAGEMENT METHODS
   // ============================================================================
@@ -435,9 +483,13 @@ export class ApiService {
   }
 
   advanceApparatusRotation(matchId: number, rotationData: { next_apparatus: string, rotation_duration?: number }): Observable<any> {
-    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_rotation/`;
-    console.log('Advancing apparatus rotation for match:', matchId, rotationData);
-    return this.http.post(url, rotationData, { headers: this.getHeaders() }).pipe(
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
+    const periodData = {
+      next_period: rotationData.rotation_duration ? Math.ceil(rotationData.rotation_duration / 60) : 1, // Convert seconds to period number
+      apparatus: rotationData.next_apparatus
+    };
+    console.log('Advancing apparatus rotation for match:', matchId, periodData);
+    return this.http.post(url, periodData, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Apparatus rotation advanced:', response))
     );
   }

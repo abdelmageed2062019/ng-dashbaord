@@ -1184,7 +1184,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns true if sport is gymnastics
    */
   isGymnasticsMatch(): boolean {
-    return this.sportConfig?.name === 'Gymnastics' || this.sportConfig?.scoring_system === 'gymnastics';
+    return this.sportConfig?.name.toLowerCase() === 'gymnastics' || this.sportConfig?.scoring_system === 'gymnastics';
   }
 
   /**
@@ -3905,7 +3905,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     console.log(this.match);
     return this.match?.sport?.name?.toLowerCase().includes('gymnastics') || 
            this.match?.sport?.toLowerCase().includes('gymnastics') ||
-           this.sportConfig?.isGymnastics ||
+           this.sportConfig?.name?.toLowerCase() === 'gymnastics' ||
            this.match?.league_obj?.sport === 10 ||
            false;
   }
@@ -3923,8 +3923,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Utility method to check if current match is water polo
   isWaterPolo(): boolean {
-    console.log('Checking if match is water polo...');
-    console.log(this.match);
+    // console.log('Checking if match is water polo...');
+    // console.log(this.match);
     return this.match?.sport?.name?.toLowerCase().includes('waterpolo') || 
            this.match?.sport?.name?.toLowerCase().includes('water polo') ||
            this.match?.sport?.toLowerCase().includes('waterpolo') ||
@@ -3975,41 +3975,124 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Manually refresh clock status from server for debugging and sync
+   */
+  refreshClockStatus(): void {
+    if (!this.match?.id) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No Match Selected',
+        text: 'Cannot refresh clock status without a valid match.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Refreshing Clock Status...',
+      html: '<div class="text-center"><i class="fas fa-sync fa-spin fa-2x text-info mb-3"></i><br>Syncing with server...</div>',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    this.loadClockStatus(this.match.id);
+    
+    // Close the loading dialog after a short delay to show the updated status
+    setTimeout(() => {
+      Swal.close();
+      Swal.fire({
+        icon: 'success',
+        title: 'Clock Status Refreshed!',
+        html: `
+          <div class="text-start">
+            <p><strong>Current Status:</strong></p>
+            <ul>
+              <li>Clock State: <strong>${this.competitionClock.isRunning ? 'Running' : 'Stopped'}</strong></li>
+              <li>Display Time: <strong>${this.formatTime(this.competitionClock.currentTime)}</strong></li>
+              <li>Current Rotation: <strong>${this.competitionState.currentRotation}</strong></li>
+              <li>Current Apparatus: <strong>${this.competitionState.currentApparatus}</strong></li>
+              <li>Routine Time: <strong>${this.formatTime(this.competitionClock.routineTime)}</strong></li>
+            </ul>
+          </div>
+        `,
+        timer: 4000,
+        showConfirmButton: true,
+        confirmButtonText: 'OK'
+      });
+    }, 1500);
+  }
+
   // Load clock status
   loadClockStatus(matchId: number): void {
+    console.log('🔄 Loading clock status for match:', matchId);
     this.apiService.getGymnasticsClockStatus(matchId).subscribe({
       next: (clockStatus) => {
-        console.log('Clock status loaded:', clockStatus);
+        console.log('📡 Raw clock status from server:', clockStatus);
         
         if (clockStatus) {
+          // Parse display time to seconds for internal use
+          const displayTimeSeconds = this.parseTimeToSeconds(clockStatus.display_time || clockStatus.time_remaining_in_period || '05:00');
+          const routineTimeSeconds = this.parseTimeToSeconds(clockStatus.routine_timer || '00:01:10');
+          
+          console.log('⏰ Parsed times:', {
+            originalDisplayTime: clockStatus.display_time,
+            displayTimeSeconds,
+            originalRoutineTimer: clockStatus.routine_timer,
+            routineTimeSeconds
+          });
+          
           this.competitionClock = {
-            isRunning: clockStatus.is_running || false,
-            currentTime: clockStatus.current_time || 0,
-            rotationTime: clockStatus.rotation_time || 0,
+            isRunning: clockStatus.is_running || clockStatus.clock_state === 'running',
+            currentTime: displayTimeSeconds,
+            rotationTime: displayTimeSeconds, // Use display time for rotation
             warmupTime: clockStatus.warmup_time || 0,
             touchWarmupTime: clockStatus.touch_warmup_time || 0,
-            routineTime: clockStatus.routine_time || 0,
+            routineTime: routineTimeSeconds,
             breakTime: clockStatus.break_time || 0
           };
+          
           this.competitionState = {
             ...this.competitionState,
-            initialized: true ,
+            initialized: true,
             currentRotation: clockStatus.current_rotation || 1,
-            allRotationsComplete: clockStatus.all_rotations_complete || false,
+            currentPeriod: clockStatus.current_period || 1,
+            currentApparatus: clockStatus.current_apparatus || 'floor_exercise',
+            allRotationsComplete: clockStatus.periods_completed >= clockStatus.total_periods,
             awards_ceremony_ready: clockStatus.awards_ceremony_ready || false
           };
-          if(clockStatus.clock_state==="running"){
-            this.competitionClock.isRunning = true;
+
+          // Update routine state if there's an active routine
+          if (clockStatus.current_routine_player) {
+            this.routineState = {
+              ...this.routineState,
+              activePlayer: { id: clockStatus.current_routine_player },
+              activeApparatus: clockStatus.current_apparatus || '',
+              isRoutineActive: clockStatus.routine_timer && clockStatus.routine_timer !== '00:01:10',
+              routineStartTime: clockStatus.routine_start_time ? new Date(clockStatus.routine_start_time) : null,
+              routineDuration: routineTimeSeconds
+            };
           }
 
           // Start clock update if clock is running
           if (this.competitionClock.isRunning) {
+            console.log('⏯️ Starting clock interval - clock is running');
             this.startClockInterval();
+          } else {
+            console.log('⏸️ Clock is stopped - not starting interval');
           }
+          
+          console.log('✅ Competition clock updated:', this.competitionClock);
+          console.log('✅ Competition state updated:', this.competitionState);
+          console.log('🔥 Routine state updated:', this.routineState);
+        } else {
+          console.log('⚠️ No clock status data received from server');
         }
       },
       error: (error) => {
-        console.log('No clock status found or error loading clock:', error);
+        console.log('❌ Error loading clock status:', error);
         // Reset clock to default state
         this.resetClockData();
       }
