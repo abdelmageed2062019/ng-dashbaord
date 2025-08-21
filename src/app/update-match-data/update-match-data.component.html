@@ -651,349 +651,288 @@
           </div>
         </div>
 
-        <!-- 🏊 LIVE WATER POLO MATCH SCORE DISPLAY -->
-        <div *ngIf="isWaterPolo() && teams.length >= 2 && match" class="live-score-container water-polo-scoreboard">
-          <div class="live-score-board">
+        <!-- ============================================ -->
+        <!-- 🏊‍♂️ COMPLETE WATER POLO CLOCK MANAGEMENT -->
+        <!-- ============================================ -->
+
+        <div class="water-polo-clock-section" *ngIf="isWaterPolo()">
+          
+          <!-- Clock Status Header -->
+          <div class="clock-status-header bg-gradient-primary text-white p-3 rounded-top">
             <div class="row align-items-center">
-              <!-- Team 1 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-swimmer fa-2x text-primary"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="team-score">{{ match.matchteams[0]?.goals || 0 }}</div>
-
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-bullseye text-success"></i>
-                          <span title="Goals">{{ match.matchteams[0]?.goals || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-crosshairs text-warning"></i>
-                          <span title="Shots">{{ match.matchteams[0]?.shots || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-shield-alt text-info"></i>
-                          <span title="Saves">{{ match.matchteams[0]?.saves || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-exclamation-triangle text-danger"></i>
-                          <span title="Ejections">{{ match.matchteams[0]?.ejections || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="col-md-8">
+                <h5 class="mb-1">
+                  <i class="fas fa-swimmer me-2"></i>
+                  Water Polo Clock Management
+                </h5>
+                <small class="text-light">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Synchronized with server • Auto-refresh every 10 seconds
+                </small>
               </div>
-              
-              <!-- Match Clock and Controls -->
-              <div class="col-4 text-center">
-                <div class="match-status water-polo-clock">
-                  <div class="clock-display">
-                    <span class="quarter-number">Q{{ waterPoloClock.currentPeriod || 1 }}</span>
-                    <span class="quarter-type">{{ waterPoloClock.periodType || 'Quarter' | titlecase }}</span>
-                  </div>
-                  
-                  <div class="time-display" [ngClass]="{
-                    'live-pulse': waterPoloClock.isRunning,
-                    'paused': waterPoloClock.isPaused,
-                    'stopped': !waterPoloClock.isRunning
-                  }">
-                    {{ waterPoloClock.displayTime || waterPoloClock.timeRemainingInPeriod || '8:00' }}
-                  </div>
-
-                  <!-- Shot Clock Display -->
-                  <div class="shot-clock-display mt-2" *ngIf="waterPoloShotClock.isRunning">
-                    <div class="shot-clock-info">
-                      <span class="shot-clock-label">Shot Clock</span>
-                      <span class="shot-clock-time" [ngClass]="{
-                        'text-danger': waterPoloShotClock.timeRemaining <= 10,
-                        'text-warning': waterPoloShotClock.timeRemaining <= 20 && waterPoloShotClock.timeRemaining > 10
-                      }">{{ waterPoloShotClock.timeRemaining }}s</span>
-                      <small class="possession-team" *ngIf="waterPoloShotClock.teamInPossession">
-                        {{ getTeamName(waterPoloShotClock.teamInPossession) }}
-                      </small>
-                    </div>
-                  </div>
-                  
-                  <div class="clock-controls mt-2">
-                    <!-- Initialize Button - Only show when NOT initialized and NOT in progress -->
-                    <button 
-                      class="btn btn-success btn-sm me-1" 
-                      *ngIf="!checkWaterPoloClockInitialized() && !isWaterPoloInitializationInProgress()" 
-                      title="Initialize Water Polo Clock"
-                      (click)="initializeWaterPoloClock()">
-                      <i class="fas fa-cog"></i> Initialize
-                    </button>
-                    
-                    <!-- Initialization in Progress Button - Show loading state -->
-                    <button 
-                      class="btn btn-success btn-sm me-1" 
-                      *ngIf="isWaterPoloInitializationInProgress()" 
-                      disabled
-                      title="Initializing Clock...">
-                      <i class="fas fa-spinner fa-spin"></i> Initializing...
-                    </button>
-                    
-                    <!-- Start Button - Only show when initialized and NOT running -->
-                    <button 
-                      class="btn btn-primary btn-sm me-1" 
-                      *ngIf="checkWaterPoloClockInitialized() && !waterPoloClock.isRunning && !waterPoloClock.isPaused" 
-                      title="Start Match"
-                      (click)="startWaterPoloMatch()">
-                      <i class="fas fa-play"></i> Start
-                    </button>
-                    
-                    <!-- Pause Button - Only show when running -->
-                    <button 
-                      class="btn btn-warning btn-sm me-1" 
-                      *ngIf="waterPoloClock.isRunning" 
-                      title="Pause Match"
-                      (click)="pauseWaterPoloMatch()">
-                      <i class="fas fa-pause"></i> Pause
-                    </button>
-                    
-                    <!-- Resume Button - Only show when paused -->
-                    <button 
-                      class="btn btn-success btn-sm me-1" 
-                      *ngIf="waterPoloClock.isPaused" 
-                      title="Resume Match"
-                      (click)="resumeWaterPoloMatch()">
-                      <i class="fas fa-play"></i> Resume
-                    </button>
-                    
-                    <!-- Next Quarter Button - Only show when initialized and before final period -->
-                    <button 
-                      class="btn btn-info btn-sm me-1" 
-                      *ngIf="checkWaterPoloClockInitialized() && waterPoloClock.currentPeriod < 4" 
-                      title="Advance Period"
-                      (click)="advanceWaterPoloPeriod()">
-                      <i class="fas fa-forward"></i> Next Quarter
-                    </button>
-                    
-                    <!-- Stop Button - Only show when initialized and (running or paused) -->
-                    <button 
-                      class="btn btn-danger btn-sm" 
-                      *ngIf="checkWaterPoloClockInitialized() && (waterPoloClock.isRunning || waterPoloClock.isPaused)" 
-                      title="Stop Match"
-                      (click)="stopWaterPoloMatch()">
-                      <i class="fas fa-stop"></i> Stop
-                    </button>
-                  </div>
-                  
-                  <div class="game-status mt-2">
-                    <span class="badge" [ngClass]="{
-                      'bg-danger live-badge': waterPoloGameState.status === 'live',
-                      'bg-success': waterPoloGameState.status === 'finished',
-                      'bg-warning text-dark': waterPoloGameState.status === 'upcoming',
-                      'bg-info': waterPoloGameState.status === 'quarter_break'
-                    }">
-                      <i class="fas" [ngClass]="{
-                        'fa-circle fa-pulse': waterPoloGameState.status === 'live',
-                        'fa-flag-checkered': waterPoloGameState.status === 'finished',
-                        'fa-clock': waterPoloGameState.status === 'upcoming',
-                        'fa-coffee': waterPoloGameState.status === 'quarter_break'
-                      }"></i>
-                      {{ waterPoloGameState.status | titlecase }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Team 2 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-swimmer fa-2x text-danger"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="team-score">{{ match.matchteams[1]?.goals || 0 }}</div>
-
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-bullseye text-success"></i>
-                          <span title="Goals">{{ match.matchteams[1]?.goals || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-crosshairs text-warning"></i>
-                          <span title="Shots">{{ match.matchteams[1]?.shots || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-shield-alt text-info"></i>
-                          <span title="Saves">{{ match.matchteams[1]?.saves || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat water-polo-stat">
-                          <i class="fas fa-exclamation-triangle text-danger"></i>
-                          <span title="Ejections">{{ match.matchteams[1]?.ejections || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="col-md-4 text-end">
+                <span class="badge" [ngClass]="{
+                  'bg-success': waterPoloClock.isInitialized && waterPoloGameState.status === 'live',
+                  'bg-warning text-dark': waterPoloClock.isInitialized && waterPoloGameState.status === 'quarter_break',
+                  'bg-info': waterPoloClock.isInitialized && waterPoloClock.isPaused,
+                  'bg-secondary': !waterPoloClock.isInitialized,
+                  'bg-dark': waterPoloGameState.status === 'finished'
+                }">
+                  <i class="fas" [ngClass]="{
+                    'fa-circle fa-pulse': waterPoloClock.isRunning,
+                    'fa-pause': waterPoloClock.isPaused,
+                    'fa-coffee': waterPoloGameState.status === 'quarter_break',
+                    'fa-cog': !waterPoloClock.isInitialized,
+                    'fa-flag-checkered': waterPoloGameState.status === 'finished'
+                  }"></i>
+                  {{ waterPoloClock.isInitialized ? 
+                     (waterPoloClock.isRunning ? 'LIVE' : 
+                      waterPoloClock.isPaused ? 'PAUSED' : 
+                      waterPoloGameState.status === 'quarter_break' ? 'BREAK' : 'READY') : 
+                     'NOT INITIALIZED' }}
+                </span>
               </div>
             </div>
-            
-            <!-- Water Polo Game Details Bar -->
-            <div class="match-details-bar mt-3">
-              <div class="row text-center">
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-history me-1"></i>{{ waterPoloClock.periodDuration / 60 || 8 }}min Quarters
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-exchange-alt me-1"></i>{{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} Timeouts
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-trophy me-1"></i>{{ waterPoloGameState.leadingTeam ? 'Leading: ' + getTeamName(waterPoloGameState.leadingTeam) : 'Tied' }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-stopwatch me-1"></i>Shot Clock: {{ waterPoloClock.shotClockDuration }}s
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-sync-alt me-1"></i>
-                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
-                    <span *ngIf="!loading">Live</span>
-                  </small>
-                </div>
-              </div>
+          </div>
+
+          <!-- Main Clock Display -->
+          <div class="main-clock-display bg-white border-start border-end p-4">
+            <div class="row align-items-center">
               
-              <!-- Quarter Progress Row -->
-              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="col-3" *ngFor="let quarter of waterPoloPeriods; let i = index">
-                  <small class="text-muted" [ngClass]="{
-                    'text-warning': waterPoloClock.currentPeriod === quarter.number,
-                    'text-success': quarter.completed
-                  }">
-                    <i class="fas" [ngClass]="{
-                      'fa-play text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isRunning,
-                      'fa-pause text-warning': waterPoloClock.currentPeriod === quarter.number && !waterPoloClock.isRunning,
-                      'fa-check text-success': quarter.completed,
-                      'fa-circle text-muted': waterPoloClock.currentPeriod < quarter.number
-                    }"></i>
-                    Q{{ quarter.number }}
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Team Controls Row -->
-              <div class="row text-center mt-2">
-                <div class="col-6">
-                  <small class="text-muted">
-                    <strong>{{ getTeamName(teams[0]?.team?.id) }}</strong>
-                    <span class="ms-2">
-                      <i class="fas fa-pause-circle me-1"></i>
-                      {{ waterPoloTimeouts.timeoutsRemaining[teams[0]?.team?.id] || 3 }} timeouts left
-                    </span>
-                    <button 
-                      class="btn btn-warning btn-sm ms-2" 
-                      (click)="callWaterPoloTimeout(teams[0]?.team?.id)"
-                      [disabled]="!waterPoloClock.isRunning || (waterPoloTimeouts.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
-                      <i class="fas fa-hand-paper"></i> Timeout
-                    </button>
-                    <button 
-                      class="btn btn-info btn-sm ms-1" 
-                      (click)="startWaterPoloShotClock(teams[0]?.team?.id)"
-                      [disabled]="!waterPoloClock.isRunning || waterPoloShotClock.isRunning">
-                      <i class="fas fa-play-circle"></i> Shot Clock
-                    </button>
-                  </small>
-                </div>
-                <div class="col-6">
-                  <small class="text-muted">
-                    <strong>{{ getTeamName(teams[1]?.team?.id) }}</strong>
-                    <span class="ms-2">
-                      <i class="fas fa-pause-circle me-1"></i>
-                      {{ waterPoloTimeouts.timeoutsRemaining[teams[1]?.team?.id] || 3 }} timeouts left
-                    </span>
-                    <button 
-                      class="btn btn-warning btn-sm ms-2" 
-                      (click)="callWaterPoloTimeout(teams[1]?.team?.id)"
-                      [disabled]="!waterPoloClock.isRunning || (waterPoloTimeouts.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
-                      <i class="fas fa-hand-paper"></i> Timeout
-                    </button>
-                    <button 
-                      class="btn btn-info btn-sm ms-1" 
-                      (click)="startWaterPoloShotClock(teams[1]?.team?.id)"
-                      [disabled]="!waterPoloClock.isRunning || waterPoloShotClock.isRunning">
-                      <i class="fas fa-play-circle"></i> Shot Clock
-                    </button>
-                  </small>
+              <!-- Team 1 Score -->
+              <div class="col-3 text-center">
+                <div class="team-score-display">
+                  <div class="team-name text-muted small">{{ getTeamName(teams[0]?.team?.id) }}</div>
+                  <div class="score-number display-4 font-weight-bold text-primary">
+                    {{ match.matchteams[0]?.goals || 0 }}
+                  </div>
                 </div>
               </div>
 
-              <!-- Shot Clock Controls Row -->
-              <div class="row text-center mt-2" *ngIf="waterPoloShotClock.isRunning">
-                <div class="col-12">
-                  <small class="text-muted">
-                    <strong>Shot Clock Controls</strong>
-                    <div class="btn-group ms-3" role="group">
-                      <button 
-                        class="btn btn-success btn-sm" 
-                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'goal_scored')"
-                        [disabled]="!waterPoloShotClock.teamInPossession"
-                        title="Goal Scored">
-                        <i class="fas fa-bullseye"></i> Goal
-                      </button>
-                      <button 
-                        class="btn btn-warning btn-sm" 
-                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_saved')"
-                        [disabled]="!waterPoloShotClock.teamInPossession"
-                        title="Shot Saved">
-                        <i class="fas fa-shield-alt"></i> Save
-                      </button>
-                      <button 
-                        class="btn btn-secondary btn-sm" 
-                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_missed')"
-                        [disabled]="!waterPoloShotClock.teamInPossession"
-                        title="Shot Missed">
-                        <i class="fas fa-times"></i> Miss
-                      </button>
-                      <button 
-                        class="btn btn-info btn-sm" 
-                        (click)="stopWaterPoloShotClock(waterPoloShotClock.teamInPossession!, 'shot_blocked')"
-                        [disabled]="!waterPoloShotClock.teamInPossession"
-                        title="Shot Blocked">
-                        <i class="fas fa-hand-paper"></i> Block
-                      </button>
+              <!-- Central Clock -->
+              <div class="col-6 text-center">
+                <div class="clock-container">
+                  <!-- Period Display -->
+                  <div class="period-display mb-2">
+                    <span class="period-label h6 text-muted">Quarter</span>
+                    <span class="period-number h4 font-weight-bold text-primary mx-2">
+                      {{ waterPoloClock.currentPeriod }}
+                    </span>
+                    <span class="period-total text-muted">of {{ waterPoloClock.totalPeriods }}</span>
+                  </div>
+                  
+                  <!-- Main Timer -->
+                  <div class="main-timer">
+                    <div class="timer-display" [ngClass]="{
+                      'text-success': waterPoloClock.isRunning,
+                      'text-warning': waterPoloClock.isPaused,
+                      'text-danger': !waterPoloClock.isRunning && !waterPoloClock.isPaused && waterPoloClock.displayTime === '0:00',
+                      'text-muted': !waterPoloClock.isInitialized
+                    }">
+                      <span class="display-1 font-weight-bold">
+                        {{ waterPoloClock.displayTime || '8:00' }}
+                      </span>
                     </div>
-                  </small>
+                    <div class="timer-status small text-muted mt-1">
+                      {{ waterPoloClock.isRunning ? 'Running' : 
+                         waterPoloClock.isPaused ? 'Paused' : 
+                         'Stopped' }} • Server Sync
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Team 2 Score -->
+              <div class="col-3 text-center">
+                <div class="team-score-display">
+                  <div class="team-name text-muted small">{{ getTeamName(teams[1]?.team?.id) }}</div>
+                  <div class="score-number display-4 font-weight-bold text-primary">
+                    {{ match.matchteams[1]?.goals || 0 }}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Clock Controls -->
+          <div class="clock-controls bg-light border-start border-end p-3">
+            <div class="row justify-content-center">
+              
+              <!-- Step 1: Initialize Button (Only if not initialized) -->
+              <div class="col-auto" *ngIf="!waterPoloClock.isInitialized">
+                <button 
+                  class="btn btn-primary btn-lg" 
+                  (click)="initializeWaterPoloClock()"
+                  [disabled]="waterPoloClock.initializationInProgress">
+                  <i class="fas fa-cog me-2"></i>
+                  {{ waterPoloClock.initializationInProgress ? 'Initializing...' : 'Initialize Clock' }}
+                </button>
+              </div>
+
+              <!-- Step 2 & 3: Main Control Buttons (Only if initialized) -->
+              <ng-container *ngIf="waterPoloClock.isInitialized">
+                
+                <!-- Start Button (when stopped) -->
+                <div class="col-auto" *ngIf="!waterPoloClock.isRunning && !waterPoloClock.isPaused">
+                  <button 
+                    class="btn btn-success btn-lg me-2" 
+                    (click)="startWaterPoloMatch()">
+                    <i class="fas fa-play me-2"></i>Start Clock
+                  </button>
+                </div>
+
+                <!-- Pause Button (when running) -->
+                <div class="col-auto" *ngIf="waterPoloClock.isRunning">
+                  <button 
+                    class="btn btn-warning btn-lg me-2" 
+                    (click)="pauseWaterPoloMatch()">
+                    <i class="fas fa-pause me-2"></i>Pause Clock
+                  </button>
+                </div>
+
+                <!-- Resume Button (when paused) -->
+                <div class="col-auto" *ngIf="waterPoloClock.isPaused">
+                  <button 
+                    class="btn btn-success btn-lg me-2" 
+                    (click)="resumeWaterPoloMatch()">
+                    <i class="fas fa-play me-2"></i>Resume Clock
+                  </button>
+                </div>
+
+                <!-- Next Quarter Button -->
+                <div class="col-auto" *ngIf="waterPoloClock.currentPeriod < waterPoloClock.totalPeriods">
+                  <button 
+                    class="btn btn-info btn-lg me-2" 
+                    (click)="advanceToNextWaterPoloQuarter()">
+                    <i class="fas fa-forward me-2"></i>Next Quarter
+                  </button>
+                </div>
+
+                <!-- Stop Match Button -->
+                <div class="col-auto" *ngIf="waterPoloClock.isRunning || waterPoloClock.isPaused">
+                  <button 
+                    class="btn btn-danger btn-lg" 
+                    (click)="stopWaterPoloMatch()">
+                    <i class="fas fa-stop me-2"></i>Stop Match
+                  </button>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Quarter Progress Indicator -->
+          <div class="quarter-progress bg-white border-start border-end p-3" *ngIf="waterPoloClock.isInitialized">
+            <div class="row text-center">
+              <div class="col-3" *ngFor="let quarter of waterPoloPeriods; let i = index">
+                <div class="quarter-indicator" [ngClass]="{
+                  'text-warning': waterPoloClock.currentPeriod === quarter.number,
+                  'text-success': quarter.completed,
+                  'text-muted': waterPoloClock.currentPeriod < quarter.number
+                }">
+                  <i class="fas fa-2x" [ngClass]="{
+                    'fa-play-circle text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isRunning,
+                    'fa-pause-circle text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isPaused,
+                    'fa-stop-circle text-muted': waterPoloClock.currentPeriod === quarter.number && !waterPoloClock.isRunning && !waterPoloClock.isPaused,
+                    'fa-check-circle text-success': quarter.completed,
+                    'fa-circle text-muted': waterPoloClock.currentPeriod < quarter.number
+                  }"></i>
+                  <div class="small mt-1">Q{{ quarter.number }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Timeout Controls -->
+          <div class="timeout-controls bg-light border-start border-end p-3" *ngIf="waterPoloClock.isInitialized">
+            <div class="row">
+              <!-- Team 1 Timeouts -->
+              <div class="col-6">
+                <div class="text-center">
+                  <h6 class="text-muted mb-2">{{ getTeamName(teams[0]?.team?.id) }} Timeouts</h6>
+                  <div class="timeout-info mb-2">
+                    <span class="badge bg-primary me-2">
+                      {{ (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 3) }} remaining
+                    </span>
+                    <span class="text-muted small">
+                      {{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) }} used
+                    </span>
+                  </div>
+                  <button 
+                    class="btn btn-outline-primary btn-sm" 
+                    (click)="callWaterPoloTimeout(teams[0]?.team?.id)"
+                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
+                    <i class="fas fa-hand-paper me-1"></i>Call Timeout
+                  </button>
+                </div>
+              </div>
+
+              <!-- Team 2 Timeouts -->
+              <div class="col-6">
+                <div class="text-center">
+                  <h6 class="text-muted mb-2">{{ getTeamName(teams[1]?.team?.id) }} Timeouts</h6>
+                  <div class="timeout-info mb-2">
+                    <span class="badge bg-primary me-2">
+                      {{ (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 3) }} remaining
+                    </span>
+                    <span class="text-muted small">
+                      {{ (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} used
+                    </span>
+                  </div>
+                  <button 
+                    class="btn btn-outline-primary btn-sm" 
+                    (click)="callWaterPoloTimeout(teams[1]?.team?.id)"
+                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
+                    <i class="fas fa-hand-paper me-1"></i>Call Timeout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Match Statistics Summary -->
+          <div class="match-stats bg-white border rounded-bottom p-3" *ngIf="waterPoloClock.isInitialized">
+            <div class="row text-center">
+              <div class="col-3">
+                <div class="stat-item">
+                  <i class="fas fa-clock text-primary me-1"></i>
+                  <small class="text-muted">Elapsed</small>
+                  <div class="stat-value">{{ waterPoloClock.totalElapsedTime || '00:00:00' }}</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-item">
+                  <i class="fas fa-stopwatch text-info me-1"></i>
+                  <small class="text-muted">Shot Clock</small>
+                  <div class="stat-value">30s</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-item">
+                  <i class="fas fa-exchange-alt text-warning me-1"></i>
+                  <small class="text-muted">Total Timeouts</small>
+                  <div class="stat-value">
+                    {{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + 
+                       (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="stat-item">
+                  <i class="fas fa-trophy text-success me-1"></i>
+                  <small class="text-muted">Leading</small>
+                  <div class="stat-value">
+                    {{ waterPoloGameState.leadingTeam ? getTeamName(waterPoloGameState.leadingTeam) : 'Tied' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
+
+        <!-- ============================================ -->
+        <!-- 🏊‍♂️ END WATER POLO CLOCK MANAGEMENT      -->
+        <!-- ============================================ -->
 
         <div class="card-body">
           <!-- Loading State -->

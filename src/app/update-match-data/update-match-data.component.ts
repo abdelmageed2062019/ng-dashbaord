@@ -359,7 +359,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     ejectionDuration: 20,
     timeoutDuration: 60,
     isInitialized: false, // Track if clock has been initialized
-    initializationInProgress: false // Prevent multiple initialization attempts
+    initializationInProgress: false, // Prevent multiple initialization attempts
+    timeoutsRemaining: {} as { [teamId: number]: number }
   };
 
   // Water Polo shot clock management
@@ -3217,12 +3218,85 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Show Period End
   private showPeriodEnd(): void {
+    if (this.waterPoloClock.currentPeriod >= this.waterPoloClock.totalPeriods) {
+      // Match is finished
+      Swal.fire({
+        icon: 'success',
+        title: 'Match Finished!',
+        text: 'The water polo match has been completed',
+        confirmButtonColor: '#10b981'
+      });
+      return;
+    }
+
+    // Ask user if they want to advance to next quarter
     Swal.fire({
-      icon: 'info',
-      title: 'End of Period!',
-      text: `Period ${this.waterPoloClock.currentPeriod} has ended`,
+      icon: 'question',
+      title: 'End of Quarter!',
+      text: `Quarter ${this.waterPoloClock.currentPeriod} has ended. Do you want to advance to the next quarter?`,
+      showCancelButton: true,
+      confirmButtonText: 'Next Quarter',
+      cancelButtonText: 'Stay in Break',
+      confirmButtonColor: '#0ea5e9',
+      cancelButtonColor: '#6b7280'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.advanceToNextWaterPoloQuarter();
+      } else {
+        // Stay in quarter break mode
+        this.waterPoloGameState.status = 'quarter_break';
+        Swal.fire({
+          icon: 'info',
+          title: 'Quarter Break',
+          text: 'You can start the next quarter when ready',
+          timer: 2000,
+          timerProgressBar: true
+        });
+      }
+    });
+  }
+
+  // Advance to Next Water Polo Quarter
+  advanceToNextWaterPoloQuarter(): void {
+    if (!this.match?.id) return;
+
+    const nextQuarter = this.waterPoloClock.currentPeriod + 1;
+    
+    if (nextQuarter > this.waterPoloClock.totalPeriods) {
+      // Match is finished
+      Swal.fire({
+        icon: 'success',
+        title: 'Match Completed!',
+        text: 'The water polo match has been completed',
+        confirmButtonColor: '#10b981'
+      });
+      this.waterPoloGameState.status = 'finished';
+      return;
+    }
+
+    // Advance to next quarter
+    this.waterPoloClock.currentPeriod = nextQuarter;
+    this.waterPoloCurrentSeconds = this.waterPoloClock.periodDuration; // Reset to 8 minutes
+    this.updateWaterPoloTimerDisplay();
+    
+    // Mark previous quarter as completed
+    if (this.waterPoloPeriods[nextQuarter - 2]) {
+      this.waterPoloPeriods[nextQuarter - 2].completed = true;
+    }
+    
+    // Update game state
+    this.waterPoloGameState.status = 'live';
+    
+    Swal.fire({
+      icon: 'success',
+      title: `Quarter ${nextQuarter}`,
+      text: `Successfully advanced to Quarter ${nextQuarter}`,
+      timer: 2000,
+      timerProgressBar: true,
       confirmButtonColor: '#0ea5e9'
     });
+
+    console.log(`🏊‍♂️ Advanced to Water Polo Quarter ${nextQuarter}`);
   }
 
   // Set Timer (for manual adjustment)
@@ -5245,9 +5319,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.pauseWaterPoloMatch(this.match.id, pauseData).subscribe({
       next: (response) => {
         console.log('Water Polo match paused:', response);
+        
+        // Update local state
         this.waterPoloClock.isPaused = true;
+        this.waterPoloClock.isRunning = false;
         this.waterPoloClock.clockState = 'paused';
+        
+        // IMPORTANT: Stop the local countdown timer
+        this.pauseWaterPoloTimer();
+        
         this.showSuccessMessage('Water Polo match paused successfully');
+        //this.loadMatchData(this.match.id); // Reload match data to reflect pause state
       },
       error: (error) => {
         console.error('Error pausing water polo match:', error);
@@ -5263,8 +5345,15 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.resumeWaterPoloMatch(this.match.id).subscribe({
       next: (response) => {
         console.log('Water Polo match resumed:', response);
+        
+        // Update local state
         this.waterPoloClock.isPaused = false;
+        this.waterPoloClock.isRunning = true;
         this.waterPoloClock.clockState = 'running';
+        
+        // IMPORTANT: Restart the local countdown timer
+        this.resumeWaterPoloTimer();
+        
         this.showSuccessMessage('Water Polo match resumed successfully');
       },
       error: (error) => {
@@ -5645,12 +5734,33 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           serverTime = '8:00';
         }
         
-        // Sync server time with local timer if not running
-        if (!this.waterPoloTimerRunning) {
-          const serverSeconds = this.parseTimeString(serverTime);
-          this.waterPoloCurrentSeconds = serverSeconds;
-          this.updateWaterPoloTimerDisplay();
-          console.log('Synced server time:', serverTime, 'to local timer');
+        // Always sync server time with local timer for accurate time
+        const serverSeconds = this.parseTimeString(serverTime);
+        this.waterPoloCurrentSeconds = serverSeconds;
+        this.updateWaterPoloTimerDisplay();
+        console.log('Synced server time:', serverTime, 'to local timer');
+      }
+
+      // Update clock running state from server
+      if (clockData.clock_state) {
+        const isRunning = clockData.clock_state === 'running';
+        const isPaused = clockData.clock_state === 'paused';
+        const isStopped = clockData.clock_state === 'stopped';
+        
+        this.waterPoloClock.isRunning = isRunning;
+        this.waterPoloClock.isPaused = isPaused;
+        this.waterPoloClock.clockState = clockData.clock_state;
+        
+        // Sync local timer state with server state, but respect local user actions
+        if (isRunning && !this.waterPoloTimerRunning) {
+          console.log('Server shows clock running, starting local timer');
+          this.startWaterPoloTimer();
+        } else if (isPaused && this.waterPoloTimerRunning) {
+          console.log('Server shows clock paused, pausing local timer');
+          this.pauseWaterPoloTimer();
+        } else if (isStopped && this.waterPoloTimerRunning) {
+          console.log('Server shows clock stopped, stopping local timer');
+          this.stopWaterPoloTimer();
         }
       }
 
@@ -5767,6 +5877,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Water Polo Clock Polling Interval
   private waterPoloClockPollingInterval: any;
+  
+  // Water Polo Countdown Interval
+  private waterPoloCountdownInterval: any;
 
   // ============================================================================
   // 🏊‍♂️ WATER POLO PLAYER STATE UPDATES (Basketball-style)
