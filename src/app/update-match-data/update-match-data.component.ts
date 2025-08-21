@@ -5355,42 +5355,117 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   // Update Water Polo Player Stats
+  // Update Water Polo Player Stats
   updateWaterPoloPlayerStats(playerId: number, teamId: number, statsData: any): void {
     if (!this.match?.id) return;
 
-    const playerStatsData = {
-      match: this.match.id,
-      team: teamId,
-      player: playerId,
-      ...statsData
-    };
+    // First get the current player stats
+    this.apiService.getPlayerStats(this.match.id, teamId, playerId).subscribe({
+      next: (currentStats) => {
+        console.log('Current water polo player stats:', currentStats);
+        
+        // Merge current stats with new score data, adding values together
+        const updatedStats = {
+          match: this.match.id,
+          team: teamId,
+          player: playerId,
+          // Add existing stats to new stats values for water polo specific stats
+          goals: (currentStats.goals || 0) + (statsData.goals || 0),
+          assists: (currentStats.assists || 0) + (statsData.assists || 0),
+          shots: (currentStats.shots || 0) + (statsData.shots || 0),
+          shots_on_goal: (currentStats.shots_on_goal || 0) + (statsData.shots_on_goal || 0),
+          saves: (currentStats.saves || 0) + (statsData.saves || 0),
+          steals: (currentStats.steals || 0) + (statsData.steals || 0),
+          turnovers: (currentStats.turnovers || 0) + (statsData.turnovers || 0),
+          ejections: (currentStats.ejections || 0) + (statsData.ejections || 0),
+          blocks: (currentStats.blocks || 0) + (statsData.blocks || 0),
+          fouls: (currentStats.fouls || 0) + (statsData.fouls || 0),
+          penalty_shots: (currentStats.penalty_shots || 0) + (statsData.penalty_shots || 0),
+          penalty_goals: (currentStats.penalty_goals || 0) + (statsData.penalty_goals || 0),
+          exclusions: (currentStats.exclusions || 0) + (statsData.exclusions || 0),
+          field_blocks: (currentStats.field_blocks || 0) + (statsData.field_blocks || 0),
+          counter_attacks: (currentStats.counter_attacks || 0) + (statsData.counter_attacks || 0),
+          power_play_goals: (currentStats.power_play_goals || 0) + (statsData.power_play_goals || 0),
+          power_play_shots: (currentStats.power_play_shots || 0) + (statsData.power_play_shots || 0),
+          minutes_played: (currentStats.minutes_played || 0) + (statsData.minutes_played || 0),
+          // Preserve any other existing stats that aren't being updated
+          ...Object.keys(currentStats)
+            .filter(key => !statsData.hasOwnProperty(key) && !['match', 'team', 'player'].includes(key))
+            .reduce((obj: any, key: string) => {
+              obj[key] = (currentStats as any)[key];
+              return obj;
+            }, {})
+        };
 
-    this.apiService.updateWaterPoloPlayerStats(playerStatsData).subscribe({
-      next: (response) => {
-        console.log('Water Polo player stats updated:', response);
-        
-        // Update local player data
-        this.updateLocalWaterPoloPlayerStats(playerId, teamId, statsData);
-        
-        // Update team stats
-        this.updateWaterPoloTeamStats(teamId);
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Stats Updated!',
-          text: `Player stats updated successfully`,
-          timer: 1500,
-          timerProgressBar: true,
-          confirmButtonColor: '#0ea5e9'
+        console.log('Updated water polo player stats to send:', updatedStats);
+
+        // Send the updated stats to the API
+        this.apiService.updateWaterPoloPlayerStats(updatedStats).subscribe({
+          next: (response) => {
+            console.log('Water Polo player stats updated:', response);
+            
+            // Update local player data with the updated stats
+            this.updateLocalWaterPoloPlayerStats(playerId, teamId, updatedStats);
+            this.loadMatchData(this.match.id);
+            // Update team stats
+            this.updateWaterPoloTeamStats(teamId);
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'Stats Updated!',
+              text: `Player stats updated successfully`,
+              timer: 1500,
+              timerProgressBar: true,
+              confirmButtonColor: '#0ea5e9'
+            });
+          },
+          error: (error) => {
+            console.error('Error updating water polo player stats:', error);
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: error.error?.error || 'Failed to update player stats',
+              confirmButtonColor: '#dc3545'
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error updating water polo player stats:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Update Failed',
-          text: error.error?.error || 'Failed to update player stats',
-          confirmButtonColor: '#dc3545'
+        console.error('Error fetching current water polo player stats:', error);
+        
+        // If we can't get current stats, try to update with just the new data
+        console.log('Falling back to direct update without current stats');
+        const playerStatsData = {
+          match: this.match.id,
+          team: teamId,
+          player: playerId,
+          ...statsData
+        };
+
+        this.apiService.updateWaterPoloPlayerStats(playerStatsData).subscribe({
+          next: (response) => {
+            console.log('Water Polo player stats updated (fallback):', response);
+            this.updateLocalWaterPoloPlayerStats(playerId, teamId, statsData);
+            this.updateWaterPoloTeamStats(teamId);
+            
+            Swal.fire({
+              icon: 'success',
+              title: 'Stats Updated!',
+              text: `Player stats updated successfully`,
+              timer: 1500,
+              timerProgressBar: true,
+              confirmButtonColor: '#0ea5e9'
+            });
+          },
+          error: (updateError) => {
+            console.error('Error updating water polo player stats (fallback):', updateError);
+            Swal.fire({
+              icon: 'error',
+              title: 'Update Failed',
+              text: updateError.error?.error || 'Failed to update player stats',
+              confirmButtonColor: '#dc3545'
+            });
+          }
         });
       }
     });
@@ -5486,11 +5561,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   // Update local Water Polo player stats
-  private updateLocalWaterPoloPlayerStats(playerId: number, teamId: number, statsData: any): void {
+  private updateLocalWaterPoloPlayerStats(playerId: number, teamId: number, updatedStats: any): void {
     if (this.playersData[teamId]) {
-      const player = this.playersData[teamId].find(p => p.id === playerId);
-      if (player) {
-        Object.assign(player, statsData);
+      const playerIndex = this.playersData[teamId].findIndex(p => p.id === playerId);
+      if (playerIndex !== -1) {
+        // Replace the entire stats object with the updated stats from the server
+        Object.keys(updatedStats).forEach(key => {
+          if (key !== 'match' && key !== 'team' && key !== 'player') {
+            this.playersData[teamId][playerIndex][key] = updatedStats[key];
+          }
+        });
+        console.log('Local water polo player data updated for player:', playerId, this.playersData[teamId][playerIndex]);
         this.updateWaterPoloTeamStats(teamId);
       }
     }
@@ -5694,10 +5775,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   // Quick Goal Button
   addWaterPoloGoal(playerId: number, teamId: number): void {
     const statsData = {
-      goals_scored: 1,
+      goals: 1,
       shots_attempted: 1,
-      points: 1,
-      plus_minus: 1
+      // points: 1,
+      // plus_minus: 1
     };
     this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
   }
