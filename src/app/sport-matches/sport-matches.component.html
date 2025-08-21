@@ -110,16 +110,17 @@
                     <h6 class="team-name mb-1">{{ match.matchteams[0].team?.name || 'Team 1' }}</h6>
                     <div class="team-score" *ngIf="IsFootballMatch()">{{ match.matchteams[0].score || 0 }}</div>
                      <div class="team-score" *ngIf="IsBasketBallMatch()">{{ match.matchteams[0].points || 0 }}</div>
+                     <div class="team-score" *ngIf="IsWaterPoloMatch()">{{ match.matchteams[0].goals || 0 }}</div>
                   </div>
 
                   <!-- VS / Score Separator -->
-                  <div class="score-separator text-center px-3">
+                  <!-- <div class="score-separator text-center px-3">
                     <div class="vs-text">{{ getMatchScore(match) }}</div>
                     <small class="text-muted" *ngIf="match.status === 'live'">
                       <i class="fas fa-clock me-1"></i>{{ match.match_duration || 0 }}'
                       
                     </small>
-                  </div>
+                  </div> -->
 
                   <!-- Team 2 -->
                   <div class="team-info text-center flex-fill">
@@ -130,6 +131,7 @@
                     <h6 class="team-name mb-1">{{ match.matchteams[1].team?.name || 'Team 2' }}</h6>
                     <div class="team-score" *ngIf="IsFootballMatch()">{{ match.matchteams[1].score || 0 }}</div>
                      <div class="team-score" *ngIf="IsBasketBallMatch()">{{ match.matchteams[1].point || 0 }}</div>
+                     <div class="team-score" *ngIf="IsWaterPoloMatch()">{{ match.matchteams[1].goals || 0 }}</div>
                   </div>
                 </div>
               </div>
