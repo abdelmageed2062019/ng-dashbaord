@@ -18,7 +18,18 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   match: any;
   sportConfig: any;
   form!: FormGroup;
-  dynamicFields: Array<{ key: string, label: string, type: string, options?: string[],enabled?: boolean|false }> = [];
+  dynamicFields: Array<{ 
+    key: string, 
+    label: string, 
+    type: string, 
+    options?: string[],
+    enabled?: boolean|false,
+    min?: number,
+    max?: number,
+    step?: number,
+    readonly?: boolean,
+    value?: any
+  }> = [];
   teams: any[] = [];
   playersData: { [teamId: number]: any[] } = {};
   selectedTeam: number | null = null;
@@ -1364,8 +1375,28 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.selectedTeam = teamId;
   }
 
-  getPlayerFields(): Array<{ key: string, label: string, type: string }> {
-    const fields: Array<{ key: string, label: string, type: string }> = [];
+  getPlayerFields(): Array<{ 
+    key: string, 
+    label: string, 
+    type: string, 
+    options?: string[],
+    min?: number,
+    max?: number,
+    step?: number,
+    readonly?: boolean,
+    value?: any
+  }> {
+    const fields: Array<{ 
+      key: string, 
+      label: string, 
+      type: string, 
+      options?: string[],
+      min?: number,
+      max?: number,
+      step?: number,
+      readonly?: boolean,
+      value?: any
+    }> = [];
     
     // Common fields for all sports
     fields.push({ key: 'minutes_played', label: 'Minutes Played', type: 'number' });
@@ -1429,51 +1460,102 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       fields.push({ key: 'minor_fouls', label: 'Minor Fouls', type: 'number' });
     }
 
-    // Gymnastics specific fields
+    // Gymnastics specific fields - Only API required fields
     if (this.sportConfig?.name === 'Gymnastics') {
-      // Add all apparatus for gymnastics
-      this.gymnasticsApparatus.forEach(apparatus => {
-        fields.push({ 
-          key: `${apparatus}_difficulty_score`, 
-          label: `${apparatus.replace('_', ' ').toUpperCase()} - Difficulty Score`, 
-          type: 'number' 
-        });
-        fields.push({ 
-          key: `${apparatus}_execution_score`, 
-          label: `${apparatus.replace('_', ' ').toUpperCase()} - Execution Score`, 
-          type: 'number' 
-        });
-        fields.push({ 
-          key: `${apparatus}_combined_score`, 
-          label: `${apparatus.replace('_', ' ').toUpperCase()} - Combined Score`, 
-          type: 'number' 
-        });
-        fields.push({ 
-          key: `${apparatus}_deductions`, 
-          label: `${apparatus.replace('_', ' ').toUpperCase()} - Deductions`, 
-          type: 'number' 
-        });
-        fields.push({ 
-          key: `${apparatus}_completed`, 
-          label: `${apparatus.replace('_', ' ').toUpperCase()} - Completed`, 
-          type: 'checkbox' 
-        });
+      // Get current apparatus for display
+      const currentApparatus = this.routineState.activeApparatus || 
+                              this.competitionState.currentApparatus || 
+                              'floor_exercise';
+      
+      // Core gymnastics scoring fields from API specification
+      fields.push({ 
+        key: 'apparatus_performed', 
+        label: 'Current Apparatus', 
+        type: 'select',
+        options: this.gymnasticsApparatus,
+        value: currentApparatus
       });
       
-      // General gymnastics fields
-      fields.push({ key: 'total_difficulty_score', label: 'Total Difficulty Score', type: 'number' });
-      fields.push({ key: 'total_execution_score', label: 'Total Execution Score', type: 'number' });
-      fields.push({ key: 'total_combined_score', label: 'Total Combined Score', type: 'number' });
-      fields.push({ key: 'total_deductions', label: 'Total Deductions', type: 'number' });
-      fields.push({ key: 'fall_count', label: 'Fall Count', type: 'number' });
-      fields.push({ key: 'line_deductions', label: 'Line Deductions', type: 'number' });
-      fields.push({ key: 'time_deductions', label: 'Time Deductions', type: 'number' });
-      fields.push({ key: 'conduct_deductions', label: 'Conduct Deductions', type: 'number' });
-      fields.push({ key: 'routines_completed', label: 'Routines Completed', type: 'number' });
-      fields.push({ key: 'all_around_total', label: 'All Around Total', type: 'number' });
-      fields.push({ key: 'qualification_score', label: 'Qualification Score', type: 'number' });
-      fields.push({ key: 'apparatus_rank', label: 'Apparatus Rank', type: 'number' });
-      fields.push({ key: 'overall_rank', label: 'Overall Rank', type: 'number' });
+      fields.push({ 
+        key: 'difficulty_score', 
+        label: 'Difficulty Score (D-Score)', 
+        type: 'number',
+        min: 0,
+        max: 10,
+        step: 0.1
+      });
+      
+      fields.push({ 
+        key: 'execution_score', 
+        label: 'Execution Score (E-Score)', 
+        type: 'number',
+        min: 0,
+        max: 10,
+        step: 0.1
+      });
+      
+      fields.push({ 
+        key: 'total_score', 
+        label: 'Total Score (Calculated)', 
+        type: 'number',
+        readonly: true
+      });
+      
+      fields.push({ 
+        key: 'deductions', 
+        label: 'Deductions', 
+        type: 'number',
+        min: 0,
+        max: 5,
+        step: 0.1
+      });
+      
+      fields.push({ 
+        key: 'fall_count', 
+        label: 'Fall Count', 
+        type: 'number',
+        min: 0,
+        max: 10
+      });
+      
+      fields.push({ 
+        key: 'routine_completion', 
+        label: 'Routine Completed', 
+        type: 'checkbox'
+      });
+      
+      fields.push({ 
+        key: 'landing_quality', 
+        label: 'Landing Quality', 
+        type: 'select',
+        options: ['excellent', 'good', 'average', 'poor']
+      });
+      
+      fields.push({ 
+        key: 'routine_duration', 
+        label: 'Routine Duration (seconds)', 
+        type: 'number',
+        min: 30,
+        max: 150
+      });
+      
+      fields.push({ 
+        key: 'artistic_score', 
+        label: 'Artistic Score', 
+        type: 'number',
+        min: 0,
+        max: 10,
+        step: 0.1
+      });
+      
+      fields.push({ 
+        key: 'technical_score', 
+        label: 'Technical Score', 
+        type: 'number',
+        min: 0,
+        max: 10,
+        step: 0.1
+      });
     }
 
     return fields;
@@ -1523,12 +1605,19 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     const playerFields = this.getPlayerFields();
     let formHtml = `
       <div style="max-height: 400px; overflow-y: auto;">
-        <h6>${player.first_name} ${player.last_name} - #${player.uniform || player.displayid}</h6>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+        <h6><i class="fas fa-dumbbell me-2"></i>${player.first_name} ${player.last_name} - #${player.uniform || player.displayid}</h6>
+        ${this.sportConfig?.name === 'Gymnastics' ? `
+          <div class="alert alert-info" style="font-size: 0.9em; padding: 8px; margin: 10px 0;">
+            <i class="fas fa-info-circle me-1"></i>
+            <strong>Current Apparatus:</strong> ${(this.competitionState.currentApparatus || 'floor_exercise').replace('_', ' ').toUpperCase()}
+          </div>
+        ` : ''}
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
     `;
 
     playerFields.forEach(field => {
-      const currentValue = currentStats[field.key] || 0;
+      const currentValue = currentStats[field.key] || field.value || 0;
+      
       if (field.type === 'checkbox') {
         formHtml += `
           <div>
@@ -1536,11 +1625,41 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
             <input type="checkbox" class="form-check-input" id="${field.key}" ${currentValue ? 'checked' : ''}>
           </div>
         `;
-      } else {
+      } else if (field.type === 'select') {
         formHtml += `
           <div>
             <label><strong>${field.label}:</strong></label><br>
-            <input type="number" class="form-control" id="${field.key}" value="${currentValue}" min="0" style="width: 100%; padding: 5px;">
+            <select class="form-control" id="${field.key}" style="width: 100%; padding: 5px;">
+        `;
+        if (field.options) {
+          field.options.forEach(option => {
+            const optionValue = typeof option === 'string' ? option : option;
+            const displayText = typeof option === 'string' ? option.replace('_', ' ').toUpperCase() : option;
+            const selected = currentValue === optionValue ? 'selected' : '';
+            formHtml += `<option value="${optionValue}" ${selected}>${displayText}</option>`;
+          });
+        }
+        formHtml += `</select></div>`;
+      } else {
+        // Handle number and text inputs
+        const minAttr = field.min !== undefined ? `min="${field.min}"` : 'min="0"';
+        const maxAttr = field.max !== undefined ? `max="${field.max}"` : '';
+        const stepAttr = field.step !== undefined ? `step="${field.step}"` : '';
+        const readonlyAttr = field.readonly ? 'readonly' : '';
+        const inputType = field.type === 'number' ? 'number' : 'text';
+        
+        formHtml += `
+          <div>
+            <label><strong>${field.label}:</strong></label><br>
+            <input type="${inputType}" 
+                   class="form-control" 
+                   id="${field.key}" 
+                   value="${currentValue}" 
+                   ${minAttr} 
+                   ${maxAttr} 
+                   ${stepAttr} 
+                   ${readonlyAttr}
+                   style="width: 100%; padding: 5px;">
           </div>
         `;
       }
@@ -1580,13 +1699,22 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       };
 
       playerFields.forEach(field => {
-        const input = dialogDiv.querySelector(`#${field.key}`) as HTMLInputElement;
+        const input = dialogDiv.querySelector(`#${field.key}`) as HTMLInputElement | HTMLSelectElement;
+        
         if (field.type === 'checkbox') {
-          updatedStats[field.key] = input.checked;
+          updatedStats[field.key] = (input as HTMLInputElement).checked;
+        } else if (field.type === 'select') {
+          updatedStats[field.key] = (input as HTMLSelectElement).value;
+        } else if (field.type === 'number') {
+          const numValue = parseFloat(input.value) || 0;
+          // Ensure values within specified range
+          let finalValue = numValue;
+          if (field.min !== undefined) finalValue = Math.max(field.min, finalValue);
+          if (field.max !== undefined) finalValue = Math.min(field.max, finalValue);
+          updatedStats[field.key] = finalValue;
         } else {
-          const value = parseInt(input.value) || 0;
-          // Ensure non-negative values for stats
-          updatedStats[field.key] = Math.max(0, value);
+          // Text fields
+          updatedStats[field.key] = input.value;
         }
       });
 
@@ -4125,65 +4253,150 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
 
   updateGymnasticsPlayerStats(statsData: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
-    // Add gymnastics-specific player stats
-    const gymnasticsPlayerData = {
-      ...statsData,
-      apparatus_scores: [],
-      total_difficulty_score: 0,
-      total_execution_score: 0, 
-      total_combined_score: 0,
-      total_deductions: 0,
-      routines_completed: 0,
-      fall_count: 0,
-      line_deductions: 0,
-      time_deductions: 0
+    console.log('🤸‍♀️ Updating gymnastics player stats:', statsData);
+    
+    // Get current apparatus from routine state or competition state
+    const currentApparatus = this.routineState.activeApparatus || 
+                            this.competitionState.currentApparatus || 
+                            'floor_exercise';
+    
+    console.log('📍 Current apparatus for routine:', currentApparatus);
+
+    // Build comprehensive gymnastics player data according to API spec
+    const gymnasticsPlayerData: any = {
+      // Required base fields
+      match: this.match.id,
+      team: player.team_id || player.team?.id,
+      player: player.id,
+      
+      // Current apparatus being performed
+      apparatus_performed: currentApparatus,
+      
+      // Core gymnastics scoring fields
+      difficulty_score: parseFloat(statsData.difficulty_score) || 0.0,
+      execution_score: parseFloat(statsData.execution_score) || 0.0,
+      total_score: 0.0, // Will be calculated
+      deductions: parseFloat(statsData.deductions) || 0.0,
+      fall_count: parseInt(statsData.fall_count) || 0,
+      routine_completion: statsData.routine_completion !== false, // Default true
+      landing_quality: statsData.landing_quality || 'good',
+      routine_duration: parseInt(statsData.routine_duration) || this.routineState.routineDuration || 68,
+      
+      // Advanced scoring fields
+      artistic_score: parseFloat(statsData.artistic_score) || 0.0,
+      technical_score: parseFloat(statsData.technical_score) || 0.0,
+      
+      // Additional gymnastics-specific fields
+      neutral_deduction: parseFloat(statsData.neutral_deduction) || 0.0,
+      line_deductions: parseFloat(statsData.line_deductions) || 0.0,
+      time_deductions: parseFloat(statsData.time_deductions) || 0.0,
+      composition_deductions: parseFloat(statsData.composition_deductions) || 0.0,
+      
+      // Performance quality indicators
+      start_value: parseFloat(statsData.start_value) || 0.0,
+      bonus_points: parseFloat(statsData.bonus_points) || 0.0,
+      connection_value: parseFloat(statsData.connection_value) || 0.0,
+      
+      // Routine characteristics
+      element_count: parseInt(statsData.element_count) || 0,
+      dismount_value: parseFloat(statsData.dismount_value) || 0.0,
+      special_requirements_met: parseInt(statsData.special_requirements_met) || 0,
+      
+      // Competition context
+      rotation_number: this.competitionState.currentRotation || 1,
+      subdivision: statsData.subdivision || 'A',
+      session_id: this.sessionConfig.sessionId,
+      
+      // Apparatus-specific legacy fields for backward compatibility
+      [`${currentApparatus}_difficulty_score`]: parseFloat(statsData.difficulty_score) || 0.0,
+      [`${currentApparatus}_execution_score`]: parseFloat(statsData.execution_score) || 0.0,
+      [`${currentApparatus}_combined_score`]: 0.0, // Will be calculated
+      [`${currentApparatus}_deductions`]: parseFloat(statsData.deductions) || 0.0,
+      [`${currentApparatus}_completed`]: statsData.routine_completion !== false
     };
 
-    // Calculate apparatus scores if available
-    this.gymnasticsApparatus.forEach(apparatus => {
-      const difficultyKey = `${apparatus}_difficulty_score`;
-      const executionKey = `${apparatus}_execution_score`;
-      const combinedKey = `${apparatus}_combined_score`;
+    // Set start_value to difficulty_score if not provided
+    if (gymnasticsPlayerData.start_value === 0.0) {
+      gymnasticsPlayerData.start_value = gymnasticsPlayerData.difficulty_score;
+    }
 
-      if (statsData[difficultyKey] !== undefined || statsData[executionKey] !== undefined) {
-        const difficultyScore = parseFloat(statsData[difficultyKey]) || 0;
-        const executionScore = parseFloat(statsData[executionKey]) || 0;
-        const combinedScore = parseFloat(statsData[combinedKey]) || (difficultyScore + executionScore);
+    // Calculate total score (difficulty + execution - deductions)
+    gymnasticsPlayerData.total_score = 
+      gymnasticsPlayerData.difficulty_score + 
+      gymnasticsPlayerData.execution_score - 
+      gymnasticsPlayerData.deductions;
 
-        gymnasticsPlayerData.apparatus_scores.push({
-          apparatus: apparatus,
-          difficulty_score: difficultyScore,
-          execution_score: executionScore,
-          combined_score: combinedScore,
-          neutral_deduction: 0,
-          completed: combinedScore > 0
-        });
+    // Update legacy combined score
+    gymnasticsPlayerData[`${currentApparatus}_combined_score`] = gymnasticsPlayerData.total_score;
 
-        // Add to totals
-        gymnasticsPlayerData.total_difficulty_score += difficultyScore;
-        gymnasticsPlayerData.total_execution_score += executionScore;
-        gymnasticsPlayerData.total_combined_score += combinedScore;
-        if (combinedScore > 0) {
-          gymnasticsPlayerData.routines_completed++;
-        }
-      }
+    // Add timestamp for this apparatus performance
+    gymnasticsPlayerData.last_updated = new Date().toISOString();
+    gymnasticsPlayerData.apparatus_completion_time = new Date().toISOString();
+
+    // Add routine timing if available
+    if (this.routineState.routineStartTime) {
+      const routineStart = this.routineState.routineStartTime.getTime();
+      const now = new Date().getTime();
+      gymnasticsPlayerData.actual_routine_duration = Math.floor((now - routineStart) / 1000);
+    }
+
+    // Validate required score fields
+    if (gymnasticsPlayerData.difficulty_score === 0 && gymnasticsPlayerData.execution_score === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Scores',
+        text: 'Please enter at least a difficulty score or execution score.',
+        confirmButtonColor: '#ffc107'
+      });
+      return;
+    }
+
+    // Validate score ranges
+    if (gymnasticsPlayerData.difficulty_score < 0 || gymnasticsPlayerData.difficulty_score > 10) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Difficulty Score',
+        text: 'Difficulty score must be between 0.0 and 10.0.',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    if (gymnasticsPlayerData.execution_score < 0 || gymnasticsPlayerData.execution_score > 10) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Execution Score',
+        text: 'Execution score must be between 0.0 and 10.0.',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
+
+    console.log('🏆 Final gymnastics player data for API:', gymnasticsPlayerData);
+    console.log('📊 Score breakdown:', {
+      apparatus: currentApparatus,
+      difficulty: gymnasticsPlayerData.difficulty_score,
+      execution: gymnasticsPlayerData.execution_score,
+      deductions: gymnasticsPlayerData.deductions,
+      total: gymnasticsPlayerData.total_score,
+      routine_completion: gymnasticsPlayerData.routine_completion
     });
-
-    console.log('Gymnastics player data:', gymnasticsPlayerData);
+console.log('🏆 Sending player update:', gymnasticsPlayerData);
     this.sendPlayerUpdate(gymnasticsPlayerData, dialogDiv, saveBtn, player);
   }
 
   sendPlayerUpdate(updatedStats: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
     // Validate required fields
-    if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        text: 'Missing required match, team, or player information',
-        confirmButtonColor: '#dc3545'
-      });
-      return;
-    }
+    console.log('🏆 Sending player update:', updatedStats);
+    // if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
+    //   Swal.fire({
+    //     icon: 'error',
+    //     title: 'Validation Error',
+    //     text: 'Missing required match, team, or player information',
+    //     confirmButtonColor: '#dc3545'
+    //   });
+    //   return;
+    // }
 
     // Disable save button during request
     saveBtn.disabled = true;
