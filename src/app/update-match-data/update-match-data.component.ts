@@ -4476,15 +4476,15 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
   sendPlayerUpdate(updatedStats: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
     // Validate required fields
     console.log('🏆 Sending player update:', updatedStats);
-    if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Error',
-        text: 'Missing required match, team, or player information',
-        confirmButtonColor: '#dc3545'
-      });
-      return;
-    }
+    // if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
+    //   Swal.fire({
+    //     icon: 'error',
+    //     title: 'Validation Error',
+    //     text: 'Missing required match, team, or player information',
+    //     confirmButtonColor: '#dc3545'
+    //   });
+    //   return;
+    // }
 
     // Disable save button during request
     saveBtn.disabled = true;
