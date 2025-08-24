@@ -1769,3 +1769,108 @@
     margin: 1px;
   }
 }
+
+/* ============================================================================ */
+/* 🤸‍♀️ LIVE GYMNASTICS SCORING STYLES */
+/* ============================================================================ */
+
+.apparatus-score-block {
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.apparatus-score-block:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.apparatus-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.25rem;
+}
+
+.apparatus-name i {
+  margin-right: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.team-apparatus-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.score-pair .badge {
+  display: block;
+  width: 100%;
+  font-size: 0.65rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.gymnastics-scoreboard .apparatus-score-block {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.gymnastics-scoreboard .apparatus-name {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+/* Live update indicator */
+.refresh-indicator {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Apparatus score animation */
+.apparatus-score-block .badge {
+  animation: scoreUpdate 0.5s ease-out;
+}
+
+@keyframes scoreUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); background-color: #ffc107; }
+  100% { transform: scale(1); }
+}
+
+/* Live scoring status indicator */
+.live-scoring-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  padding: 0.5rem 1rem;
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-scoring-status.disconnected {
+  background: rgba(220, 53, 69, 0.9);
+}
+
+.live-scoring-status i {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}

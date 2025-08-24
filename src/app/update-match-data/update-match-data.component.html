@@ -1,4 +1,12 @@
 <div class="container-fluid">
+  <!-- Live Scoring Status Indicator -->
+  <div *ngIf="isGymnastics() && match" class="live-scoring-status" [class.disconnected]="!lastLiveScoreUpdate">
+    <i class="fas fa-circle"></i>
+    <span *ngIf="lastLiveScoreUpdate">Live Scoring Active</span>
+    <span *ngIf="!lastLiveScoreUpdate">Live Scoring Disconnected</span>
+    <small *ngIf="lastLiveScoreUpdate">({{ getLastUpdateTime() }})</small>
+  </div>
+
   <div class="row">
     <div class="col-12">
       <div class="card shadow">
@@ -249,6 +257,14 @@
                     <small class="text-muted">Current Apparatus</small>
                     <div class="apparatus-name">{{ (selectedApparatus?.replace('_', ' ') | titlecase) || 'Multiple' }}</div>
                   </div>
+                  <div class="live-scoring-controls mt-2">
+                    <button class="btn btn-sm btn-outline-light" 
+                            (click)="refreshLiveScoring()" 
+                            title="Refresh Live Scoring">
+                      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+                      <small class="ms-1">Refresh Scores</small>
+                    </button>
+                  </div>
                   <div class="competition-time mt-2" [ngClass]="{
                     'live-pulse': match.status === 'live',
                     'finished': match.status === 'finished',
@@ -360,35 +376,39 @@
               
               <!-- Apparatus Progress Row for Gymnastics -->
               <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-running me-1"></i>Floor
+                <div class="col-12">
+                  <small class="text-muted mb-2 d-block">
+                    <i class="fas fa-dumbbell me-1"></i>Apparatus Scores
+                    <span class="ms-2 badge bg-info" *ngIf="lastLiveScoreUpdate">
+                      Last Update: {{ getLastUpdateTime() }}
+                    </span>
                   </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-dumbbell me-1"></i>Pommel
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-circle me-1"></i>Rings
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-arrow-up me-1"></i>Vault
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-equals me-1"></i>P.Bars
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-minus me-1"></i>H.Bar
-                  </small>
+                  <div class="row">
+                    <div class="col-2" *ngFor="let apparatus of ['floor_exercise', 'pommel_horse', 'still_rings', 'vault', 'parallel_bars', 'horizontal_bar']">
+                      <div class="apparatus-score-block">
+                        <div class="apparatus-name">
+                          <i class="fas" [ngClass]="{
+                            'fa-running': apparatus === 'floor_exercise',
+                            'fa-horse': apparatus === 'pommel_horse', 
+                            'fa-circle': apparatus === 'still_rings',
+                            'fa-arrow-up': apparatus === 'vault',
+                            'fa-equals': apparatus === 'parallel_bars',
+                            'fa-minus': apparatus === 'horizontal_bar'
+                          }"></i>
+                          <small>{{ apparatus.replace('_', ' ') | titlecase }}</small>
+                        </div>
+                        <div class="team-apparatus-scores mt-1">
+                          <div class="score-pair" *ngFor="let team of teams; index as i">
+                            <span class="badge" 
+                                  [ngClass]="{'bg-primary': i === 0, 'bg-danger': i === 1}"
+                                  [title]="getTeamName(team.team?.id)">
+                              {{ getApparatusScore(team.team?.id, apparatus).toFixed(1) }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

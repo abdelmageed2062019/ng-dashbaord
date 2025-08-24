@@ -148,6 +148,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     isRoutineActive: false
   };
 
+  // Live scoring data management
+  liveScoreData: any = null;
+  teamScores: { [teamId: number]: any } = {};
+  lastLiveScoreUpdate: Date | null = null;
+  liveScoreRefreshInterval: any = null;
+  private readonly LIVE_SCORE_REFRESH_INTERVAL = 5000; // 5 seconds
+
   // Timeout management
   timeoutState = {
     isActive: false,
@@ -615,6 +622,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.initializeWaterPoloGameState();
         }
 
+        // Initialize live scoring for all sports
+        this.initializeLiveScoring(matchId);
 
         this.loading = false;
         
@@ -1204,23 +1213,32 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns formatted total score string
    */
   getTeamGymnasticsScore(teamId: number): string {
-    if (!teamId || !this.playersData[teamId]) {
+    if (!teamId) {
       return '0.000';
     }
 
-    // Check if there's an official team score first
+    // First priority: Use live scoring data if available
+    const liveScore = this.getTeamLiveScore(teamId);
+    if (liveScore && liveScore.totalScore > 0) {
+      return liveScore.totalScore.toFixed(3);
+    }
+
+    // Second priority: Check if there's an official team score
     const teamData = this.teams.find(t => t.team?.id === teamId);
     if (teamData?.total_score) {
       return Number(teamData.total_score).toFixed(3);
     }
 
-    // Calculate from player scores
-    const players = this.playersData[teamId] || [];
-    const totalScore = players.reduce((sum, player) => {
-      return sum + (Number(player.total_score) || 0);
-    }, 0);
+    // Fallback: Calculate from player scores
+    if (this.playersData[teamId]) {
+      const players = this.playersData[teamId] || [];
+      const totalScore = players.reduce((sum, player) => {
+        return sum + (Number(player.total_score) || 0);
+      }, 0);
+      return totalScore.toFixed(3);
+    }
 
-    return totalScore.toFixed(3);
+    return '0.000';
   }
 
   /**
@@ -1229,13 +1247,28 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns highest individual score
    */
   getTeamHighestScore(teamId: number): string {
-    if (!teamId || !this.playersData[teamId]) {
+    if (!teamId) {
       return '0.000';
     }
 
-    const players = this.playersData[teamId] || [];
-    const highestScore = Math.max(...players.map(p => Number(p.total_score) || 0));
-    return highestScore.toFixed(3);
+    // First priority: Calculate from live scoring data
+    const liveScore = this.getTeamLiveScore(teamId);
+    if (liveScore && liveScore.apparatusScores) {
+      const scores = Object.values(liveScore.apparatusScores)
+        .filter((app: any) => app.completed)
+        .map((app: any) => app.totalScore);
+      const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+      return highestScore.toFixed(3);
+    }
+
+    // Fallback: Calculate from player scores
+    if (this.playersData[teamId]) {
+      const players = this.playersData[teamId] || [];
+      const highestScore = Math.max(...players.map(p => Number(p.total_score) || 0));
+      return highestScore.toFixed(3);
+    }
+
+    return '0.000';
   }
 
   /**
@@ -1244,18 +1277,35 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns average team score
    */
   getTeamAverageScore(teamId: number): string {
-    if (!teamId || !this.playersData[teamId]) {
+    if (!teamId) {
       return '0.000';
     }
 
-    const players = this.playersData[teamId] || [];
-    if (players.length === 0) return '0.000';
+    // First priority: Calculate from live scoring data
+    const liveScore = this.getTeamLiveScore(teamId);
+    if (liveScore && liveScore.apparatusScores) {
+      const scores = Object.values(liveScore.apparatusScores)
+        .filter((app: any) => app.completed)
+        .map((app: any) => app.totalScore);
+      if (scores.length > 0) {
+        const average = scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length;
+        return average.toFixed(3);
+      }
+    }
 
-    const totalScore = players.reduce((sum, player) => {
-      return sum + (Number(player.total_score) || 0);
-    }, 0);
+    // Fallback: Calculate from player scores
+    if (this.playersData[teamId]) {
+      const players = this.playersData[teamId] || [];
+      if (players.length === 0) return '0.000';
 
-    return (totalScore / players.length).toFixed(3);
+      const totalScore = players.reduce((sum, player) => {
+        return sum + (Number(player.total_score) || 0);
+      }, 0);
+
+      return (totalScore / players.length).toFixed(3);
+    }
+
+    return '0.000';
   }
 
   /**
@@ -1264,16 +1314,34 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns team difficulty score
    */
   getTeamDifficultyScore(teamId: number): string {
-    if (!teamId || !this.playersData[teamId]) {
+    if (!teamId) {
       return '0.000';
     }
 
-    const players = this.playersData[teamId] || [];
-    const totalDifficulty = players.reduce((sum, player) => {
-      return sum + (Number(player.difficulty_score) || 0);
-    }, 0);
+    // First priority: Calculate from live scoring data
+    const liveScore = this.getTeamLiveScore(teamId);
+    if (liveScore && liveScore.apparatusScores) {
+      let totalDifficulty = 0;
+      Object.values(liveScore.apparatusScores).forEach((apparatusData: any) => {
+        if (apparatusData.completed) {
+          // For live data, we need to calculate based on combined scores
+          // This is an approximation since live data doesn't separate difficulty
+          totalDifficulty += apparatusData.totalScore * 0.6; // Assume 60% is difficulty
+        }
+      });
+      return totalDifficulty.toFixed(3);
+    }
 
-    return totalDifficulty.toFixed(3);
+    // Fallback: Calculate from player scores
+    if (this.playersData[teamId]) {
+      const players = this.playersData[teamId] || [];
+      const totalDifficulty = players.reduce((sum, player) => {
+        return sum + (Number(player.difficulty_score) || 0);
+      }, 0);
+      return totalDifficulty.toFixed(3);
+    }
+
+    return '0.000';
   }
 
   /**
@@ -1282,16 +1350,34 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns team execution score
    */
   getTeamExecutionScore(teamId: number): string {
-    if (!teamId || !this.playersData[teamId]) {
+    if (!teamId) {
       return '0.000';
     }
 
-    const players = this.playersData[teamId] || [];
-    const totalExecution = players.reduce((sum, player) => {
-      return sum + (Number(player.execution_score) || 0);
-    }, 0);
+    // First priority: Calculate from live scoring data
+    const liveScore = this.getTeamLiveScore(teamId);
+    if (liveScore && liveScore.apparatusScores) {
+      let totalExecution = 0;
+      Object.values(liveScore.apparatusScores).forEach((apparatusData: any) => {
+        if (apparatusData.completed) {
+          // For live data, we need to calculate based on combined scores
+          // This is an approximation since live data doesn't separate execution
+          totalExecution += apparatusData.totalScore * 0.4; // Assume 40% is execution
+        }
+      });
+      return totalExecution.toFixed(3);
+    }
 
-    return totalExecution.toFixed(3);
+    // Fallback: Calculate from player scores
+    if (this.playersData[teamId]) {
+      const players = this.playersData[teamId] || [];
+      const totalExecution = players.reduce((sum, player) => {
+        return sum + (Number(player.execution_score) || 0);
+      }, 0);
+      return totalExecution.toFixed(3);
+    }
+
+    return '0.000';
   }
 
   // Debug method to test player update API
@@ -3130,6 +3216,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.stopWaterPoloTimer();
     // Clean up countdown timer
     this.stopCountdownTimer();
+    // Clean up live scoring refresh
+    this.stopLiveScoreRefresh();
   }
 
   // Utility method for formatting time display
@@ -4388,15 +4476,15 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
   sendPlayerUpdate(updatedStats: any, dialogDiv: HTMLElement, saveBtn: HTMLButtonElement, player: any): void {
     // Validate required fields
     console.log('🏆 Sending player update:', updatedStats);
-    // if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
-    //   Swal.fire({
-    //     icon: 'error',
-    //     title: 'Validation Error',
-    //     text: 'Missing required match, team, or player information',
-    //     confirmButtonColor: '#dc3545'
-    //   });
-    //   return;
-    // }
+    if (!updatedStats.match || !updatedStats.team || !updatedStats.player) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Missing required match, team, or player information',
+        confirmButtonColor: '#dc3545'
+      });
+      return;
+    }
 
     // Disable save button during request
     saveBtn.disabled = true;
@@ -6321,6 +6409,226 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
       plus_minus: (plusMinusMap[statType] || 0) * value
     };
     this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+  }
+
+  // ============================================================================
+  // 🎯 LIVE SCORING MANAGEMENT METHODS
+  // ============================================================================
+
+  /**
+   * Initialize live scoring data refresh
+   */
+  initializeLiveScoring(matchId: number): void {
+    console.log('🎯 Initializing live scoring for match:', matchId);
+    
+    // Load initial live score data
+    this.loadLiveScoreData(matchId);
+    
+    // Start live score refresh interval
+    this.startLiveScoreRefresh(matchId);
+  }
+
+  /**
+   * Load live scoring data from API
+   */
+  loadLiveScoreData(matchId: number): void {
+    this.apiService.getLiveScoring(matchId).subscribe({
+      next: (data) => {
+        console.log('🏆 Live scoring data received:', data);
+        this.liveScoreData = data;
+        this.lastLiveScoreUpdate = new Date();
+        
+        // Process team scores from player stats
+        this.processTeamScores(data);
+        
+        // Force UI update
+        setTimeout(() => {}, 0);
+      },
+      error: (error) => {
+        console.error('❌ Error loading live scoring data:', error);
+        // Don't show error to user as this might be polling
+      }
+    });
+  }
+
+  /**
+   * Process team scores from live scoring data
+   */
+  processTeamScores(liveData: any): void {
+    if (!liveData || !liveData.player_stats) {
+      return;
+    }
+
+    console.log('📊 Processing team scores from live data');
+    
+    // Reset team scores
+    this.teamScores = {};
+
+    // Group players by team and calculate scores
+    liveData.player_stats.forEach((playerStat: any) => {
+      const teamId = playerStat.team;
+      
+      if (!this.teamScores[teamId]) {
+        this.teamScores[teamId] = {
+          teamId: teamId,
+          teamName: this.getTeamName(teamId),
+          totalScore: 0,
+          apparatusScores: {},
+          completedApparatus: 0,
+          totalApparatus: 8, // Standard gymnastics apparatus count
+          lastUpdated: new Date()
+        };
+      }
+
+      // Process apparatus scores if available
+      if (playerStat.apparatus_scores && Array.isArray(playerStat.apparatus_scores)) {
+        playerStat.apparatus_scores.forEach((apparatusScore: any) => {
+          const apparatus = apparatusScore.apparatus;
+          
+          if (!this.teamScores[teamId].apparatusScores[apparatus]) {
+            this.teamScores[teamId].apparatusScores[apparatus] = {
+              totalScore: 0,
+              playerCount: 0,
+              completed: false
+            };
+          }
+          
+          // Add player's score for this apparatus
+          if (apparatusScore.completed && apparatusScore.combined_score > 0) {
+            this.teamScores[teamId].apparatusScores[apparatus].totalScore += apparatusScore.combined_score;
+            this.teamScores[teamId].apparatusScores[apparatus].playerCount += 1;
+            this.teamScores[teamId].apparatusScores[apparatus].completed = true;
+          }
+        });
+      }
+    });
+
+    // Calculate total team scores
+    Object.keys(this.teamScores).forEach(teamIdStr => {
+      const teamId = parseInt(teamIdStr);
+      const team = this.teamScores[teamId];
+      team.totalScore = 0;
+      team.completedApparatus = 0;
+
+      Object.keys(team.apparatusScores).forEach(apparatus => {
+        const apparatusData = team.apparatusScores[apparatus];
+        if (apparatusData.completed) {
+          team.totalScore += apparatusData.totalScore;
+          team.completedApparatus += 1;
+        }
+      });
+    });
+
+    console.log('🏆 Team scores calculated:', this.teamScores);
+  }
+
+  /**
+   * Start live score refresh interval
+   */
+  startLiveScoreRefresh(matchId: number): void {
+    // Clear existing interval if any
+    this.stopLiveScoreRefresh();
+    
+    console.log('🔄 Starting live score refresh every', this.LIVE_SCORE_REFRESH_INTERVAL, 'ms');
+    
+    this.liveScoreRefreshInterval = setInterval(() => {
+      this.loadLiveScoreData(matchId);
+    }, this.LIVE_SCORE_REFRESH_INTERVAL);
+  }
+
+  /**
+   * Stop live score refresh interval
+   */
+  stopLiveScoreRefresh(): void {
+    if (this.liveScoreRefreshInterval) {
+      console.log('⏹️ Stopping live score refresh');
+      clearInterval(this.liveScoreRefreshInterval);
+      this.liveScoreRefreshInterval = null;
+    }
+  }
+
+  /**
+   * Get team score for display
+   */
+  getTeamLiveScore(teamId: number): any {
+    return this.teamScores[teamId] || {
+      teamId: teamId,
+      teamName: this.getTeamName(teamId),
+      totalScore: 0,
+      apparatusScores: {},
+      completedApparatus: 0,
+      totalApparatus: 8,
+      lastUpdated: null
+    };
+  }
+
+  /**
+   * Get apparatus score for a team
+   */
+  getApparatusScore(teamId: number, apparatus: string): number {
+    const teamScore = this.teamScores[teamId];
+    if (teamScore && teamScore.apparatusScores[apparatus]) {
+      return teamScore.apparatusScores[apparatus].totalScore;
+    }
+    return 0;
+  }
+
+  /**
+   * Check if apparatus is completed for a team
+   */
+  isApparatusCompleted(teamId: number, apparatus: string): boolean {
+    const teamScore = this.teamScores[teamId];
+    if (teamScore && teamScore.apparatusScores[apparatus]) {
+      return teamScore.apparatusScores[apparatus].completed;
+    }
+    return false;
+  }
+
+  /**
+   * Get live match status
+   */
+  getLiveMatchStatus(): any {
+    if (!this.liveScoreData) {
+      return null;
+    }
+
+    return {
+      match: this.liveScoreData.match,
+      clock: this.liveScoreData.clock,
+      lastUpdated: this.lastLiveScoreUpdate
+    };
+  }
+
+  /**
+   * Force refresh live scoring data
+   */
+  refreshLiveScoring(): void {
+    if (!this.match?.id) {
+      return;
+    }
+
+    console.log('🔄 Manually refreshing live scoring data');
+    this.loadLiveScoreData(this.match.id);
+  }
+
+  /**
+   * Get formatted last update time
+   */
+  getLastUpdateTime(): string {
+    if (!this.lastLiveScoreUpdate) {
+      return 'Never';
+    }
+    
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - this.lastLiveScoreUpdate.getTime()) / 1000);
+    
+    if (diff < 60) {
+      return `${diff} seconds ago`;
+    } else if (diff < 3600) {
+      return `${Math.floor(diff / 60)} minutes ago`;
+    } else {
+      return this.lastLiveScoreUpdate.toLocaleTimeString();
+    }
   }
 
   // ============================================================================
