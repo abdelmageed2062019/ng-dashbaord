@@ -15,6 +15,8 @@ import { throwDialogContentAlreadyAttachedError } from '@angular/cdk/dialog';
   styleUrls: ['./update-match-data.component.css']
 })
 export class UpdateMatchDataComponent implements OnInit, OnDestroy {
+
+
   match: any;
   sportConfig: any;
   form!: FormGroup;
@@ -543,6 +545,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     { name: 'Wing Position', made: 0, attempted: 0 },
     { name: 'Penalty Shot', made: 0, attempted: 0 }
   ];
+  footballClock: any;
 
 
   constructor(
@@ -621,6 +624,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           this.getWaterPoloClockStatus();
           this.initializeWaterPoloGameState();
         }
+        if (this.isFootballMatch()) {
+          console.log('Loading football match features...');
+          
+          this.getMatchClockStatus(matchId);
+          // this.initializeFootballGameState();
+        }
 
         // Initialize live scoring for all sports
         this.initializeLiveScoring(matchId);
@@ -655,6 +664,48 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+  isFootballInitialized: boolean = false;
+  getMatchClockStatus(matchId: number) {
+    this.apiService.getMatchClockStatus(matchId).subscribe({
+      next: (clockStatus) => {
+        console.log('Match clock status loaded:', clockStatus);
+        this.footballClock = clockStatus;
+        this.isFootballInitialized = true;
+      },
+      error: (err) => {
+
+        console.error('Error loading match clock status:', err);
+      }
+    });
+  }
+  initializeFootballClock() {
+    if (!this.isFootballInitialized) {
+      this.apiService.initializeFootballClock(this.match.id).subscribe({
+        next: (clockStatus) => {
+          console.log('Football clock initialized:', clockStatus);
+          this.footballClock = clockStatus;
+          this.isFootballInitialized = true;
+
+        },
+        error: (err) => {
+          console.error('Error initializing football clock:', err);
+        }
+      });
+    }
+  }
+  startFootballClock() {
+    if (this.isFootballInitialized) {
+      this.apiService.startFootballClock(this.match.id).subscribe({
+        next: (clockStatus) => {
+          console.log('Football clock started:', clockStatus);
+          this.footballClock = clockStatus;
+        },
+        error: (err) => {
+          console.error('Error starting football clock:', err);
+        }
+      });
+    }
   }
 
   /**
@@ -4117,8 +4168,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Utility method to check if current match is gymnastics
   isGymnastics(): boolean {
-    console.log('Checking if match is gymnastics...');
-    console.log(this.match);
+    // console.log('Checking if match is gymnastics...');
+    // console.log(this.match);
     return this.match?.sport?.name?.toLowerCase().includes('gymnastics') || 
            this.match?.sport?.toLowerCase().includes('gymnastics') ||
            this.sportConfig?.name?.toLowerCase() === 'gymnastics' ||

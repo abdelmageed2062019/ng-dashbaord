@@ -974,6 +974,34 @@
             <i class="fas fa-check-circle"></i>
             {{ successMessage }}
           </div>
+          <!-- FootBall Clock Management -->
+           <div *ngIf="isFootballMatch()" class="mb-4">
+              <div class="card">
+                  <div class="card-header">
+                      <h5 class="mb-0">Football Match Clock</h5>
+                  </div>
+                  <div class="card-body">
+                      <!-- If Match clock not initialized -->
+                      <div *ngIf="!isFootballInitialized" class="row mb-4 text-center">
+                          <div class="col-12">
+                              <p>Match clock is not initialized.</p>
+                          </div>
+                          <div class="col-12">
+                              <button class="btn btn-primary" (click)="initializeFootballClock()">Initialize Clock</button>
+                          </div>
+                      </div>
+                      <!-- If Match clock is initialized -->
+                      <div *ngIf="isFootballInitialized" class="row mb-4 text-center">
+                          <div class="col-12">
+                              <p>Match clock is initialized.</p>
+                          </div>
+                          <div class="col-12" *ngIf="!footballClock.isRunning && footballClock.clock_state === 'stopped'">
+                              <button class="btn btn-primary" (click)="startFootballClock()">Start Clock</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+           </div>
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form && !loading">
             <div class="row g-4">

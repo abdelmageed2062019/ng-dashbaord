@@ -900,4 +900,32 @@ export class ApiService {
     const params = new HttpParams().set('match_id', matchId.toString());
     return this.http.get(url, { headers: this.getHeaders(), params });
   }
+
+
+  // Get Clock Status
+  getMatchClockStatus(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/`;
+    return this.http.get(url, { headers: this.getHeaders() });
+  }
+  //initialize Football Clock
+  initializeFootballClock(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/initialize/`;
+    const footballClockConfig = {
+      "match_format": "football",
+      "total_periods": 2,
+      "period_duration": 2700,
+      "extra_time_duration": 900
+    };
+    console.log('Initializing football clock:', matchId, footballClockConfig);
+    return this.http.post(url, footballClockConfig, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Football clock initialized:', response))
+    );
+  }
+  startFootballClock(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/start/`;
+    console.log('Starting football clock:', matchId);
+    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Football clock started:', response))
+    );
+  }
 }
