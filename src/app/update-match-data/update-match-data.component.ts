@@ -17,6 +17,9 @@ import { throwDialogContentAlreadyAttachedError } from '@angular/cdk/dialog';
 export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
 
+
+
+
   match: any;
   sportConfig: any;
   form!: FormGroup;
@@ -707,6 +710,45 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       });
     }
   }
+  pauseFootballClock() {
+    if (this.isFootballInitialized) {
+      this.apiService.pauseFootballClock(this.match.id).subscribe({
+        next: (clockStatus) => {
+          console.log('Football clock paused:', clockStatus);
+          this.footballClock = clockStatus;
+        },
+        error: (err) => {
+          console.error('Error pausing football clock:', err);
+        }
+      });
+    }
+  }
+  resumeFootballClock() {
+    if (this.isFootballInitialized) {
+      this.apiService.resumeFootballClock(this.match.id).subscribe({
+        next: (clockStatus) => {
+          console.log('Football clock resumed:', clockStatus);
+          this.footballClock = clockStatus;
+        },
+        error: (err) => {
+          console.error('Error resuming football clock:', err);
+        }
+      });
+    }
+  }
+  stopFootballClock() {
+  if (this.isFootballInitialized) {
+    this.apiService.stopFootballClock(this.match.id).subscribe({
+      next: (clockStatus) => {
+        console.log('Football clock stopped:', clockStatus);
+        this.footballClock = clockStatus;
+      },
+      error: (err) => {
+        console.error('Error stopping football clock:', err);
+      }
+    });
+  }
+}
 
   /**
    * Setup auto-refresh for live matches

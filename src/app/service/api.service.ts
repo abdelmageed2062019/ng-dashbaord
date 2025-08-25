@@ -928,4 +928,27 @@ export class ApiService {
       tap(response => console.log('Football clock started:', response))
     );
   }
+  pauseFootballClock(matchId: number, reason?: string): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/pause/`;
+    const data = { reason: reason || 'half_time' };
+    console.log('Pausing football clock:', matchId);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Football clock paused:', response))
+    );
+  }
+  resumeFootballClock(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/resume/`;
+    console.log('Resuming football clock:', matchId);
+    return this.http.post(url, {}, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Football clock resumed:', response))
+    );
+  }
+  stopFootballClock(matchId: number, reason?: string): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/stop/`;
+    const data = { reason: reason || 'match_completed' };
+    console.log('Stopping football clock:', matchId);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Football clock stopped:', response))
+    );
+  }
 }

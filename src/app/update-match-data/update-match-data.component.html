@@ -995,10 +995,26 @@
                           <div class="col-12">
                               <p>Match clock is initialized.</p>
                           </div>
-                          <div class="col-12" *ngIf="!footballClock.isRunning && footballClock.clock_state === 'stopped'">
+                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'stopped'">
                               <button class="btn btn-primary" (click)="startFootballClock()">Start Clock</button>
                           </div>
+                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running'">
+                              <button class="btn btn-danger" (click)="pauseFootballClock()">Pause Clock</button>
+                          </div>
+                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'paused'">
+                              <button class="btn btn-success" (click)="resumeFootballClock()">Resume Clock</button>
+                          </div>
+                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running' && footballClock.current_period === 2">
+                              <button class="btn btn-danger" (click)="stopFootballClock()">Stop Clock</button>
+                          </div>
                       </div>
+                      <div class="row text-center">
+                          <div class="col-12">
+                              <h3 [ngClass]="{'text-success': footballClock.isRunning, 'text-danger': !footballClock.isRunning}">
+                                  {{ liveScoreData?.clock.display_time || '00:00' }}
+                              </h3>
+                              <p>Current Period: {{ footballClock.current_period }} / 2</p>
+                          </div>
                   </div>
               </div>
            </div>
