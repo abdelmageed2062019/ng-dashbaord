@@ -56,7 +56,7 @@ export class SportMatchesComponent implements OnInit {
     return this.sportConfig && this.sportConfig.sport_code === 'BB';
   }
   IsFootballMatch(){
-    return this.sportConfig && this.sportConfig.sport_code === 'BF';
+    return this.sportConfig && this.sportConfig.sport_code === 'FB';
   }
   IsWaterPoloMatch(){
     return this.sportConfig && this.sportConfig.sport_code === 'WP';
