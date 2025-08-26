@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { CommonModule, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../service/api.service';
 
@@ -49,17 +49,17 @@ export class SportMatchesComponent implements OnInit {
 
   ngOnInit(): void {
     this.sportId = this.route.snapshot.paramMap.get('sportId');
-    this.sportConfig = history.state.sportConfig;
+    this.sportConfig = JSON.parse(localStorage.getItem('sport')||'{}')
     this.loadMatches();
   }
   IsBasketBallMatch(){
-    return this.sportConfig && this.sportConfig.name.toLowerCase() === 'basketball';
+    return this.sportConfig && this.sportConfig.sport_code === 'BB';
   }
   IsFootballMatch(){
-    return this.sportConfig && this.sportConfig.name.toLowerCase() === 'football';
+    return this.sportConfig && this.sportConfig.sport_code === 'BF';
   }
   IsWaterPoloMatch(){
-    return this.sportConfig && this.sportConfig.name.toLowerCase() === 'waterpolo';
+    return this.sportConfig && this.sportConfig.sport_code === 'WP';
   }
   
 

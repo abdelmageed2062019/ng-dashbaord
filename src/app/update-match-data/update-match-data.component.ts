@@ -561,7 +561,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loading = true;
-    this.sportConfig = history.state.sportConfig;
+    this.sportConfig = JSON.parse(localStorage.getItem('sport')||'{}');
+    console.log(this.sportConfig);
     const matchId = this.route.snapshot.paramMap.get('matchId');
     if (matchId) {
       this.loadMatchData(Number(matchId));
@@ -809,7 +810,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.dynamicFields.push({ key: 'group_name', label: 'Group Name', type: 'text' });
 
     // Football specific fields
-    if (this.sportConfig?.name === 'Football') {
+    if (this.sportConfig?.sport_code === 'FB') {
       this.dynamicFields.push({ key: 'red_cards', label: 'Red Cards', type: 'number' });
       this.dynamicFields.push({ key: 'yellow_cards', label: 'Yellow Cards', type: 'number' });
       this.dynamicFields.push({ key: 'fouls', label: 'Fouls', type: 'number' });
@@ -818,13 +819,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       this.dynamicFields.push({ key: 'shots_on_target', label: 'Shots on Target', type: 'number' });
       this.dynamicFields.push({ key: 'total_shots', label: 'Total Shots', type: 'number' });
       this.dynamicFields.push({ key: 'total_goals', label: 'Total Goals', type: 'number' });
-      if (this.sportConfig?.penalty_kicks) {
+      if (this.sportConfig?.sport_config?.penalty_kicks) {
         this.dynamicFields.push({ key: 'penalty_goals_scored', label: 'Penalty Goals', type: 'number' });
       }
     }
 
     // Basketball specific fields
-    if (this.sportConfig?.name === 'Basketball') {
+    if (this.sportConfig?.sport_code === 'BB') {
       this.dynamicFields.push({ key: 'total_points', label: 'Total Points', type: 'number' });
       this.dynamicFields.push({ key: 'two_pointers_made', label: 'Two Pointers Made', type: 'number' });
       this.dynamicFields.push({ key: 'two_pointers_attempted', label: 'Two Pointers Attempted', type: 'number' });
@@ -838,13 +839,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       this.dynamicFields.push({ key: 'total_blocks', label: 'Total Blocks', type: 'number' });
       this.dynamicFields.push({ key: 'total_turnovers', label: 'Total Turnovers', type: 'number' });
       this.dynamicFields.push({ key: 'total_personal_fouls', label: 'Personal Fouls', type: 'number' });
-      if (this.sportConfig?.quarters) {
+      if (this.sportConfig?.sport_config?.quarters) {
         this.dynamicFields.push({ key: 'quarters_played', label: 'Quarters Played', type: 'number' });
       }
     }
 
     // Water Polo specific fields
-    if (this.sportConfig?.name === 'Waterpolo') {
+    if (this.sportConfig?.sport_code === 'WP') {
       // Basic scoring fields
       this.dynamicFields.push({ key: 'goals_scored', label: 'Goals Scored', type: 'number' });
       this.dynamicFields.push({ key: 'assists', label: 'Assists', type: 'number' });
@@ -874,7 +875,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Gymnastics specific fields
-    if (this.sportConfig?.name === 'Gymnastics') {
+    if (this.sportConfig?.sport_code === 'GY') {
       // Basic match info
       this.dynamicFields.push({ key: 'competition_type', label: 'Competition Type', type: 'select', options: this.gymnasticsCompetitionTypes });
       this.dynamicFields.push({ key: 'session_number', label: 'Session Number', type: 'number' });
@@ -914,10 +915,10 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Duration fields based on sport config
-    if (this.sportConfig?.match_duration) {
+    if (this.sportConfig?.sport_config.match_duration) {
       this.dynamicFields.push({ key: 'match_duration', label: 'Match Duration (minutes)', type: 'number' });
     }
-    if (this.sportConfig?.extra_time_duration) {
+    if (this.sportConfig?.sport_config.extra_time_duration) {
       this.dynamicFields.push({ key: 'extra_time_duration', label: 'Extra Time Duration', type: 'number' });
     }
 
@@ -1018,7 +1019,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   goBack() {
     this.router.navigate(['/sport-matches', history.state.sportId], { 
-      state: { sportConfig: this.sportConfig } 
+      state: { sport: this.sportConfig } 
     });
   }
 
@@ -1215,13 +1216,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     const players = this.playersData[teamId] || [];
     let totalScore = 0;
     
-    if (this.sportConfig?.name.toLowerCase() === 'football' || this.sportConfig?.scoring_system === 'goals') {
+    if (this.isFootballMatch()) {
       // For football, sum up all goals from players
       totalScore = players.reduce((sum, player) => sum + (player.goals || 0), 0);
-    } else if (this.sportConfig?.name.toLowerCase() === 'basketball' || this.sportConfig?.scoring_system === 'points') {
+    } else if (this.isBasketball()) {
       // For basketball, sum up all points from players
       totalScore = players.reduce((sum, player) => sum + (player.points || 0), 0);
-    } else if (this.sportConfig?.name === 'Gymnastics') {
+    } else if (this.isGymnastics()) {
       // For gymnastics, sum up total combined scores
       totalScore = players.reduce((sum, player) => sum + (player.total_combined_score || player.total_score || 0), 0);
     } else {
@@ -1289,7 +1290,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns true if sport is football
    */
   isFootballMatch(): boolean {
-    return this.sportConfig?.name === 'Football';
+    return this.sportConfig?.sport_code === 'FB';
   }
 
   /**
@@ -1297,7 +1298,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * @returns true if sport is gymnastics
    */
   isGymnasticsMatch(): boolean {
-    return this.sportConfig?.name.toLowerCase() === 'gymnastics' || this.sportConfig?.scoring_system === 'gymnastics';
+    return this.sportConfig?.sport_code === 'GY';
   }
 
   /**
@@ -1581,7 +1582,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     fields.push({ key: 'minutes_played', label: 'Minutes Played', type: 'number' });
     
     // Football specific fields
-    if (this.sportConfig?.name === 'Football' || this.sportConfig?.scoring_system === 'goals') {
+    if (this.isFootballMatch()) {
       fields.push({ key: 'goals', label: 'Goals', type: 'number' });
       fields.push({ key: 'assists', label: 'Assists', type: 'number' });
       fields.push({ key: 'red_cards', label: 'Red Cards', type: 'number' });
@@ -1593,14 +1594,14 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       fields.push({ key: 'tackles', label: 'Tackles', type: 'number' });
       fields.push({ key: 'offsides', label: 'Offsides', type: 'number' });
       fields.push({ key: 'corners', label: 'Corners', type: 'number' });
-      if (this.sportConfig?.penalty_kicks) {
+      if (this.sportConfig?.sport_config.penalty_kicks) {
         fields.push({ key: 'penalties_shots', label: 'Penalty Shots', type: 'number' });
         fields.push({ key: 'penalties_score', label: 'Penalty Goals', type: 'number' });
       }
     }
 
     // Basketball specific fields
-    if (this.sportConfig?.name === 'Basketball') {
+    if (this.isBasketball()) {
       fields.push({ key: 'points', label: 'Points', type: 'number' });
       fields.push({ key: 'two_pointers_made', label: 'Two Pointers Made', type: 'number' });
       fields.push({ key: 'two_pointers_attempted', label: 'Two Pointers Attempted', type: 'number' });
@@ -1619,7 +1620,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Water Polo specific fields
-    if (this.sportConfig?.name === 'Waterpolo') {
+    if (this.isWaterPolo()) {
       fields.push({ key: 'goals_scored', label: 'Goals Scored', type: 'number' });
       fields.push({ key: 'assists', label: 'Assists', type: 'number' });
       fields.push({ key: 'shots_attempted', label: 'Shots Attempted', type: 'number' });
@@ -1640,7 +1641,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     // Gymnastics specific fields - Only API required fields
-    if (this.sportConfig?.name === 'Gymnastics') {
+    if (this.isGymnastics()) {
       // Get current apparatus for display
       const currentApparatus = this.routineState.activeApparatus || 
                               this.competitionState.currentApparatus || 
@@ -1785,7 +1786,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     let formHtml = `
       <div style="max-height: 400px; overflow-y: auto;">
         <h6><i class="fas fa-dumbbell me-2"></i>${player.first_name} ${player.last_name} - #${player.uniform || player.displayid}</h6>
-        ${this.sportConfig?.name === 'Gymnastics' ? `
+        ${this.sportConfig?.sport_code === 'GY' ? `
           <div class="alert alert-info" style="font-size: 0.9em; padding: 8px; margin: 10px 0;">
             <i class="fas fa-info-circle me-1"></i>
             <strong>Current Apparatus:</strong> ${(this.competitionState.currentApparatus || 'floor_exercise').replace('_', ' ').toUpperCase()}
@@ -1900,7 +1901,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       console.log('Sending player update with data:', updatedStats);
 
       // Special handling for gymnastics player updates
-      if (this.sportConfig?.name === 'Gymnastics') {
+      if (this.isGymnastics()) {
         this.updateGymnasticsPlayerStats(updatedStats, dialogDiv, saveBtn, player);
       } else {
         this.sendPlayerUpdate(updatedStats, dialogDiv, saveBtn, player);
@@ -4212,10 +4213,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   isGymnastics(): boolean {
     // console.log('Checking if match is gymnastics...');
     // console.log(this.match);
-    return this.match?.sport?.name?.toLowerCase().includes('gymnastics') || 
-           this.match?.sport?.toLowerCase().includes('gymnastics') ||
-           this.sportConfig?.name?.toLowerCase() === 'gymnastics' ||
-           this.match?.league_obj?.sport === 10 ||
+    return this.sportConfig?.sport_code === 'GY' ||
            false;
   }
 
@@ -4223,9 +4221,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   isBasketball(): boolean {
     //console.log('Checking if match is basketball...');
     //console.log(this.match);
-    return this.match?.sport?.name?.toLowerCase().includes('basketball') || 
-           this.match?.sport?.toLowerCase().includes('basketball') ||
-           this.sportConfig?.name?.toLowerCase() === 'basketball' ||
+    return this.sportConfig?.sport_code?.toLowerCase() === 'BB' ||
            this.match?.league_obj?.sport === 2 || // Assuming basketball sport ID is 2
            false;
   }
@@ -4234,10 +4230,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   isWaterPolo(): boolean {
     // console.log('Checking if match is water polo...');
     // console.log(this.match);
-    return this.match?.sport?.name?.toLowerCase().includes('waterpolo') || 
-           this.match?.sport?.name?.toLowerCase().includes('water polo') ||
-           this.match?.sport?.toLowerCase().includes('waterpolo') ||
-           this.sportConfig?.name?.toLowerCase() === 'waterpolo' ||
+    return this.sportConfig?.sport_code === 'WP' ||
            this.match?.league_obj?.sport === 3 || // Assuming water polo sport ID is 3
            false;
   }

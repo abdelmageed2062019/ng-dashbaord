@@ -34,6 +34,7 @@ export class SportsComponent implements OnInit {
   }
 
   goToSport(sport: any) {
-    this.router.navigate(['/sport', sport.id], { state: { sportConfig: sport.sport_config } });
+    localStorage.setItem("sport",JSON.stringify(sport));
+    this.router.navigate(['/sport', sport.id], { state: { sport: sport.data } });
   }
 }
