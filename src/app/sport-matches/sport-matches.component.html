@@ -104,7 +104,7 @@
                   <!-- Team 1 -->
                   <div class="team-info text-center flex-fill">
                     <img 
-                      [src]="match.matchteams[0].team?.logo || '/assets/player.jpg'" 
+                      [src]="match.matchteams[0].team?.logo || 'assets/player.jpg'" 
                       [alt]="match.matchteams[0].team?.name"
                       class="team-logo mb-2">
                     <h6 class="team-name mb-1">{{ match.matchteams[0].team?.name || 'Team 1' }}</h6>
@@ -125,7 +125,7 @@
                   <!-- Team 2 -->
                   <div class="team-info text-center flex-fill">
                     <img 
-                      [src]="match.matchteams[1].team?.logo || '/assets/player.jpg'" 
+                      [src]="match.matchteams[1].team?.logo || 'assets/player.jpg'" 
                       [alt]="match.matchteams[1].team?.name"
                       class="team-logo mb-2">
                     <h6 class="team-name mb-1">{{ match.matchteams[1].team?.name || 'Team 2' }}</h6>
@@ -142,7 +142,7 @@
                   <div class="col-6" *ngFor="let teamData of match.matchteams">
                     <div class="team-card mb-2">
                       <img 
-                        [src]="teamData.team?.logo || '/assets/player.jpg'" 
+                        [src]="teamData.team?.logo || 'assets/player.jpg'" 
                         [alt]="teamData.team?.name"
                         class="team-logo-small me-2">
                       <span class="team-name-small">{{ teamData.team?.name }}</span>

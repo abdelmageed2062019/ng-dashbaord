@@ -16,10 +16,9 @@
             "outputPath": "dist/NGSC/Admin",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": ["sweetalert2"],
             "assets": [
               "src/favicon.ico",
               "src/assets",
@@ -40,19 +39,20 @@
           },
           "configurations": {
             "production": {
+              "baseHref": "/NGSC_Admin/",
+              "outputHashing": "all",
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kB",
-                  "maximumError": "4kB"
+                  "maximumWarning": "50kb",
+                  "maximumError": "100kb"
                 }
-              ],
-              "outputHashing": "all"
+              ]
             },
             "development": {
               "optimization": false,
@@ -80,10 +80,7 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
               {
@@ -102,6 +99,6 @@
     }
   },
   "cli": {
-    "analytics": "f614d15f-0c57-4410-803b-4c2a2001eac6"
+    "analytics": false
   }
 }

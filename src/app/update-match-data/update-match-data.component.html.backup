@@ -238,7 +238,7 @@
                     <div class="player-card">
                       <div class="d-flex align-items-center mb-3">
                         <img 
-                          [src]="player.avatar || '/assets/player.jpg'" 
+                          [src]="player.avatar || 'assets/player.jpg'" 
                           [alt]="player.first_name + ' ' + player.last_name"
                           class="player-avatar me-3">
                         <div class="flex-grow-1">
