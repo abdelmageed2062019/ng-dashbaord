@@ -4211,10 +4211,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   // Utility method to check if current match is gymnastics
   isGymnastics(): boolean {
-    // console.log('Checking if match is gymnastics...');
-    // console.log(this.match);
-    return this.sportConfig?.sport_code === 'GY' ||
-           false;
+    console.log('Checking if match is gymnastics...');
+    console.log(this.match);
+    return this.sportConfig?.sport_code === 'GY'
   }
 
   // Utility method to check if current match is basketball
