@@ -4220,7 +4220,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   isBasketball(): boolean {
     //console.log('Checking if match is basketball...');
     //console.log(this.match);
-    return this.sportConfig?.sport_code?.toLowerCase() === 'BB' ||
+    return this.sportConfig?.sport_code === 'BB' ||
            this.match?.league_obj?.sport === 2 || // Assuming basketball sport ID is 2
            false;
   }
