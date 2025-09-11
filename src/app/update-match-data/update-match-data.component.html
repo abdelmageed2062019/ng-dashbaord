@@ -880,7 +880,7 @@
                   <button 
                     class="btn btn-outline-primary btn-sm" 
                     (click)="callWaterPoloTimeout(teams[0]?.team?.id)"
-                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
+                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 0) > 0">
                     <i class="fas fa-hand-paper me-1"></i>Call Timeout
                   </button>
                 </div>
@@ -901,7 +901,7 @@
                   <button 
                     class="btn btn-outline-primary btn-sm" 
                     (click)="callWaterPoloTimeout(teams[1]?.team?.id)"
-                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
+                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 0) > 0">
                     <i class="fas fa-hand-paper me-1"></i>Call Timeout
                   </button>
                 </div>

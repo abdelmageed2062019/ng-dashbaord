@@ -900,6 +900,15 @@ export class ApiService {
     const params = new HttpParams().set('match_id', matchId.toString());
     return this.http.get(url, { headers: this.getHeaders(), params });
   }
+  // advanced next period for water polo
+  advanceWaterPoloNextPeriod(matchId: number, nextPeriod: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/advance_period/`;
+    const data = { next_period: nextPeriod };
+    console.log('Advancing to next period:', nextPeriod);
+    return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Next period advanced:', response))
+    );
+  }
 
 
   // Get Clock Status

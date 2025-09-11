@@ -3565,13 +3565,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       }
     });
   }
-
+  
   // Advance to Next Water Polo Quarter
   advanceToNextWaterPoloQuarter(): void {
     if (!this.match?.id) return;
 
     const nextQuarter = this.waterPoloClock.currentPeriod + 1;
-    
+    this.apiService.advanceWaterPoloNextPeriod(this.match.id, nextQuarter).subscribe({
+      next: (response) => {
+        console.log('Advanced to next quarter on server:', response);
+      }
+    });
     if (nextQuarter > this.waterPoloClock.totalPeriods) {
       // Match is finished
       Swal.fire({
