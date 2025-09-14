@@ -681,12 +681,12 @@
           <div class="clock-status-header bg-gradient-primary text-white p-3 rounded-top">
             <div class="row align-items-center">
               <div class="col-md-8">
-                <h5 class="mb-1">
-                  <i class="fas fa-swimmer me-2"></i>
+                <h5 class="mb-1 text-dark">
+                  <i class="fas fa-swimmer me-2 "></i>
                   Water Polo Clock Management
                 </h5>
-                <small class="text-light">
-                  <i class="fas fa-info-circle me-1"></i>
+                <small class="text-dark">
+                  <i class="fas fa-info-circle me-1 dark-color"></i>
                   Synchronized with server • Auto-refresh every 10 seconds
                 </small>
               </div>
@@ -811,7 +811,7 @@
                 </div>
 
                 <!-- Resume Button (when paused) -->
-                <div class="col-auto" *ngIf="waterPoloClock.isPaused">
+                <div class="col-auto" *ngIf="waterPoloClock.isPaused && waterPoloClock.displayTime !== '00:00'">
                   <button 
                     class="btn btn-success btn-lg me-2" 
                     (click)="resumeWaterPoloMatch()">
@@ -871,10 +871,10 @@
                   <h6 class="text-muted mb-2">{{ getTeamName(teams[0]?.team?.id) }} Timeouts</h6>
                   <div class="timeout-info mb-2">
                     <span class="badge bg-primary me-2">
-                      {{ (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 3) }} remaining
+                      {{ getTeamWaterPoloTimeouts(teams[0]?.team?.id) }} remaining
                     </span>
                     <span class="text-muted small">
-                      {{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) }} used
+                      {{ 3 - getTeamWaterPoloTimeouts(teams[0]?.team?.id) }} used
                     </span>
                   </div>
                   <button 
@@ -892,10 +892,10 @@
                   <h6 class="text-muted mb-2">{{ getTeamName(teams[1]?.team?.id) }} Timeouts</h6>
                   <div class="timeout-info mb-2">
                     <span class="badge bg-primary me-2">
-                      {{ (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 3) }} remaining
+                      {{ getTeamWaterPoloTimeouts(teams[1]?.team?.id) }} remaining
                     </span>
                     <span class="text-muted small">
-                      {{ (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} used
+                      {{ 3 - getTeamWaterPoloTimeouts(teams[1]?.team?.id) }} used
                     </span>
                   </div>
                   <button 
@@ -909,44 +909,59 @@
             </div>
           </div>
 
-          <!-- Match Statistics Summary -->
-          <div class="match-stats bg-white border rounded-bottom p-3" *ngIf="waterPoloClock.isInitialized">
-            <div class="row text-center">
-              <div class="col-3">
-                <div class="stat-item">
-                  <i class="fas fa-clock text-primary me-1"></i>
-                  <small class="text-muted">Elapsed</small>
-                  <div class="stat-value">{{ waterPoloClock.totalElapsedTime || '00:00:00' }}</div>
-                </div>
-              </div>
-              <div class="col-3">
-                <div class="stat-item">
-                  <i class="fas fa-stopwatch text-info me-1"></i>
-                  <small class="text-muted">Shot Clock</small>
-                  <div class="stat-value">30s</div>
-                </div>
-              </div>
-              <div class="col-3">
-                <div class="stat-item">
-                  <i class="fas fa-exchange-alt text-warning me-1"></i>
-                  <small class="text-muted">Total Timeouts</small>
-                  <div class="stat-value">
-                    {{ (waterPoloTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + 
-                       (waterPoloTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }}
-                  </div>
-                </div>
-              </div>
-              <div class="col-3">
-                <div class="stat-item">
-                  <i class="fas fa-trophy text-success me-1"></i>
-                  <small class="text-muted">Leading</small>
-                  <div class="stat-value">
-                    {{ waterPoloGameState.leadingTeam ? getTeamName(waterPoloGameState.leadingTeam) : 'Tied' }}
+          <!-- Active Exclusion Timers -->
+          <div class="exclusion-timers bg-danger text-white p-3 border-start border-end" 
+               *ngIf="waterPoloClock.isInitialized && getActiveExclusionTimers().length > 0">
+            <div class="row">
+              <div class="col-12">
+                <h6 class="mb-3 text-center">
+                  <i class="fas fa-user-times me-2"></i>Active Player Exclusions
+                </h6>
+                <div class="row">
+                  <div class="col-md-6 mb-2" *ngFor="let exclusion of getActiveExclusionTimers()">
+                    <div class="exclusion-timer-card bg-white text-dark rounded p-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{{ exclusion.playerName }}</strong>
+                          <br>
+                          <small class="text-muted">{{ getTeamName(exclusion.teamId) }}</small>
+                        </div>
+                        <div class="text-end">
+                          <span class="badge bg-danger fs-6">{{ exclusion.remaining }}s</span>
+                          <br>
+                          <small class="text-muted">of {{ exclusion.duration }}s</small>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <!-- Active Timeout Display -->
+          <div class="active-timeout bg-warning text-dark p-3 border-start border-end" 
+               *ngIf="waterPoloClock.isInitialized && getCurrentTimeout()">
+            <div class="row">
+              <div class="col-12 text-center">
+                <h6 class="mb-2">
+                  <i class="fas fa-hand-paper me-2"></i>TIMEOUT IN PROGRESS
+                </h6>
+                <div class="timeout-info">
+                  <strong>{{ getCurrentTimeout()?.teamName }}</strong>
+                  <div class="mt-2">
+                    <span class="badge bg-dark fs-6">
+                      <i class="fas fa-clock me-1"></i>{{ getCurrentTimeout()?.duration || '01:00' }}
+                    </span>
+                  </div>
+                  <button class="btn btn-sm btn-dark mt-2" (click)="endWaterPoloTimeout()">
+                    <i class="fas fa-stop me-1"></i>End Timeout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
 
         </div>
 
@@ -1872,6 +1887,16 @@
                               (click)="addWaterPoloEjection(player.id, selectedTeam, 'ordinary')"
                               title="Ejection">
                               <i class="fas fa-exclamation-triangle"></i> EJECT
+                            </button>
+                          </div>
+                          
+                          <!-- Exclusion Button -->
+                          <div class="col-12">
+                            <button 
+                              class="btn btn-danger btn-sm w-100" 
+                              (click)="addWaterPoloExclusion(player.id, selectedTeam)"
+                              title="Player Exclusion with Timer">
+                              <i class="fas fa-user-times"></i> EXCLUSION
                             </button>
                           </div>
                         </div>

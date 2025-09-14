@@ -1874,3 +1874,54 @@
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.3; }
 }
+
+/* Water Polo Exclusion Timers Styling */
+.exclusion-timers {
+  animation: pulse-red 2s infinite;
+}
+
+.exclusion-timer-card {
+  border-left: 4px solid #dc3545;
+  transition: all 0.3s ease;
+}
+
+.exclusion-timer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes pulse-red {
+  0%, 100% { 
+    background-color: #dc3545; 
+    opacity: 1;
+  }
+  50% { 
+    background-color: #c82333; 
+    opacity: 0.9;
+  }
+}
+
+/* Water Polo Timeout Display Styling */
+.active-timeout {
+  animation: pulse-yellow 1.5s infinite;
+}
+
+@keyframes pulse-yellow {
+  0%, 100% { 
+    background-color: #ffc107; 
+    opacity: 1;
+  }
+  50% { 
+    background-color: #e0a800; 
+    opacity: 0.9;
+  }
+}
+
+.timeout-info .badge {
+  animation: countdown-blink 1s infinite;
+}
+
+@keyframes countdown-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.7; }
+}

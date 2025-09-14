@@ -19,7 +19,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
 
 
-
+  GenClockData: any;
   match: any;
   sportConfig: any;
   form!: FormGroup;
@@ -4013,6 +4013,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
           startTime: new Date(),
           endTime: new Date(Date.now() + 60000) // 1 minute from now
         };
+        this.pauseWaterPoloMatch();
 
         const teamName = this.getTeamName(teamId);
         Swal.fire({
@@ -6345,7 +6346,66 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
   }
 
   getTeamWaterPoloTimeouts(teamId: number): number {
-    return this.waterPoloTimeouts.timeoutsUsed[teamId] || 0;
+    if (!this.liveScoreData?.clock?.timeouts_remaining) {
+      return 3; // Default timeout count
+    }
+    console.log('Timeouts used for team', teamId, this.liveScoreData.clock.timeouts_remaining[teamId] || 0);
+    return this.liveScoreData.clock.timeouts_remaining[teamId] || 0;
+  }
+
+  // Get active exclusion timers from live score data
+  getActiveExclusionTimers(): any[] {
+    if (!this.liveScoreData?.clock?.exclusion_timers) {
+      return [];
+    }
+    
+    const exclusionTimers = this.liveScoreData.clock.exclusion_timers;
+    return Object.keys(exclusionTimers).map(playerId => ({
+      playerId: playerId,
+      playerName: this.getPlayerName(parseInt(playerId)),
+      teamId: this.getPlayerTeamId(parseInt(playerId)),
+      startTime: exclusionTimers[playerId].start_time,
+      duration: exclusionTimers[playerId].duration,
+      remaining: exclusionTimers[playerId].remaining
+    }));
+  }
+
+  // Get current active timeout information
+  getCurrentTimeout(): any {
+    if (!this.liveScoreData?.clock?.current_timeout_team) {
+      return null;
+    }
+    
+    return {
+      teamId: this.liveScoreData.clock.current_timeout_team,
+      teamName: this.getTeamName(this.liveScoreData.clock.current_timeout_team),
+      endTime: this.liveScoreData.clock.timeout_end_time,
+      duration: this.liveScoreData.clock.timeout_duration
+    };
+  }
+
+  // Helper method to get player name by ID
+  getPlayerName(playerId: number): string {
+    for (const teamId in this.playersData) {
+      const players = this.playersData[teamId];
+      const player = players.find(p => p.id === playerId);
+      if (player) {
+        return player.name || `Player ${playerId}`;
+      }
+    }
+    return `Player ${playerId}`;
+  }
+
+  // Helper method to get player's team ID
+  getPlayerTeamId(playerId: number): number {
+    for (const teamId in this.playersData) {
+      const players = this.playersData[teamId];
+      const player = players.find(p => p.id === playerId);
+      if (player) {
+        return parseInt(teamId);
+      }
+    }
+    return 0;
   }
 
   // Water Polo Clock Polling Interval
@@ -6443,6 +6503,111 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
     this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
   }
 
+  // Quick Player Exclusion Button with foul type selection
+  addWaterPoloExclusion(playerId: number, teamId: number): void {
+    Swal.fire({
+      title: 'Player Exclusion',
+      html: `
+        <div class="text-center">
+          <p>Set exclusion for player?</p>
+          <div class="mt-3">
+            <label class="form-label"><i class="fas fa-exclamation-triangle me-1"></i>Foul Type</label>
+            <select class="form-select" id="foulTypeSelect">
+              <option value="major_foul">Major Foul (20 seconds)</option>
+              <option value="misconduct">Misconduct (Indefinite)</option>
+              <option value="brutal_foul">Brutal Foul (Rest of game)</option>
+              <option value="unsportsmanlike">Unsportsmanlike Conduct</option>
+              <option value="violence">Violence</option>
+            </select>
+          </div>
+          <div class="mt-3">
+            <label class="form-label"><i class="fas fa-clock me-1"></i>Duration (seconds)</label>
+            <input type="number" class="form-control" id="exclusionDurationInput" value="20" min="0" max="300">
+            <small class="text-muted">Leave 0 for automatic duration based on foul type</small>
+          </div>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Apply Exclusion',
+      cancelButtonText: 'Cancel',
+      preConfirm: () => {
+        const foulTypeSelect = document.getElementById('foulTypeSelect') as HTMLSelectElement;
+        const durationInput = document.getElementById('exclusionDurationInput') as HTMLInputElement;
+        
+        let duration = parseInt(durationInput.value) || 0;
+        
+        // Set default duration based on foul type if not specified
+        if (duration === 0) {
+          switch (foulTypeSelect.value) {
+            case 'major_foul':
+              duration = 20;
+              break;
+            case 'misconduct':
+              duration = 240; // 4 minutes
+              break;
+            case 'brutal_foul':
+              duration = 1200; // 20 minutes (rest of game)
+              break;
+            case 'unsportsmanlike':
+              duration = 60;
+              break;
+            case 'violence':
+              duration = 1200; // 20 minutes (rest of game)
+              break;
+            default:
+              duration = 20;
+          }
+        }
+        
+        return {
+          foulType: foulTypeSelect.value,
+          duration: duration
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.apiService.startExclusionTimer(
+          this.match.id, 
+          playerId, 
+          teamId, 
+          result.value.duration, 
+          result.value.foulType
+        ).subscribe({
+          next: (response) => {
+            console.log('Exclusion timer started:', response);
+            Swal.fire({
+              title: 'Exclusion Applied',
+              text: `Player excluded for ${result.value.duration} seconds (${result.value.foulType.replace('_', ' ')})`,
+              icon: 'success',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            
+            // Update player stats to reflect the exclusion
+            const statsData = {
+              exclusions: 1,
+              [result.value.foulType + '_exclusions']: 1,
+              plus_minus: -1
+            };
+            this.updateWaterPoloPlayerStats(playerId, teamId, statsData);
+          },
+          error: (error) => {
+            console.error('Error starting exclusion timer:', error);
+            Swal.fire({
+              title: 'Error',
+              text: 'Failed to start exclusion timer. Please try again.',
+              icon: 'error',
+              confirmButtonColor: '#dc3545'
+            });
+          }
+        });
+      }
+    });
+  }
+
   // Quick Penalty Shot Button
   addWaterPoloPenaltyShot(playerId: number, teamId: number, scored: boolean): void {
     const statsData = {
@@ -6512,9 +6677,24 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
     
     // Load initial live score data
     this.loadLiveScoreData(matchId);
-    
+    this.getActiveExclusionTimers();
+    this.getCurrentTimeout();
+    this.loadClockData(matchId);
     // Start live score refresh interval
     this.startLiveScoreRefresh(matchId);
+  }
+  loadClockData(matchId: number): void {
+    console.log('⏱️ Loading clock data for match:', matchId);
+
+    this.apiService.getClockStatus(matchId).subscribe({
+      next: (data) => {
+        console.log('⏱️ Clock data received:', data);
+        this.GenClockData = data;
+      },
+      error: (error) => {
+        console.error('❌ Error loading clock data:', error);
+      }
+    });
   }
 
   /**
@@ -6529,7 +6709,9 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
         
         // Process team scores from player stats
         this.processTeamScores(data);
-        
+        this.loadClockData(matchId);
+        this.getActiveExclusionTimers();
+    this.getCurrentTimeout();
         // Force UI update
         setTimeout(() => {}, 0);
       },

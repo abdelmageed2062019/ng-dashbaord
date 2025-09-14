@@ -846,6 +846,20 @@ export class ApiService {
     return this.http.get(url, { headers: this.getHeaders() });
   }
 
+  // Start Player Exclusion Timer
+  startExclusionTimer(matchId: number, playerId: number, teamId: number, duration: number = 20, foulType: string = 'major_foul'): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/exclusion_timer/`;
+    const exclusionData = {
+      player_id: playerId,
+      team_id: teamId,
+      duration: duration,
+      foul_type: foulType
+    };
+    return this.http.post(url, exclusionData, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Exclusion timer started:', response))
+    );
+  }
+
   // Update Water Polo Player Stats
   updateWaterPoloPlayerStats(statsData: any): Observable<any> {
     const url = `${this.apiUrl}/player-stats/custom_update/`;
@@ -958,6 +972,14 @@ export class ApiService {
     console.log('Stopping football clock:', matchId);
     return this.http.post(url, data, { headers: this.getHeaders() }).pipe(
       tap(response => console.log('Football clock stopped:', response))
+    );
+  }
+
+
+  getClockStatus(matchId: number): Observable<any> {
+    const url = `${this.apiUrl}/matches/${matchId}/clock/`;
+    return this.http.get(url, { headers: this.getHeaders() }).pipe(
+      tap(response => console.log('Basketball clock status retrieved:', response))
     );
   }
 }
