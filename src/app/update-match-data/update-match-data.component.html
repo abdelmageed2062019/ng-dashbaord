@@ -1,2018 +1,490 @@
-<div class="container-fluid">
-  <!-- Live Scoring Status Indicator -->
-  <div *ngIf="isGymnastics() && match" class="live-scoring-status" [class.disconnected]="!lastLiveScoreUpdate">
-    <i class="fas fa-circle"></i>
-    <span *ngIf="lastLiveScoreUpdate">Live Scoring Active</span>
-    <span *ngIf="!lastLiveScoreUpdate">Live Scoring Disconnected</span>
-    <small *ngIf="lastLiveScoreUpdate">({{ getLastUpdateTime() }})</small>
+﻿
+<div class="match-data-container">
+  <!-- Header Section -->
+  <div class="match-header">
+    <h1>Match Data Management</h1>
+    <div class="match-info" *ngIf="matchData">
+      <h2>{{ matchData.league?.name || 'Unknown League' }}</h2>
+      <p>{{ matchData.match_date | date:'medium' }}</p>
+      <div class="match-status" [class]="matchData.status">
+        {{ matchData.status | uppercase }}
+      </div>
+    </div>
   </div>
 
-  <div class="row">
-    <div class="col-12">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">
-              <i class="fas fa-edit me-2"></i>Update Match Data
-            </h4>
-            <button class="btn btn-light btn-sm" (click)="goBack()">
-              <i class="fas fa-arrow-left me-2"></i>Back
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading match data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+    <button (click)="getMatchDetails()" class="retry-btn">Retry</button>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="successMessage" class="success-message">
+    {{ successMessage }}
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && matchData" class="main-content">
+    
+    <!-- Teams Overview -->
+    <div class="teams-overview">
+      <h3>Teams</h3>
+      <div class="teams-grid">
+        <div *ngFor="let team of matchTeams" class="team-card">
+          <div class="team-header">
+            <img *ngIf="team.team.logo" [src]="team.team.logo" [alt]="team.team.name" class="team-logo">
+            <div class="team-info">
+              <h4>{{ team.team.name }}</h4>
+              <p class="sport-info">{{ team.team.sport_obj.name }}</p>
+            </div>
+            <div class="team-score">
+              {{ team.score }}
+            </div>
+          </div>
+          
+          <!-- Team Stats Summary -->
+          <div class="team-stats-summary">
+            <div class="stat-item" *ngIf="currentSportType === 'BB'">
+              <span class="stat-label">Points:</span>
+              <span class="stat-value">{{ team.points }}</span>
+            </div>
+            <div class="stat-item" *ngIf="currentSportType === 'WP'">
+              <span class="stat-label">Goals:</span>
+              <span class="stat-value">{{ team.goals }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Fouls:</span>
+              <span class="stat-value">{{ team.fouls }}</span>
+            </div>
+          </div>
+
+          <button (click)="selectTeam(team)" class="select-team-btn">
+            Manage Players
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player Management Section -->
+    <div *ngIf="selectedTeam" class="player-management">
+      <h3>{{ selectedTeam.team.name }} - Player Management</h3>
+      
+      <!-- Players Grid -->
+      <div class="players-grid">
+        <div *ngFor="let matchPlayer of getTeamPlayers(selectedTeam.team.id)" 
+             class="player-card" 
+             [class.primary-player]="matchPlayer.player.is_primary">
+          
+          <!-- Player Header -->
+          <div class="player-header">
+            <div class="player-info">
+              <img *ngIf="matchPlayer.player.avatar" 
+                   [src]="matchPlayer.player.avatar" 
+                   [alt]="matchPlayer.player.first_name + ' ' + matchPlayer.player.last_name" 
+                   class="player-avatar">
+              <div class="player-details">
+                <h4>{{ matchPlayer.player.first_name }} {{ matchPlayer.player.last_name }}</h4>
+                <p class="player-position">{{ matchPlayer.player.position }} | #{{ matchPlayer.player.uniform }}</p>
+              </div>
+            </div>
+            <div class="player-status" [class.active]="matchPlayer.player.is_primary">
+              {{ matchPlayer.player.is_primary ? 'Starter' : 'Bench' }}
+            </div>
+          </div>
+
+          <!-- Player Current Stats -->
+          <div class="player-current-stats">
+            <h5>Current Match Stats</h5>
+            <div class="stats-row">
+              <!-- Basketball Stats -->
+              <div *ngIf="currentSportType === 'BB'" class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Points</span>
+                  <span class="stat-value">{{ matchPlayer.points }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Rebounds</span>
+                  <span class="stat-value">{{ matchPlayer.rebounds }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Assists</span>
+                  <span class="stat-value">{{ matchPlayer.assists }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Fouls</span>
+                  <span class="stat-value">{{ matchPlayer.personal_fouls }}</span>
+                </div>
+              </div>
+
+              <!-- Football Stats -->
+              <div *ngIf="currentSportType === 'FB'" class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Goals</span>
+                  <span class="stat-value">{{ matchPlayer.goals }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Assists</span>
+                  <span class="stat-value">{{ matchPlayer.assists }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Yellow</span>
+                  <span class="stat-value">{{ matchPlayer.yellow_cards }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Red</span>
+                  <span class="stat-value">{{ matchPlayer.red_cards }}</span>
+                </div>
+              </div>
+
+              <!-- Water Polo Stats -->
+              <div *ngIf="currentSportType === 'WP'" class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Goals</span>
+                  <span class="stat-value">{{ matchPlayer.goals }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Saves</span>
+                  <span class="stat-value">{{ matchPlayer.saves }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Exclusions</span>
+                  <span class="stat-value">{{ matchPlayer.exclusions }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Shots</span>
+                  <span class="stat-value">{{ matchPlayer.shots_attempted }}</span>
+                </div>
+              </div>
+
+              <!-- Gymnastics Stats -->
+              <div *ngIf="currentSportType === 'GY'" class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Total Score</span>
+                  <span class="stat-value">{{ matchPlayer.total_score }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Difficulty</span>
+                  <span class="stat-value">{{ matchPlayer.difficulty_score }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Execution</span>
+                  <span class="stat-value">{{ matchPlayer.execution_score }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Falls</span>
+                  <span class="stat-value">{{ matchPlayer.fall_count }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="quick-actions">
+            <h5>Quick Actions</h5>
+            
+            <!-- Basketball Quick Actions -->
+            <div *ngIf="currentSportType === 'BB'" class="action-buttons">
+              <div class="action-group">
+                <label>Scoring</label>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'make_2pt')" class="action-btn scoring">+2 PTS</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'make_3pt')" class="action-btn scoring">+3 PTS</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'make_ft')" class="action-btn scoring">+1 FT</button>
+              </div>
+              <div class="action-group">
+                <label>Defense</label>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'rebound')" class="action-btn defense">Rebound</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'steal')" class="action-btn defense">Steal</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'block')" class="action-btn defense">Block</button>
+              </div>
+              <div class="action-group">
+                <label>Other</label>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'turnover')" class="action-btn turnover">Turnover</button>
+                <button (click)="basketballQuickAction(matchPlayer.player, 'foul')" class="action-btn foul">Foul</button>
+              </div>
+            </div>
+
+            <!-- Football Quick Actions -->
+            <div *ngIf="currentSportType === 'FB'" class="action-buttons">
+              <div class="action-group">
+                <label>Scoring</label>
+                <button (click)="footballQuickAction(matchPlayer.player, 'goal')" class="action-btn scoring">Goal</button>
+                <button (click)="footballQuickAction(matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
+              </div>
+              <div class="action-group">
+                <label>Cards</label>
+                <button (click)="footballQuickAction(matchPlayer.player, 'yellow_card')" class="action-btn warning">Yellow</button>
+                <button (click)="footballQuickAction(matchPlayer.player, 'red_card')" class="action-btn danger">Red</button>
+              </div>
+              <div class="action-group">
+                <label>Other</label>
+                <button (click)="footballQuickAction(matchPlayer.player, 'shot_on_target')" class="action-btn">Shot</button>
+                <button (click)="footballQuickAction(matchPlayer.player, 'foul')" class="action-btn foul">Foul</button>
+              </div>
+            </div>
+
+            <!-- Water Polo Quick Actions -->
+            <div *ngIf="currentSportType === 'WP'" class="action-buttons">
+              <div class="action-group">
+                <label>Scoring</label>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'goal')" class="action-btn scoring">Goal</button>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'penalty_goal')" class="action-btn scoring">Penalty Goal</button>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
+              </div>
+              <div class="action-group">
+                <label>Defense</label>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'save')" class="action-btn defense">Save</button>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'steal')" class="action-btn defense">Steal</button>
+              </div>
+              <div class="action-group">
+                <label>Fouls</label>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'exclusion')" class="action-btn warning">Exclusion</button>
+                <button (click)="waterPoloQuickAction(matchPlayer.player, 'major_foul')" class="action-btn foul">Major Foul</button>
+              </div>
+            </div>
+
+            <!-- Gymnastics Quick Actions -->
+            <div *ngIf="currentSportType === 'GY'" class="action-buttons">
+              <div class="action-group">
+                <label>Score Entry</label>
+                <button (click)="openScoreDialog(matchPlayer.player)" class="action-btn scoring">Enter Scores</button>
+                <button (click)="gymnasticsQuickAction(matchPlayer.player, 'fall')" class="action-btn danger">Fall</button>
+              </div>
+              <div class="action-group">
+                <label>Routine</label>
+                <button (click)="gymnasticsQuickAction(matchPlayer.player, 'start_routine')" class="action-btn">Start</button>
+                <button (click)="gymnasticsQuickAction(matchPlayer.player, 'complete_routine')" class="action-btn">Complete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comprehensive Clock Management -->
+    <div class="clock-management-section">
+      
+      <!-- Clock Initialization (if not initialized) -->
+      <div *ngIf="!isClockInitialized()" class="clock-init-panel">
+        <h3>Initialize Match Clock</h3>
+        <p>Clock not initialized for this match. Click below to set up the clock system.</p>
+        <button (click)="initializeClock()" class="action-btn scoring" [disabled]="loading">
+          <span *ngIf="loading">Initializing...</span>
+          <span *ngIf="!loading">Initialize Clock</span>
+        </button>
+      </div>
+
+      <!-- Live Clock Display -->
+      <div *ngIf="isClockInitialized()" class="live-clock">
+        <h3>Match Clock - {{ getCurrentPeriodDisplay() }}</h3>
+        
+        <div class="clock-display">
+          <div class="time-remaining">{{ getFormattedTime() }}</div>
+          <div class="period-info">{{ liveClock?.period || getCurrentPeriodDisplay() }}</div>
+          
+          <!-- Timeout Display - Prominent when active -->
+          <div *ngIf="liveClock?.timeout_status?.has_timeout" class="timeout-display">
+            <div class="timeout-team">{{ liveClock?.timeout_status?.current_timeout_team?.name }} TIMEOUT</div>
+            <div class="timeout-countdown">{{ liveClock?.timeout_status?.timeout_remaining_display }}s</div>
+            <div class="timeout-duration">{{ liveClock?.timeout_status?.timeout_remaining }}/{{ liveClock?.timeout_status?.timeout_duration }}s</div>
+          </div>
+          
+          <div class="clock-state" [class]="liveClock?.clock_state">
+            {{ liveClock?.state || liveClock?.clock_state | uppercase }}
+          </div>
+          
+          <!-- Sport-specific timers -->
+          <div *ngIf="getShotClockDisplay()" class="shot-clock">
+            Shot Clock: {{ getShotClockDisplay() }}
+          </div>
+          
+          <div *ngIf="getRoutineTimerDisplay()" class="routine-timer">
+            Routine Timer: {{ getRoutineTimerDisplay() }}
+          </div>
+        </div>
+
+        <!-- Clock Control Buttons -->
+        <div class="clock-controls">
+          
+          <!-- Debug Button -->
+          <div class="control-group">
+            <button (click)="debugTimeoutStatus()" class="action-btn" style="background: #6c757d;">
+              Debug Timeout Status
             </button>
           </div>
-        </div>
-
-        <!-- 🏟️ LIVE FOOTBALL MATCH SCORE DISPLAY -->
-        <div *ngIf="isFootballMatch() && teams.length >= 2 && match" class="live-score-container">
-          <div class="live-score-board">
-            <div class="row align-items-center">
-              <!-- Home Team -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-shield-alt fa-2x text-primary"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="team-score">{{ getTeamScore(teams[0]?.team?.id) }}</div>
-                  
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-square text-warning"></i>
-                          <span>{{ teams[0]?.yellow_cards || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-square text-danger"></i>
-                          <span>{{ teams[0]?.red_cards || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-flag"></i>
-                          <span>{{ teams[0]?.corners || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-bullseye"></i>
-                          <span>{{ teams[0]?.shots_on_target || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Match Info Center -->
-              <div class="col-4 text-center">
-                <div class="match-status">
-                  <div class="match-time" [ngClass]="{
-                    'live-pulse': match.status === 'live',
-                    'finished': match.status === 'finished',
-                    'upcoming': match.status === 'upcoming'
-                  }">
-                    {{ getMatchTime() }}
-                  </div>
-                  <div class="match-date">
-                    {{ (match.match_date || match.start_date) | date:'MMM d, y' }}
-                  </div>
-                  <div class="match-status-badge">
-                    <span class="badge" [ngClass]="{
-                      'bg-danger live-badge': match.status === 'live',
-                      'bg-success': match.status === 'finished',
-                      'bg-warning text-dark': match.status === 'upcoming',
-                      'bg-secondary': match.status === 'postponed' || match.status === 'cancelled'
-                    }">
-                      <i class="fas" [ngClass]="{
-                        'fa-circle fa-pulse': match.status === 'live',
-                        'fa-flag-checkered': match.status === 'finished',
-                        'fa-clock': match.status === 'upcoming',
-                        'fa-pause': match.status === 'postponed',
-                        'fa-times': match.status === 'cancelled'
-                      }"></i>
-                      {{ match.status | titlecase }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Away Team -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-shield-alt fa-2x text-danger"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="team-score">{{ getTeamScore(teams[1]?.team?.id) }}</div>
-                  
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-square text-warning"></i>
-                          <span>{{ teams[1]?.yellow_cards || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-square text-danger"></i>
-                          <span>{{ teams[1]?.red_cards || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-flag"></i>
-                          <span>{{ teams[1]?.corners || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat">
-                          <i class="fas fa-bullseye"></i>
-                          <span>{{ teams[1]?.shots_on_target || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Match Details Bar -->
-            <div class="match-details-bar mt-3">
-              <div class="row text-center">
-                <div class="col-2">
-                  <small class="text-muted white-color">Week {{ match.week || '1' }}</small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted white-color">{{ match.group_name || 'Regular Season' }}</small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-stopwatch me-1"></i>{{ match.match_duration || 90 }}'
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-flag me-1"></i>{{ match.corners || 0 }} Corners
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-sync-alt me-1"></i>
-                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
-                    <span *ngIf="!loading">Live</span>
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Additional Stats Row for Football -->
-              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="col-3">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-square text-warning me-1"></i>{{ match.yellow_cards || 0 }} Yellow
-                  </small>
-                </div>
-                <div class="col-3">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-square text-danger me-1"></i>{{ match.red_cards || 0 }} Red
-                  </small>
-                </div>
-                <div class="col-3">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-exclamation-triangle me-1"></i>{{ match.fouls || 0 }} Fouls
-                  </small>
-                </div>
-                <div class="col-3">
-                  <small class="text-muted white-color">
-                    <i class="fas fa-bullseye me-1"></i>{{ match.shots_on_target || 0 }} Shots
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 🤸‍♀️ LIVE GYMNASTICS COMPETITION SCORE DISPLAY -->
-        <div *ngIf="isGymnasticsMatch() && teams.length >= 2 && match" class="live-score-container gymnastics-scoreboard">
-          <div class="live-score-board">
-            <div class="row align-items-center">
-              <!-- Team/Athlete 1 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-medal fa-2x text-warning"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="team-score gymnastics-total">{{ getTeamGymnasticsScore(teams[0]?.team?.id) }}</div>
-                  
-                  <!-- Gymnastics Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-star text-primary"></i>
-                          <span title="Difficulty Score">{{ getTeamDifficultyScore(teams[0]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-thumbs-up text-success"></i>
-                          <span title="Execution Score">{{ getTeamExecutionScore(teams[0]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-trophy text-warning"></i>
-                          <span title="Highest Score">{{ getTeamHighestScore(teams[0]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-calculator text-info"></i>
-                          <span title="Average Score">{{ getTeamAverageScore(teams[0]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Competition Info Center -->
-              <div class="col-4 text-center">
-                <div class="match-status">
-                  <div class="competition-mode">
-                    <i class="fas fa-dumbbell me-2"></i>
-                    <span class="badge bg-primary">{{ (selectedCompetitionType?.replace('_', ' ') | titlecase) || 'All-Around' }}</span>
-                  </div>
-                  <div class="current-apparatus mt-2">
-                    <small class="text-muted">Current Apparatus</small>
-                    <div class="apparatus-name">{{ (selectedApparatus?.replace('_', ' ') | titlecase) || 'Multiple' }}</div>
-                  </div>
-                  <div class="live-scoring-controls mt-2">
-                    <button class="btn btn-sm btn-outline-light" 
-                            (click)="refreshLiveScoring()" 
-                            title="Refresh Live Scoring">
-                      <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
-                      <small class="ms-1">Refresh Scores</small>
-                    </button>
-                  </div>
-                  <div class="competition-time mt-2" [ngClass]="{
-                    'live-pulse': match.status === 'live',
-                    'finished': match.status === 'finished',
-                    'upcoming': match.status === 'upcoming'
-                  }">
-                    {{ getMatchTime() }}
-                  </div>
-                  <div class="match-date">
-                    {{ (match.match_date || match.start_date) | date:'MMM d, y' }}
-                  </div>
-                  <div class="match-status-badge">
-                    <span class="badge" [ngClass]="{
-                      'bg-danger live-badge': match.status === 'live',
-                      'bg-success': match.status === 'finished',
-                      'bg-warning text-dark': match.status === 'upcoming',
-                      'bg-secondary': match.status === 'postponed' || match.status === 'cancelled'
-                    }">
-                      <i class="fas" [ngClass]="{
-                        'fa-circle fa-pulse': match.status === 'live',
-                        'fa-flag-checkered': match.status === 'finished',
-                        'fa-clock': match.status === 'upcoming',
-                        'fa-pause': match.status === 'postponed',
-                        'fa-times': match.status === 'cancelled'
-                      }"></i>
-                      {{ match.status | titlecase }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Team/Athlete 2 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-medal fa-2x text-danger"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="team-score gymnastics-total">{{ getTeamGymnasticsScore(teams[1]?.team?.id) }}</div>
-                  
-                  <!-- Gymnastics Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-star text-primary"></i>
-                          <span title="Difficulty Score">{{ getTeamDifficultyScore(teams[1]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-thumbs-up text-success"></i>
-                          <span title="Execution Score">{{ getTeamExecutionScore(teams[1]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-trophy text-warning"></i>
-                          <span title="Highest Score">{{ getTeamHighestScore(teams[1]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat gymnastics-stat">
-                          <i class="fas fa-calculator text-info"></i>
-                          <span title="Average Score">{{ getTeamAverageScore(teams[1]?.team?.id) }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Competition Details Bar -->
-            <div class="match-details-bar mt-3">
-              <div class="row text-center">
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Athletes
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-sync-alt me-1"></i>R{{ competitionState.currentRotation || 1 }}/{{ gymnasticsRotations.length || 6 }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-layer-group me-1"></i>{{ sessionConfig.subdivision || 'A' }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-medal me-1"></i>{{ sessionConfig.competitionLevel || 'Senior' }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-venus-mars me-1"></i>{{ sessionConfig.gender || 'Mixed' | titlecase }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-sync-alt me-1"></i>
-                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
-                    <span *ngIf="!loading">Live</span>
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Apparatus Progress Row for Gymnastics -->
-              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="col-12">
-                  <small class="text-muted mb-2 d-block">
-                    <i class="fas fa-dumbbell me-1"></i>Apparatus Scores
-                    <span class="ms-2 badge bg-info" *ngIf="lastLiveScoreUpdate">
-                      Last Update: {{ getLastUpdateTime() }}
-                    </span>
-                  </small>
-                  <div class="row">
-                    <div class="col-2" *ngFor="let apparatus of ['floor_exercise', 'pommel_horse', 'still_rings', 'vault', 'parallel_bars', 'horizontal_bar']">
-                      <div class="apparatus-score-block">
-                        <div class="apparatus-name">
-                          <i class="fas" [ngClass]="{
-                            'fa-running': apparatus === 'floor_exercise',
-                            'fa-horse': apparatus === 'pommel_horse', 
-                            'fa-circle': apparatus === 'still_rings',
-                            'fa-arrow-up': apparatus === 'vault',
-                            'fa-equals': apparatus === 'parallel_bars',
-                            'fa-minus': apparatus === 'horizontal_bar'
-                          }"></i>
-                          <small>{{ apparatus.replace('_', ' ') | titlecase }}</small>
-                        </div>
-                        <div class="team-apparatus-scores mt-1">
-                          <div class="score-pair" *ngFor="let team of teams; index as i">
-                            <span class="badge" 
-                                  [ngClass]="{'bg-primary': i === 0, 'bg-danger': i === 1}"
-                                  [title]="getTeamName(team.team?.id)">
-                              {{ getApparatusScore(team.team?.id, apparatus).toFixed(1) }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 🏀 LIVE BASKETBALL MATCH SCORE DISPLAY -->
-        <div *ngIf="isBasketball() && teams.length >= 2 && match" class="live-score-container basketball-scoreboard">
-          <div class="live-score-board">
-            <div class="row align-items-center">
-              <!-- Team 1 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-basketball-ball fa-2x text-primary"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="team-score">{{ match?.matchteams[0]?.points || getTeamScore(teams[0]?.team?.id) }}</div>
-
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-bullseye text-success"></i>
-                          <span title="Field Goals">{{ match?.matchteams[0]?.two_pointers_made || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-dot-circle text-warning"></i>
-                          <span title="3-Pointers">{{ match?.matchteams[0]?.three_pointers_made || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-hands-helping text-info"></i>
-                          <span title="Assists">{{ match?.matchteams[0]?.assists || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-redo text-primary"></i>
-                          <span title="Rebounds">{{ match?.matchteams[0]?.rebounds || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Game Clock Center -->
-              <div class="col-4 text-center">
-                <div class="match-status basketball-clock">
-                  <div class="quarter-info">
-                    <span class="quarter-number">Q{{ basketballClock.currentPeriod || 1 }}</span>
-                    <span class="quarter-type">{{ basketballClock.periodType || 'Quarter' | titlecase }}</span>
-                  </div>
-                  
-                  <div class="main-clock" [ngClass]="{
-                    'live-pulse': basketballClock.isRunning,
-                    'paused': basketballClock.isPaused,
-                    'stopped': !basketballClock.isRunning
-                  }">
-                    {{ basketballClock.displayTime || basketballClock.timeRemainingInPeriod || '12:00' }}
-                  </div>
-                  
-                  <div class="clock-controls mt-2">
-                    <button 
-                      *ngIf="!checkBasketballClockInitialized()" 
-                      class="btn btn-primary btn-sm me-1" 
-                      (click)="initializeBasketballClock()">
-                      <i class="fas fa-play"></i> Initialize
-                    </button>
-                    
-                    <button 
-                      *ngIf="checkBasketballClockInitialized() && !basketballClock.isRunning && !basketballClock.isPaused" 
-                      class="btn btn-success btn-sm me-1" 
-                      (click)="startBasketballClock()">
-                      <i class="fas fa-play"></i> Start
-                    </button>
-                    
-                    <button 
-                      *ngIf="basketballClock.isRunning" 
-                      class="btn btn-warning btn-sm me-1" 
-                      (click)="pauseBasketballClock('manual')">
-                      <i class="fas fa-pause"></i> Pause
-                    </button>
-                    
-                    <button 
-                      *ngIf="basketballClock.isPaused" 
-                      class="btn btn-success btn-sm me-1" 
-                      (click)="resumeBasketballClock()">
-                      <i class="fas fa-play"></i> Resume
-                    </button>
-                    
-                    <button 
-                      *ngIf="(basketballClock.isRunning || basketballClock.isPaused) && checkBasketballClockInitialized()" 
-                      class="btn btn-danger btn-sm me-1" 
-                      (click)="stopBasketballClock()">
-                      <i class="fas fa-stop"></i> Stop
-                    </button>
-                    
-                    <button 
-                      *ngIf="basketballClock.currentPeriod < 4" 
-                      class="btn btn-info btn-sm" 
-                      (click)="advanceToNextQuarter()">
-                      <i class="fas fa-forward"></i> Q{{ (basketballClock.currentPeriod || 1) + 1 }}
-                    </button>
-                  </div>
-                  
-                  <div class="game-status mt-2">
-                    <span class="badge" [ngClass]="{
-                      'bg-danger live-badge': basketballGameState.status === 'live',
-                      'bg-success': basketballGameState.status === 'finished',
-                      'bg-warning text-dark': basketballGameState.status === 'upcoming',
-                      'bg-info': basketballGameState.status === 'quarter_break' || basketballGameState.status === 'halftime'
-                    }">
-                      <i class="fas" [ngClass]="{
-                        'fa-circle fa-pulse': basketballGameState.status === 'live',
-                        'fa-flag-checkered': basketballGameState.status === 'finished',
-                        'fa-clock': basketballGameState.status === 'upcoming',
-                        'fa-coffee': basketballGameState.status === 'quarter_break',
-                        'fa-pause': basketballGameState.status === 'halftime'
-                      }"></i>
-                      {{ basketballGameState.status | titlecase }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Team 2 -->
-              <div class="col-4 text-center">
-                <div class="team-info">
-                  <div class="team-logo">
-                    <i class="fas fa-basketball-ball fa-2x text-danger"></i>
-                  </div>
-                  <div class="team-name">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="team-score">{{ match?.matchteams[1]?.points || getTeamScore(teams[1]?.team?.id) }}</div>
-
-                  <!-- Team Stats -->
-                  <div class="team-stats mt-2">
-                    <div class="row g-1">
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-bullseye text-success"></i>
-                          <span title="Field Goals">{{ match?.matchteams[1]?.two_pointers_made || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-dot-circle text-warning"></i>
-                          <span title="3-Pointers">{{ match?.matchteams[1]?.three_pointers_made || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-hands-helping text-info"></i>
-                          <span title="Assists">{{ match?.matchteams[1]?.assists || 0 }}</span>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div class="mini-stat basketball-stat">
-                          <i class="fas fa-redo text-primary"></i>
-                          <span title="Rebounds">{{ match?.matchteams[1]?.rebounds || 0 }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Basketball Game Details Bar -->
-            <div class="match-details-bar mt-3">
-              <div class="row text-center">
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-users me-1"></i>{{ getTotalPlayers() }} Players
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-history me-1"></i>{{ basketballClock.periodDuration / 60 || 12 }}min Quarters
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-exchange-alt me-1"></i>{{ (basketballTimeouts.timeoutsUsed[teams[0]?.team?.id] || 0) + (basketballTimeouts.timeoutsUsed[teams[1]?.team?.id] || 0) }} Timeouts
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-trophy me-1"></i>{{ basketballGameState.leadingTeam ? 'Leading: ' + getTeamName(basketballGameState.leadingTeam) : 'Tied' }}
-                  </small>
-                </div>
-                <div class="col-2">
-                  <small class="text-muted">
-                    <i class="fas fa-sync-alt me-1"></i>
-                    <span class="refresh-indicator" *ngIf="loading">Updating...</span>
-                    <span *ngIf="!loading">Live</span>
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Quarter Progress and Timeouts Row -->
-              <div class="row text-center mt-2 pt-2" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                <div class="col-3" *ngFor="let quarter of basketballQuarters; let i = index">
-                  <small class="text-muted" [ngClass]="{
-                    'text-warning': basketballClock.currentPeriod === quarter.number,
-                    'text-success': quarter.completed
-                  }">
-                    <i class="fas" [ngClass]="{
-                      'fa-play text-warning': basketballClock.currentPeriod === quarter.number && basketballClock.isRunning,
-                      'fa-pause text-warning': basketballClock.currentPeriod === quarter.number && !basketballClock.isRunning,
-                      'fa-check text-success': quarter.completed,
-                      'fa-circle text-muted': basketballClock.currentPeriod < quarter.number
-                    }"></i>
-                    Q{{ quarter.number }}
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Team Timeouts Row -->
-              <div class="row text-center mt-2">
-                <div class="col-6">
-                  <small class="text-muted">
-                    <strong>{{ getTeamName(teams[0]?.team?.id) }}</strong>
-                    <span class="ms-2">
-                      <i class="fas fa-pause-circle me-1"></i>
-                      {{ basketballClock.timeoutsRemaining[teams[0]?.team?.id] || 3 }} timeouts left
-                    </span>
-                    <button 
-                      class="btn btn-warning btn-sm ms-2" 
-                      (click)="callBasketballTeamTimeout(teams[0]?.team?.id)"
-                      [disabled]="!basketballClock.isRunning || (basketballClock.timeoutsRemaining[teams[0]?.team?.id] || 0) <= 0">
-                      <i class="fas fa-hand-paper"></i> Timeout
-                    </button>
-                  </small>
-                </div>
-                <div class="col-6">
-                  <small class="text-muted">
-                    <strong>{{ getTeamName(teams[1]?.team?.id) }}</strong>
-                    <span class="ms-2">
-                      <i class="fas fa-pause-circle me-1"></i>
-                      {{ basketballClock.timeoutsRemaining[teams[1]?.team?.id] || 3 }} timeouts left
-                    </span>
-                    <button 
-                      class="btn btn-warning btn-sm ms-2" 
-                      (click)="callBasketballTeamTimeout(teams[1]?.team?.id)"
-                      [disabled]="!basketballClock.isRunning || (basketballClock.timeoutsRemaining[teams[1]?.team?.id] || 0) <= 0">
-                      <i class="fas fa-hand-paper"></i> Timeout
-                    </button>
-                  </small>
-                </div>
-              </div>
-              
-              <!-- Shot Clock Controls -->
-            </div>
-          </div>
-        </div>
-
-        <!-- ============================================ -->
-        <!-- 🏊‍♂️ COMPLETE WATER POLO CLOCK MANAGEMENT -->
-        <!-- ============================================ -->
-
-        <div class="water-polo-clock-section" *ngIf="isWaterPolo()">
           
-          <!-- Clock Status Header -->
-          <div class="clock-status-header bg-gradient-primary text-white p-3 rounded-top">
-            <div class="row align-items-center">
-              <div class="col-md-8">
-                <h5 class="mb-1 text-dark">
-                  <i class="fas fa-swimmer me-2 "></i>
-                  Water Polo Clock Management
-                </h5>
-                <small class="text-dark">
-                  <i class="fas fa-info-circle me-1 dark-color"></i>
-                  Synchronized with server • Auto-refresh every 10 seconds
-                </small>
-              </div>
-              <div class="col-md-4 text-end">
-                <span class="badge" [ngClass]="{
-                  'bg-success': waterPoloClock.isInitialized && waterPoloGameState.status === 'live',
-                  'bg-warning text-dark': waterPoloClock.isInitialized && waterPoloGameState.status === 'quarter_break',
-                  'bg-info': waterPoloClock.isInitialized && waterPoloClock.isPaused,
-                  'bg-secondary': !waterPoloClock.isInitialized,
-                  'bg-dark': waterPoloGameState.status === 'finished'
-                }">
-                  <i class="fas" [ngClass]="{
-                    'fa-circle fa-pulse': waterPoloClock.isRunning,
-                    'fa-pause': waterPoloClock.isPaused,
-                    'fa-coffee': waterPoloGameState.status === 'quarter_break',
-                    'fa-cog': !waterPoloClock.isInitialized,
-                    'fa-flag-checkered': waterPoloGameState.status === 'finished'
-                  }"></i>
-                  {{ waterPoloClock.isInitialized ? 
-                     (waterPoloClock.isRunning ? 'LIVE' : 
-                      waterPoloClock.isPaused ? 'PAUSED' : 
-                      waterPoloGameState.status === 'quarter_break' ? 'BREAK' : 'READY') : 
-                     'NOT INITIALIZED' }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Main Clock Display -->
-          <div class="main-clock-display bg-white border-start border-end p-4">
-            <div class="row align-items-center">
-              
-              <!-- Team 1 Score -->
-              <div class="col-3 text-center">
-                <div class="team-score-display">
-                  <div class="team-name text-muted small">{{ getTeamName(teams[0]?.team?.id) }}</div>
-                  <div class="score-number display-4 font-weight-bold text-primary">
-                    {{ match.matchteams[0]?.goals || 0 }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Central Clock -->
-              <div class="col-6 text-center">
-                <div class="clock-container">
-                  <!-- Period Display -->
-                  <div class="period-display mb-2">
-                    <span class="period-label h6 text-muted">Quarter</span>
-                    <span class="period-number h4 font-weight-bold text-primary mx-2">
-                      {{ waterPoloClock.currentPeriod }}
-                    </span>
-                    <span class="period-total text-muted">of {{ waterPoloClock.totalPeriods }}</span>
-                  </div>
-                  
-                  <!-- Main Timer -->
-                  <div class="main-timer">
-                    <div class="timer-display" [ngClass]="{
-                      'text-success': waterPoloClock.isRunning,
-                      'text-warning': waterPoloClock.isPaused,
-                      'text-danger': !waterPoloClock.isRunning && !waterPoloClock.isPaused && waterPoloClock.displayTime === '0:00',
-                      'text-muted': !waterPoloClock.isInitialized
-                    }">
-                      <span class="display-1 font-weight-bold">
-                        {{ waterPoloClock.displayTime || '8:00' }}
-                      </span>
-                    </div>
-                    <div class="timer-status small text-muted mt-1">
-                      {{ waterPoloClock.isRunning ? 'Running' : 
-                         waterPoloClock.isPaused ? 'Paused' : 
-                         'Stopped' }} • Server Sync
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Team 2 Score -->
-              <div class="col-3 text-center">
-                <div class="team-score-display">
-                  <div class="team-name text-muted small">{{ getTeamName(teams[1]?.team?.id) }}</div>
-                  <div class="score-number display-4 font-weight-bold text-primary">
-                    {{ match.matchteams[1]?.goals || 0 }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Clock Controls -->
-          <div class="clock-controls bg-light border-start border-end p-3">
-            <div class="row justify-content-center">
-              
-              <!-- Step 1: Initialize Button (Only if not initialized) -->
-              <div class="col-auto" *ngIf="!waterPoloClock.isInitialized">
-                <button 
-                  class="btn btn-primary btn-lg" 
-                  (click)="initializeWaterPoloClock()"
-                  [disabled]="waterPoloClock.initializationInProgress">
-                  <i class="fas fa-cog me-2"></i>
-                  {{ waterPoloClock.initializationInProgress ? 'Initializing...' : 'Initialize Clock' }}
-                </button>
-              </div>
-
-              <!-- Step 2 & 3: Main Control Buttons (Only if initialized) -->
-              <ng-container *ngIf="waterPoloClock.isInitialized">
-                
-                <!-- Start Button (when stopped) -->
-                <div class="col-auto" *ngIf="!waterPoloClock.isRunning && !waterPoloClock.isPaused">
-                  <button 
-                    class="btn btn-success btn-lg me-2" 
-                    (click)="startWaterPoloMatch()">
-                    <i class="fas fa-play me-2"></i>Start Clock
-                  </button>
-                </div>
-
-                <!-- Pause Button (when running) -->
-                <div class="col-auto" *ngIf="waterPoloClock.isRunning">
-                  <button 
-                    class="btn btn-warning btn-lg me-2" 
-                    (click)="pauseWaterPoloMatch()">
-                    <i class="fas fa-pause me-2"></i>Pause Clock
-                  </button>
-                </div>
-
-                <!-- Resume Button (when paused) -->
-                <div class="col-auto" *ngIf="waterPoloClock.isPaused && waterPoloClock.displayTime !== '00:00'">
-                  <button 
-                    class="btn btn-success btn-lg me-2" 
-                    (click)="resumeWaterPoloMatch()">
-                    <i class="fas fa-play me-2"></i>Resume Clock
-                  </button>
-                </div>
-
-                <!-- Next Quarter Button -->
-                <div class="col-auto" *ngIf="waterPoloClock.currentPeriod < waterPoloClock.totalPeriods">
-                  <button 
-                    class="btn btn-info btn-lg me-2" 
-                    (click)="advanceToNextWaterPoloQuarter()">
-                    <i class="fas fa-forward me-2"></i>Next Quarter
-                  </button>
-                </div>
-
-                <!-- Stop Match Button -->
-                <div class="col-auto" *ngIf="waterPoloClock.isRunning || waterPoloClock.isPaused">
-                  <button 
-                    class="btn btn-danger btn-lg" 
-                    (click)="stopWaterPoloMatch()">
-                    <i class="fas fa-stop me-2"></i>Stop Match
-                  </button>
-                </div>
-              </ng-container>
-            </div>
-          </div>
-
-          <!-- Quarter Progress Indicator -->
-          <div class="quarter-progress bg-white border-start border-end p-3" *ngIf="waterPoloClock.isInitialized">
-            <div class="row text-center">
-              <div class="col-3" *ngFor="let quarter of waterPoloPeriods; let i = index">
-                <div class="quarter-indicator" [ngClass]="{
-                  'text-warning': waterPoloClock.currentPeriod === quarter.number,
-                  'text-success': quarter.completed,
-                  'text-muted': waterPoloClock.currentPeriod < quarter.number
-                }">
-                  <i class="fas fa-2x" [ngClass]="{
-                    'fa-play-circle text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isRunning,
-                    'fa-pause-circle text-warning': waterPoloClock.currentPeriod === quarter.number && waterPoloClock.isPaused,
-                    'fa-stop-circle text-muted': waterPoloClock.currentPeriod === quarter.number && !waterPoloClock.isRunning && !waterPoloClock.isPaused,
-                    'fa-check-circle text-success': quarter.completed,
-                    'fa-circle text-muted': waterPoloClock.currentPeriod < quarter.number
-                  }"></i>
-                  <div class="small mt-1">Q{{ quarter.number }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Team Timeout Controls -->
-          <div class="timeout-controls bg-light border-start border-end p-3" *ngIf="waterPoloClock.isInitialized">
-            <div class="row">
-              <!-- Team 1 Timeouts -->
-              <div class="col-6">
-                <div class="text-center">
-                  <h6 class="text-muted mb-2">{{ getTeamName(teams[0]?.team?.id) }} Timeouts</h6>
-                  <div class="timeout-info mb-2">
-                    <span class="badge bg-primary me-2">
-                      {{ getTeamWaterPoloTimeouts(teams[0]?.team?.id) }} remaining
-                    </span>
-                    <span class="text-muted small">
-                      {{ 3 - getTeamWaterPoloTimeouts(teams[0]?.team?.id) }} used
-                    </span>
-                  </div>
-                  <button 
-                    class="btn btn-outline-primary btn-sm" 
-                    (click)="callWaterPoloTimeout(teams[0]?.team?.id)"
-                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[0]?.team?.id] || 0) > 0">
-                    <i class="fas fa-hand-paper me-1"></i>Call Timeout
-                  </button>
-                </div>
-              </div>
-
-              <!-- Team 2 Timeouts -->
-              <div class="col-6">
-                <div class="text-center">
-                  <h6 class="text-muted mb-2">{{ getTeamName(teams[1]?.team?.id) }} Timeouts</h6>
-                  <div class="timeout-info mb-2">
-                    <span class="badge bg-primary me-2">
-                      {{ getTeamWaterPoloTimeouts(teams[1]?.team?.id) }} remaining
-                    </span>
-                    <span class="text-muted small">
-                      {{ 3 - getTeamWaterPoloTimeouts(teams[1]?.team?.id) }} used
-                    </span>
-                  </div>
-                  <button 
-                    class="btn btn-outline-primary btn-sm" 
-                    (click)="callWaterPoloTimeout(teams[1]?.team?.id)"
-                    [disabled]="!waterPoloClock.isRunning || (waterPoloClock.timeoutsRemaining[teams[1]?.team?.id] || 0) > 0">
-                    <i class="fas fa-hand-paper me-1"></i>Call Timeout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Active Exclusion Timers -->
-          <div class="exclusion-timers bg-danger text-white p-3 border-start border-end" 
-               *ngIf="waterPoloClock.isInitialized && getActiveExclusionTimers().length > 0">
-            <div class="row">
-              <div class="col-12">
-                <h6 class="mb-3 text-center">
-                  <i class="fas fa-user-times me-2"></i>Active Player Exclusions
-                </h6>
-                <div class="row">
-                  <div class="col-md-6 mb-2" *ngFor="let exclusion of getActiveExclusionTimers()">
-                    <div class="exclusion-timer-card bg-white text-dark rounded p-2">
-                      <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                          <strong>{{ exclusion.playerName }}</strong>
-                          <br>
-                          <small class="text-muted">{{ getTeamName(exclusion.teamId) }}</small>
-                        </div>
-                        <div class="text-end">
-                          <span class="badge bg-danger fs-6">{{ exclusion.remaining }}s</span>
-                          <br>
-                          <small class="text-muted">of {{ exclusion.duration }}s</small>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Active Timeout Display -->
-          <div class="active-timeout bg-warning text-dark p-3 border-start border-end" 
-               *ngIf="waterPoloClock.isInitialized && getCurrentTimeout()">
-            <div class="row">
-              <div class="col-12 text-center">
-                <h6 class="mb-2">
-                  <i class="fas fa-hand-paper me-2"></i>TIMEOUT IN PROGRESS
-                </h6>
-                <div class="timeout-info">
-                  <strong>{{ getCurrentTimeout()?.teamName }}</strong>
-                  <div class="mt-2">
-                    <span class="badge bg-dark fs-6">
-                      <i class="fas fa-clock me-1"></i>{{ getCurrentTimeout()?.duration || '01:00' }}
-                    </span>
-                  </div>
-                  <button class="btn btn-sm btn-dark mt-2" (click)="endWaterPoloTimeout()">
-                    <i class="fas fa-stop me-1"></i>End Timeout
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-
-        </div>
-
-        <!-- ============================================ -->
-        <!-- 🏊‍♂️ END WATER POLO CLOCK MANAGEMENT      -->
-        <!-- ============================================ -->
-
-        <div class="card-body">
-          <!-- Loading State -->
-          <div *ngIf="loading" class="loading-container">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading match data...</p>
-          </div>
-
-          <!-- Error State -->
-          <div *ngIf="error" class="error-state">
-            <i class="fas fa-exclamation-triangle"></i>
-            {{ error }}
-          </div>
-
-          <!-- Success State -->
-          <div *ngIf="successMessage" class="success-state">
-            <i class="fas fa-check-circle"></i>
-            {{ successMessage }}
-          </div>
-          <!-- FootBall Clock Management -->
-           <div *ngIf="isFootballMatch()" class="mb-4">
-              <div class="card">
-                  <div class="card-header">
-                      <h5 class="mb-0">Football Match Clock</h5>
-                  </div>
-                  <div class="card-body">
-                      <!-- If Match clock not initialized -->
-                      <div *ngIf="!isFootballInitialized" class="row mb-4 text-center">
-                          <div class="col-12">
-                              <p>Match clock is not initialized.</p>
-                          </div>
-                          <div class="col-12">
-                              <button class="btn btn-primary" (click)="initializeFootballClock()">Initialize Clock</button>
-                          </div>
-                      </div>
-                      <!-- If Match clock is initialized -->
-                      <div *ngIf="isFootballInitialized" class="row mb-4 text-center">
-                          <div class="col-12">
-                              <p>Match clock is initialized.</p>
-                          </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'stopped'">
-                              <button class="btn btn-primary" (click)="startFootballClock()">Start Clock</button>
-                          </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running'">
-                              <button class="btn btn-danger" (click)="pauseFootballClock()">Pause Clock</button>
-                          </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'paused'">
-                              <button class="btn btn-success" (click)="resumeFootballClock()">Resume Clock</button>
-                          </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running' && footballClock.current_period === 2">
-                              <button class="btn btn-danger" (click)="stopFootballClock()">Stop Clock</button>
-                          </div>
-                      </div>
-                      <div class="row text-center">
-                          <div class="col-12">
-                              <h3 [ngClass]="{'text-success': footballClock.isRunning, 'text-danger': !footballClock.isRunning}">
-                                  {{ liveScoreData?.clock.display_time || '00:00' }}
-                              </h3>
-                              <p>Current Period: {{ footballClock.current_period }} / 2</p>
-                          </div>
-                  </div>
-              </div>
-           </div>
-           </div>
-
-          <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="form && !loading">
-            <div class="row g-4">
-              <div *ngFor="let field of dynamicFields" class="col-md-6">
-                <label class="form-label" *ngIf="field.enabled">
-                  <i [class]="getFieldIcon(field.type)"></i>
-                  {{ field.label }}
-                  <span class="text-danger" *ngIf="hasFieldError(field.key)">*</span>
-                </label>
-                
-                <!-- Text Input -->
-                <input 
-                  *ngIf="field.type === 'text' && field.enabled" 
-                  type="text" 
-                  class="form-control"
-                  [disabled]="!field.enabled"
-                  [class.is-invalid]="hasFieldError(field.key)"
-                  [formControlName]="field.key"
-                  [placeholder]="'Enter ' + field.label.toLowerCase()">
-                
-                <!-- Number Input -->
-                <input 
-                  *ngIf="field.type === 'number' && field.enabled" 
-                  type="number" 
-                  class="form-control"
-                  [disabled]="true"
-                  [class.is-invalid]="hasFieldError(field.key)"
-                  [formControlName]="field.key"
-                  [placeholder]="'Enter ' + field.label.toLowerCase()"
-                  min="0">
-                
-                <!-- Datetime Input -->
-                <input 
-                  *ngIf="field.type === 'datetime-local' && field.enabled" 
-                  type="datetime-local" 
-                  class="form-control"
-                  [class.is-invalid]="hasFieldError(field.key)"
-                  [formControlName]="field.key">
-                
-                <!-- Checkbox Input -->
-                <div *ngIf="field.type === 'checkbox' && field.enabled" class="form-check">
-                  <input 
-                    type="checkbox" 
-                    class="form-check-input"
-                    [class.is-invalid]="hasFieldError(field.key)"
-                    [formControlName]="field.key"
-                    [id]="field.key">
-                  <label class="form-check-label" [for]="field.key">
-                    {{ field.label }}
-                  </label>
-                </div>
-                
-                <!-- Select Input -->
-                <select 
-                  *ngIf="field.type === 'select' && field.enabled" 
-                  class="form-select"
-                  [class.is-invalid]="hasFieldError(field.key)"
-                  [formControlName]="field.key">
-                  <option value="">Select {{ field.label.toLowerCase() }}</option>
-                  <option *ngFor="let option of field.options" [value]="option">
-                    {{ option | titlecase }}
-                  </option>
-                </select>
-                
-                <!-- Error Message -->
-                <div *ngIf="hasFieldError(field.key) && field.enabled" class="invalid-feedback d-block">
-                  <i class="fas fa-exclamation-circle me-1"></i>
-                  {{ getFieldErrorMessage(field.key) }}
-                </div>
-              </div>
-            </div>
+          <div class="control-group">
+            <label>Basic Controls</label>
             
-            <!-- Action Buttons -->
-            <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mt-5">
-              <button type="button" class="btn btn-secondary" (click)="goBack()">
-                <i class="fas fa-arrow-left me-2"></i>Back to Matches
+            <button *ngIf="isClockStopped()" 
+                    (click)="startClock()" 
+                    class="action-btn scoring" 
+                    [disabled]="loading">
+              Start Clock
+            </button>
+            
+            <button *ngIf="isClockRunning()" 
+                    (click)="pauseClock()" 
+                    class="action-btn warning" 
+                    [disabled]="loading">
+              Pause Clock
+            </button>
+            
+            <button *ngIf="isClockPaused()" 
+                    (click)="resumeClock()" 
+                    class="action-btn scoring" 
+                    [disabled]="loading">
+              Resume Clock
+            </button>
+            
+            <button *ngIf="!isClockStopped()" 
+                    (click)="stopClock()" 
+                    class="action-btn danger" 
+                    [disabled]="loading">
+              Stop Clock
+            </button>
+            
+            <button *ngIf="!isMatchFinished()" 
+                    (click)="advancePeriod()" 
+                    class="action-btn defense" 
+                    [disabled]="loading">
+              Advance {{ liveClock?.period_type === 'quarter' ? 'Quarter' : 'Period' }}
+            </button>
+          </div>
+
+          <!-- Timeout Management -->
+          <div class="control-group" *ngIf="matchTeams.length > 0">
+            <label>Timeout Management</label>
+            
+            <div *ngIf="isTimeoutActive()" class="timeout-active">
+              <p><strong>Timeout Active</strong> - {{ getTimeoutTeamName() }}</p>
+              <button (click)="endTimeout()" class="action-btn warning" [disabled]="loading">
+                End Timeout
               </button>
-              
-              <div class="d-flex flex-column flex-md-row gap-2">
-                <button type="button" class="btn btn-info" (click)="togglePlayerStats()">
-                  <i class="fas fa-users me-2"></i>
-                  {{ showPlayerStats ? 'Hide' : 'Show' }} Player Stats
-                </button>
-                <button type="button" class="btn btn-secondary" (click)="refreshMatchData()" [disabled]="loading">
-                  <i class="fas fa-sync-alt me-2" [class.fa-spin]="loading"></i>
-                  Refresh Data
-                </button>
-                <!-- <button type="button" class="btn btn-warning" (click)="testPlayerUpdate()" *ngIf="showPlayerStats && selectedTeam">
-                  <i class="fas fa-bug me-2"></i>Test API
-                </button> -->
-                <button type="submit" class="btn btn-success">
-                  <i class="fas fa-save me-2"></i>Update Match
-                </button>
-              </div>
             </div>
-          </form>
-          
-          <!-- Player Stats Section -->
-          <div *ngIf="showPlayerStats && teams.length > 0" class="mt-5">
-            <div class="card">
-              <div class="card-header">
-                <h5><i class="fas fa-users me-2"></i>Team Players & Statistics</h5>
-                <small style="opacity: 0.8;">Manage player performance and stats</small>
-              </div>
-              <div class="card-body">
-                <!-- Gymnastics Special Section -->
-                <div *ngIf="sportConfig?.sport_code === 'GY'" class="mb-4">
-                  
-                  <div class="card border-primary">
-                    <div class="card-header bg-primary text-white">
-                      <h6 class="mb-0"><i class="fas fa-medal me-2"></i>Gymnastics Competition Management</h6>
-                    </div>
-                    <div class="card-body">
-                      
-                      <!-- Competition Status Dashboard -->
-                      <div class="row mb-4">
-                        <div class="col-md-6">
-                          <div class="alert" [ngClass]="competitionState.initialized ? 'alert-success' : 'alert-warning'">
-                            <strong>Competition Status:</strong> 
-                            {{ competitionState.initialized ? 'Initialized ✅' : 'Not Initialized ⚠️' }}
-                          </div>
-                        </div>
-                        <div class="col-md-6">
-                          <div class="alert" [ngClass]="competitionState.allRotationsComplete ? 'alert-success' : 'alert-info'">
-                            <strong>Rotations:</strong> 
-                            {{ competitionState.currentRotation }} / {{ gymnasticsRotations.length || 6 }}
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- 🕐 COMPETITION CLOCK & TIMER MANAGEMENT PANEL -->
-                      <div class="card border-warning mb-4" style="box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                        <div class="card-header bg-warning text-dark">
-                          <h6 class="mb-0">
-                            <i class="fas fa-clock me-2"></i><strong>Competition Clock & Timer Management</strong>
-                          </h6>
-                        </div>
-                        <div class="card-body">
-                          <div class="row">
-                            <!-- 📱 CLOCK DISPLAY PANEL -->
-                            <div class="col-md-6">
-                              <div class="clock-display text-center p-4 border rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
-                                <!-- Main Competition Timer -->
-                                <div class="display-3 mb-3 font-weight-bold" 
-                                     [ngClass]="competitionClock.isRunning ? 'text-success' : 'text-muted'"
-                                     style="font-family: 'Courier New', monospace; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
-                                  {{ formatTime(competitionClock.currentTime) }}
-                                </div>
-                                <div class="text-muted mb-3">
-                                  <small><i class="fas fa-stopwatch me-1"></i><strong>Competition Time</strong></small>
-                                </div>
-                                
-                                <!-- Timer Status Indicator -->
-                                <div class="mb-3">
-                                  <span class="badge" 
-                                        [ngClass]="competitionClock.isRunning ? 'bg-success' : 'bg-secondary'"
-                                        style="font-size: 0.9em; padding: 8px 12px;">
-                                    <i class="fas" [ngClass]="competitionClock.isRunning ? 'fa-play' : 'fa-pause'"></i>
-                                    {{ competitionClock.isRunning ? 'RUNNING' : 'PAUSED' }}
-                                  </span>
-                                </div>
-
-                                <!-- Sub-Timers Grid -->
-                                <div class="row g-2">
-                                  <div class="col-6">
-                                    <div class="p-2 bg-light rounded">
-                                      <div class="h6 text-primary mb-1">{{ formatTime(competitionClock.rotationTime) }}</div>
-                                      <small class="text-muted">Rotation</small>
-                                    </div>
-                                  </div>
-                                  <div class="col-6">
-                                    <div class="p-2 bg-light rounded">
-                                      <div class="h6 text-info mb-1">{{ formatTime(competitionClock.warmupTime) }}</div>
-                                      <small class="text-muted">Warmup</small>
-                                    </div>
-                                  </div>
-                                  <div class="col-6">
-                                    <div class="p-2 bg-light rounded">
-                                      <div class="h6 text-warning mb-1">{{ formatTime(competitionClock.touchWarmupTime) }}</div>
-                                      <small class="text-muted">Touch Warmup</small>
-                                    </div>
-                                  </div>
-                                  <div class="col-6">
-                                    <div class="p-2 bg-light rounded">
-                                      <div class="h6 text-danger mb-1">{{ formatTime(competitionClock.routineTime) }}</div>
-                                      <small class="text-muted">Routine</small>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <!-- 🎮 CLOCK CONTROLS PANEL -->
-                            <div class="col-md-6">
-                              <div class="h-100 d-flex flex-column">
-                                <h6 class="mb-3"><i class="fas fa-gamepad me-2"></i><strong>Timer Controls</strong></h6>
-                                
-                                <div class="d-grid gap-3 flex-grow-1">
-                                  <!-- Initialize Competition Button -->
-                                  <button class="btn btn-primary btn-lg" 
-                                          (click)="initializeCompetition()" 
-                                          [disabled]="competitionState.initialized"
-                                          style="height: 60px;">
-                                    <i class="fas fa-flag me-2"></i>
-                                    <div>
-                                      <strong>Initialize Competition</strong>
-                                      <br><small>Set up competition parameters</small>
-                                    </div>
-                                  </button>
-                                  
-                                  <!-- Start/Resume Clock Button -->
-                                  <button class="btn btn-success btn-lg" 
-                                          *ngIf="!competitionClock.isRunning && competitionClock.currentTime === 0"
-                                          (click)="startClock()" 
-                                          [disabled]="!competitionState.initialized"
-                                          style="height: 60px;">
-                                    <i class="fas fa-play me-2"></i>
-                                    <div>
-                                      <strong>Start Clock</strong>
-                                      <br><small>Begin competition timing</small>
-                                    </div>
-                                  </button>
-
-                                  <!-- Resume Clock Button -->
-                                  <button class="btn btn-warning btn-lg" 
-                                          *ngIf="!competitionClock.isRunning && competitionClock.currentTime > 0"
-                                          (click)="resumeClock()" 
-                                          [disabled]="!competitionState.initialized"
-                                          style="height: 60px;">
-                                    <i class="fas fa-play me-2"></i>
-                                    <div>
-                                      <strong>Resume Clock</strong>
-                                      <br><small>Continue competition timing</small>
-                                    </div>
-                                  </button>
-                                  
-                                  <div class="row g-2">
-                                    <!-- Pause Clock Button -->
-                                    <div class="col-6">
-                                      <button class="btn btn-warning w-100" 
-                                              (click)="stopClock()" 
-                                              [disabled]="!competitionClock.isRunning"
-                                              style="height: 50px;">
-                                        <i class="fas fa-pause d-block"></i>
-                                        <small>Pause</small>
-                                      </button>
-                                    </div>
-                                    
-                                    <!-- Reset Clock Button -->
-                                    <div class="col-6">
-                                      <button class="btn btn-danger w-100" 
-                                              (click)="resetClock()" 
-                                              [disabled]="competitionClock.isRunning"
-                                              style="height: 50px;">
-                                        <i class="fas fa-redo d-block"></i>
-                                        <small>Reset</small>
-                                      </button>
-                                    </div>
-                                  </div>
-                                  
-                                  <!-- Refresh Clock Status Button -->
-                                  <button class="btn btn-outline-info w-100" 
-                                          (click)="refreshClockStatus()" 
-                                          style="height: 45px;">
-                                    <i class="fas fa-sync me-2"></i>
-                                    <div>
-                                      <strong>Refresh Clock Status</strong>
-                                      <br><small>Sync with server</small>
-                                    </div>
-                                  </button>
-                                  
-                                  <!-- 🔄 APPARATUS ROTATION CONTROL -->
-                                  <div class="mt-3">
-                                    <button class="btn btn-info w-100" 
-                                            (click)="advanceRotation()" 
-                                            [disabled]="competitionState.allRotationsComplete || !competitionState.initialized"
-                                            style="height: 50px;">
-                                      <i class="fas fa-sync-alt me-2"></i>
-                                      <div>
-                                        <strong>Advance to Next Apparatus</strong>
-                                        <br><small>{{ getNextApparatus() || 'Competition Complete' }}</small>
-                                      </div>
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <!-- 📊 TIMING INFORMATION BAR -->
-                          <div class="mt-4 p-3 bg-light rounded">
-                            <div class="row text-center">
-                              <div class="col-3">
-                                <div class="text-muted small">Break Time</div>
-                                <div class="h6">{{ formatTime(competitionClock.breakTime) }}</div>
-                              </div>
-                              <div class="col-3">
-                                <div class="text-muted small">Current Rotation</div>
-                                <div class="h6">{{ competitionState.currentRotation || 1 }}</div>
-                              </div>
-                              <div class="col-3">
-                                <div class="text-muted small">Total Rotations</div>
-                                <div class="h6">{{ gymnasticsRotations.length || 6 }}</div>
-                              </div>
-                              <div class="col-3">
-                                <div class="text-muted small">Competition Level</div>
-                                <div class="h6">{{ sessionConfig.competitionLevel || 'Senior' }}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- 🏃‍♀️ ROUTINE MANAGEMENT PANEL -->
-                      <div class="card border-warning mb-4">
-                        <div class="card-header bg-warning text-dark">
-                          <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">
-                              <i class="fas fa-stopwatch me-2"></i><strong>Routine Management</strong>
-                            </h6>
-                            <div class="badge bg-secondary">
-                              {{ getRoutineStatusText() }}
-                            </div>
-                          </div>
-                        </div>
-                        <div class="card-body">
-                          <!-- Active Routine Display -->
-                          <div *ngIf="isRoutineTimerActive()" class="alert alert-info mb-3">
-                            <div class="row align-items-center">
-                              <div class="col-8">
-                                <div class="d-flex align-items-center">
-                                  <i class="fas fa-user-clock fa-2x text-primary me-3"></i>
-                                  <div>
-                                    <h6 class="mb-0">
-                                      {{ getActiveRoutinePlayer()?.first_name }} {{ getActiveRoutinePlayer()?.last_name }}
-                                    </h6>
-                                    <small class="text-muted">
-                                      <i class="fas fa-dumbbell me-1"></i>
-                                      {{ getActiveRoutineApparatus().replace('_', ' ') | titlecase }}
-                                    </small>
-                                  </div>
-                                </div>
-                              </div>
-                              <div class="col-4 text-end">
-                                <div class="h4 mb-0 text-primary">{{ getCurrentRoutineTimer() }}</div>
-                                <small class="text-muted">Routine Timer</small>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- No Active Routine Message -->
-                          <div *ngIf="!isRoutineTimerActive()" class="alert alert-light mb-3">
-                            <div class="text-center text-muted">
-                              <i class="fas fa-clock fa-2x mb-2"></i>
-                              <div>No active routine timer</div>
-                              <small>Select a player to start their routine</small>
-                            </div>
-                          </div>
-
-                          <!-- Routine Control Buttons -->
-                          <div class="row g-2">
-                            <!-- Start Routine Button -->
-                            <div class="col-md-6">
-                              <div class="mb-2">
-                                <label class="form-label small"><i class="fas fa-user me-1"></i>Select Player</label>
-                                <select class="form-select form-select-sm" id="routinePlayerSelect">
-                                  <option value="">Choose a player...</option>
-                                  <ng-container *ngFor="let teamData of teams">
-                                    <optgroup [label]="teamData.team.name">
-                                      <option 
-                                        *ngFor="let player of playersData[teamData.team.id]"
-                                        [value]="player.id">
-                                        {{ player.first_name }} {{ player.last_name }} (#{{ player.uniform || player.displayid }})
-                                      </option>
-                                    </optgroup>
-                                  </ng-container>
-                                </select>
-                              </div>
-                              
-                              <div class="mb-2">
-                                <label class="form-label small"><i class="fas fa-dumbbell me-1"></i>Apparatus</label>
-                                <select class="form-select form-select-sm" id="routineApparatusSelect">
-                                  <option value="">Select apparatus...</option>
-                                  <option *ngFor="let apparatus of gymnasticsApparatus" [value]="apparatus">
-                                    {{ apparatus.replace('_', ' ') | titlecase }}
-                                  </option>
-                                </select>
-                              </div>
-
-                              <div class="mb-2">
-                                <label class="form-label small"><i class="fas fa-hourglass-half me-1"></i>Duration (seconds)</label>
-                                <input type="number" class="form-control form-control-sm" 
-                                       id="routineDurationInput" 
-                                       value="90" 
-                                       min="30" 
-                                       max="150">
-                              </div>
-
-                              <button class="btn btn-success btn-sm w-100 mb-2" 
-                                      [disabled]="isRoutineTimerActive() || !competitionState.initialized"
-                                      (click)="startRoutineFromUI()">
-                                <i class="fas fa-play me-1"></i>Start Routine Timer
-                              </button>
-                            </div>
-
-                            <!-- Stop Routine Button -->
-                            <div class="col-md-6">
-                              <div class="d-flex flex-column h-100 justify-content-center">
-                                <div class="text-center mb-3">
-                                  <div class="h5 mb-1">{{ getCurrentRoutineTimer() }}</div>
-                                  <small class="text-muted">Current Timer</small>
-                                </div>
-                                
-                                <button class="btn btn-danger btn-sm w-100" 
-                                        [disabled]="!isRoutineTimerActive()"
-                                        (click)="stopRoutineTimer()">
-                                  <i class="fas fa-stop me-1"></i>Stop Routine Timer
-                                </button>
-                                
-                                <div class="mt-2 text-center">
-                                  <small class="text-muted">
-                                    *Timer will auto-stop when duration expires
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- Quick Player Selection -->
-                          <div class="mt-3">
-                            <label class="form-label small"><i class="fas fa-users me-1"></i>Quick Player Selection</label>
-                            <div class="row g-1">
-                              <ng-container *ngFor="let teamData of teams">
-                                <div class="col-12 mb-2">
-                                  <div class="card bg-light">
-                                    <div class="card-header py-1">
-                                      <small class="text-muted">{{ teamData.team.name }}</small>
-                                    </div>
-                                    <div class="card-body py-2">
-                                      <div class="d-flex flex-wrap gap-1">
-                                        <button 
-                                          *ngFor="let player of playersData[teamData.team.id]?.slice(0, 6)"
-                                          class="btn btn-outline-primary btn-sm"
-                                          [disabled]="isRoutineTimerActive()"
-                                          (click)="quickStartRoutine(player.id, teamData.team.name)">
-                                          {{ player.first_name.charAt(0) }}{{ player.last_name.charAt(0) }}
-                                          <small>#{{ player.uniform || player.displayid }}</small>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </ng-container>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      
-
-                      <!-- Apparatus Scores Summary -->
-                      <div *ngIf="selectedCompetitionType" class="row">
-                        <div class="col-12">
-                          <h6><i class="fas fa-chart-bar me-2"></i>Apparatus Scores Overview</h6>
-                          <div class="row g-2">
-                            <div *ngFor="let apparatus of gymnasticsApparatus" class="col-lg-3 col-md-4 col-sm-6">
-                              <div class="card apparatus-card" [class.selected]="selectedApparatus === apparatus">
-                                <div class="card-body text-center p-2">
-                                  <small class="apparatus-name">{{ apparatus.replace('_', ' ').toUpperCase() }}</small>
-                                  <div class="apparatus-score">
-                                    {{ gymnasticsScores[apparatus]?.combined_score || '0.0' }}
-                                  </div>
-                                  <small class="text-muted">
-                                    D: {{ gymnasticsScores[apparatus]?.difficulty_score || '0.0' }} | 
-                                    E: {{ gymnasticsScores[apparatus]?.execution_score || '0.0' }}
-                                  </small>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                     
-
-                      
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Team Selection -->
-                <div class="mb-4">
-                  <label class="form-label">
-                    <i class="fas fa-users-cog me-2"></i>Select Team:
-                  </label>
-                  <div class="btn-group w-100" role="group">
-                    <button 
-                      *ngFor="let teamData of teams; let i = index"
-                      type="button" 
-                      class="btn"
-                      [class.active]="selectedTeam === teamData.team.id"
-                      (click)="selectTeam(teamData.team.id)">
-                      <i class="fas fa-shield-alt me-2"></i>
-                      {{ teamData.team.name }}
-                      <span class="badge bg-light text-dark ms-2">{{ (playersData[teamData.team.id] || []).length }}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Players List -->
-                <div *ngIf="selectedTeam && playersData[selectedTeam]" class="row g-4">
-                  <div *ngFor="let player of playersData[selectedTeam]" class="col-md-4 col-xl-3">
-                    <div class="player-card">
-                      <div class="d-flex align-items-center mb-3">
-                        <img 
-                          [src]="player.avatar || 'assets/player.jpg'" 
-                          [alt]="player.first_name + ' ' + player.last_name"
-                          class="player-avatar me-3">
-                        <div class="flex-grow-1">
-                          <h6 class="player-name mb-1">{{ player.first_name }} {{ player.last_name }}</h6>
-                          <div class="player-position">
-                            #{{ player.uniform || player.displayid }} • {{ player.position || 'Player' }}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <!-- Player Stats Display -->
-                      <!-- <div class="player-stats"> -->
-                        <!-- Football Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="row g-2">
-                          
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Yellow</div>
-                              <div class="stat-value">{{ player.yellow_cards || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Red</div>
-                              <div class="stat-value">{{ player.red_cards || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
-                        
-                        <!-- Basketball Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Points</div>
-                              <div class="stat-value">{{ player.points || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Rebounds</div>
-                              <div class="stat-value">{{ player.rebounds || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Steals</div>
-                              <div class="stat-value">{{ player.steals || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
-                        
-                        <!-- Water Polo Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Waterpolo'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Saves</div>
-                              <div class="stat-value">{{ player.saves || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Exclusions</div>
-                              <div class="stat-value">{{ player.exclusions || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
-                        
-                        <!-- Gymnastics Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Gymnastics'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Total</div>
-                              <div class="stat-value">{{ player.total_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Difficulty</div>
-                              <div class="stat-value">{{ player.difficulty_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Execution</div>
-                              <div class="stat-value">{{ player.execution_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Falls</div>
-                              <div class="stat-value">{{ player.fall_count || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
-                      <!-- </div> -->
-                      
-                      <!-- Basketball Quick Actions -->
-                      <div *ngIf="isBasketball()" class="basketball-quick-actions mb-3">
-                        <div class="row g-1">
-                          <!-- Scoring Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-success btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'two_point')"
-                              title="2-Point Shot">
-                              <i class="fas fa-basketball-ball"></i> 2PT
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-warning btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'three_point')"
-                              title="3-Point Shot">
-                              <i class="fas fa-dot-circle"></i> 3PT
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-info btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'free_throw')"
-                              title="Free Throw">
-                              <i class="fas fa-circle"></i> FT
-                            </button>
-                          </div>
-                          
-                          <!-- Additional Stats Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-primary btn-sm w-100" 
-                              (click)="addBasketballAssist(player.id, selectedTeam)"
-                              title="Assist">
-                              <i class="fas fa-hands-helping"></i> AST
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-secondary btn-sm w-100" 
-                              (click)="addBasketballRebound(player.id, selectedTeam, 'defensive')"
-                              title="Defensive Rebound">
-                              <i class="fas fa-redo"></i> REB
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-dark btn-sm w-100" 
-                              (click)="addBasketballRebound(player.id, selectedTeam, 'offensive')"
-                              title="Offensive Rebound">
-                              <i class="fas fa-redo-alt"></i> O-REB
-                            </button>
-                          </div>
-                          
-                          <!-- Defensive Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-success btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'steals', 1)"
-                              title="Steal">
-                              <i class="fas fa-user-ninja"></i> STL
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-info btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'blocks', 1)"
-                              title="Block">
-                              <i class="fas fa-hand-paper"></i> BLK
-                            </button>
-                          </div>
-                          
-                          <!-- Negative Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-warning btn-sm w-100" 
-                              (click)="addBasketballFoul(player.id, selectedTeam, 'personal')"
-                              title="Personal Foul">
-                              <i class="fas fa-exclamation-triangle"></i> FOUL
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-danger btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'turnovers', 1)"
-                              title="Turnover">
-                              <i class="fas fa-exchange-alt"></i> TO
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- Player Current Stats Display -->
-                        <!-- <div class="mt-2 p-2 bg-light rounded">
-                          <div class="row g-1 text-center">
-                            <div class="col-3">
-                              <small class="text-muted d-block">PTS</small>
-                              <strong>{{ player.points || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">REB</small>
-                              <strong>{{ player.rebounds || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">AST</small>
-                              <strong>{{ player.assists || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">FLS</small>
-                              <strong>{{ player.fouls || 0 }}</strong>
-                            </div>
-                          </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-4">
-                              <small class="text-muted d-block">FG</small>
-                              <strong>{{ (player.field_goals_made || 0) }}/{{ (player.field_goals_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">3PT</small>
-                              <strong>{{ (player.three_pointers_made || 0) }}/{{ (player.three_pointers_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">FT</small>
-                              <strong>{{ (player.free_throws_made || 0) }}/{{ (player.free_throws_attempted || 0) }}</strong>
-                            </div>
-                          </div>
-                        </div> -->
-                      </div>
-
-                      <!-- Water Polo Quick Actions -->
-                      <div *ngIf="isWaterPolo()" class="water-polo-quick-actions mb-3">
-                        <div class="row g-1">
-                          <!-- Primary Scoring Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-success btn-sm w-100" 
-                              (click)="addWaterPoloGoal(player.id, selectedTeam)"
-                              title="Goal Scored">
-                              <i class="fas fa-bullseye"></i> GOAL
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-warning btn-sm w-100" 
-                              (click)="addWaterPoloShot(player.id, selectedTeam)"
-                              title="Shot Attempt">
-                              <i class="fas fa-hockey-puck"></i> SHOT
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-info btn-sm w-100" 
-                              (click)="addWaterPoloAssist(player.id, selectedTeam)"
-                              title="Assist">
-                              <i class="fas fa-hands-helping"></i> AST
-                            </button>
-                          </div>
-                          
-                          <!-- Goalkeeper & Defensive Stats -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-primary btn-sm w-100" 
-                              (click)="addWaterPoloSave(player.id, selectedTeam)"
-                              title="Save (Goalkeeper)">
-                              <i class="fas fa-hand-paper"></i> SAVE
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-secondary btn-sm w-100" 
-                              (click)="addWaterPoloSteal(player.id, selectedTeam)"
-                              title="Steal">
-                              <i class="fas fa-user-ninja"></i> STEAL
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-dark btn-sm w-100" 
-                              (click)="addWaterPoloBlock(player.id, selectedTeam)"
-                              title="Block">
-                              <i class="fas fa-shield-alt"></i> BLOCK
-                            </button>
-                          </div>
-                          
-                          <!-- Special Situations -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-success btn-sm w-100" 
-                              (click)="addWaterPoloManUpGoal(player.id, selectedTeam)"
-                              title="Man-Up Goal">
-                              <i class="fas fa-plus-circle"></i> MAN-UP
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-info btn-sm w-100" 
-                              (click)="addWaterPoloSprintWin(player.id, selectedTeam)"
-                              title="Sprint Win">
-                              <i class="fas fa-running"></i> SPRINT
-                            </button>
-                          </div>
-                          
-                          <!-- Negative Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-warning btn-sm w-100" 
-                              (click)="addWaterPoloTurnover(player.id, selectedTeam)"
-                              title="Turnover">
-                              <i class="fas fa-exchange-alt"></i> TO
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-danger btn-sm w-100" 
-                              (click)="addWaterPoloEjection(player.id, selectedTeam, 'ordinary')"
-                              title="Ejection">
-                              <i class="fas fa-exclamation-triangle"></i> EJECT
-                            </button>
-                          </div>
-                          
-                          <!-- Exclusion Button -->
-                          <div class="col-12">
-                            <button 
-                              class="btn btn-danger btn-sm w-100" 
-                              (click)="addWaterPoloExclusion(player.id, selectedTeam)"
-                              title="Player Exclusion with Timer">
-                              <i class="fas fa-user-times"></i> EXCLUSION
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- Advanced Actions Row -->
-                        <div class="row g-1 mt-2">
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-primary btn-sm w-100" 
-                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, true)"
-                              title="Penalty Shot Scored">
-                              <i class="fas fa-target"></i> PEN+
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-secondary btn-sm w-100" 
-                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, false)"
-                              title="Penalty Shot Missed">
-                              <i class="fas fa-times-circle"></i> PEN-
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- Player Current Stats Display -->
-                        <div class="mt-2 p-2 bg-light rounded water-polo-stats">
-                          <div class="row g-1 text-center">
-                            <div class="col-3">
-                              <small class="text-muted d-block">GOALS</small>
-                              <strong>{{ player.goals_scored || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">SHOTS</small>
-                              <strong>{{ player.shots_attempted || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">SAVES</small>
-                              <strong>{{ player.saves || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">AST</small>
-                              <strong>{{ player.assists || 0 }}</strong>
-                            </div>
-                          </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-3">
-                              <small class="text-muted d-block">STEALS</small>
-                              <strong>{{ player.steals || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">BLOCKS</small>
-                              <strong>{{ player.blocks || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">EJECT</small>
-                              <strong>{{ player.ejections || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">+/-</small>
-                              <strong [ngClass]="{
-                                'text-success': (player.plus_minus || 0) > 0,
-                                'text-danger': (player.plus_minus || 0) < 0,
-                                'text-muted': (player.plus_minus || 0) === 0
-                              }">{{ player.plus_minus || 0 }}</strong>
-                            </div>
-                          </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-4">
-                              <small class="text-muted d-block">SPRINTS</small>
-                              <strong>{{ player.sprints_won || 0 }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">PEN</small>
-                              <strong>{{ (player.penalty_shots_scored || 0) }}/{{ (player.penalty_shots_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">TO</small>
-                              <strong>{{ player.turnovers || 0 }}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="mt-3">
-                        <button 
-                          class="btn btn-outline-primary w-100" 
-                          (click)="updatePlayerStats(player, selectedTeam)">
-                          <i class="fas fa-chart-line me-2"></i>Update Player Stats
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- No Team Selected Message -->
-                <div *ngIf="!selectedTeam" class="empty-state">
-                  <i class="fas fa-hand-pointer"></i>
-                  <h5>Select a Team</h5>
-                  <p>Choose a team from above to view and manage player statistics</p>
-                </div>
-                
-                <!-- No Players Message -->
-                <div *ngIf="selectedTeam && (!playersData[selectedTeam] || playersData[selectedTeam].length === 0)" class="empty-state">
-                  <i class="fas fa-user-slash"></i>
-                  <h5>No Players Found</h5>
-                  <p>No players are available for this team at the moment</p>
-                </div>
+            
+            <div *ngIf="!isTimeoutActive()" class="timeout-controls">
+              <div *ngFor="let team of matchTeams" class="team-timeout">
+                <span>{{ team.team.name }}: {{ getTeamTimeoutsRemaining(team.team.id) }} timeouts left</span>
+                <button (click)="callTimeout(team.team.id)" 
+                        class="action-btn assist" 
+                        [disabled]="loading || !canTeamCallTimeout(team.team.id)">
+                  Call Timeout
+                </button>
               </div>
             </div>
           </div>
-          
-          <!-- Fallback Loading State -->
-          <div *ngIf="!form && !loading" class="empty-state">
-            <i class="fas fa-exclamation-circle"></i>
-            <h5>Form Not Available</h5>
-            <p>Unable to load the match update form. Please try refreshing the page.</p>
+
+          <!-- Sport-Specific Controls -->
+          <div class="control-group" *ngIf="currentSportType === 'BB'">
+            <label>Basketball Controls</label>
+            <button (click)="resetShotClock()" 
+                    class="action-btn assist" 
+                    [disabled]="loading || !isClockRunning()">
+              Reset Shot Clock
+            </button>
+          </div>
+
+          <div class="control-group" *ngIf="currentSportType === 'GY'">
+            <label>Gymnastics Controls</label>
+            <button (click)="startRoutineTimer(selectedPlayer?.id, getCurrentApparatus())" 
+                    class="action-btn scoring" 
+                    [disabled]="loading || !selectedPlayer">
+              Start Routine Timer
+            </button>
+            <button (click)="stopRoutineTimer()" 
+                    class="action-btn warning" 
+                    [disabled]="loading">
+              Stop Routine Timer
+            </button>
+          </div>
+
+          <div class="control-group" *ngIf="currentSportType === 'FB'">
+            <label>Football Controls</label>
+            <button (click)="addInjuryTime(180)" 
+                    class="action-btn warning" 
+                    [disabled]="loading">
+              Add 3 Min Injury Time
+            </button>
+            <button (click)="addInjuryTime(300)" 
+                    class="action-btn warning" 
+                    [disabled]="loading">
+              Add 5 Min Injury Time
+            </button>
+          </div>
+
+          <div class="control-group" *ngIf="currentSportType === 'WP'">
+            <label>Water Polo Controls</label>
+            <div *ngIf="selectedPlayer" class="exclusion-controls">
+              <button (click)="startExclusionTimer(selectedPlayer.id, selectedPlayer.team.id)" 
+                      class="action-btn foul" 
+                      [disabled]="loading">
+                Start Exclusion ({{ selectedPlayer.name }})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Timers Display -->
+        <div class="active-timers" *ngIf="currentSportType === 'WP' && getExclusionTimers().length > 0">
+          <h4>Active Exclusions</h4>
+          <div class="exclusion-list">
+            <div *ngFor="let exclusion of getExclusionTimers()" class="exclusion-item">
+              <span>Player #{{ exclusion.player_id }}</span>
+              <span class="timer">{{ exclusion.remaining }}s remaining</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clock Status Information -->
+        <div class="clock-status-info">
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="status-label">Total Elapsed:</span>
+              <span class="status-value">{{ liveClock?.total_elapsed_time }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Periods Completed:</span>
+              <span class="status-value">{{ liveClock?.periods_completed }}/{{ liveClock?.total_periods }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Last Sync:</span>
+              <span class="status-value">{{ liveClock?.last_sync_time | date:'short' }}</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Official Time:</span>
+              <span class="status-value">{{ liveClock?.is_official_time ? 'Yes' : 'No' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match Statistics Summary -->
+    <div class="match-summary">
+      <h3>Match Summary</h3>
+      <div *ngIf="liveScoring" class="summary-stats">
+        <div class="total-stats">
+          <h4>Match Totals</h4>
+          <div class="stats-grid">
+            <div class="stat-item" *ngIf="currentSportType === 'BB'">
+              <span class="stat-label">Total Points</span>
+              <span class="stat-value">{{ liveScoring.match_stats?.total_points || 0 }}</span>
+            </div>
+            <div class="stat-item" *ngIf="currentSportType === 'BB'">
+              <span class="stat-label">Total Rebounds</span>
+              <span class="stat-value">{{ liveScoring.match_stats?.total_rebounds || 0 }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Total Fouls</span>
+              <span class="stat-value">{{ liveScoring.match_stats?.total_fouls || 0 }}</span>
+            </div>
           </div>
         </div>
       </div>

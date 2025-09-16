@@ -5,6 +5,7 @@ import { ApiService } from '../service/api.service';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { Subject, takeUntil } from 'rxjs';
+import { MatchPlayer } from '../models';
 
 @Component({
   selector: 'app-update-match',
@@ -24,6 +25,7 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
   team2id!: number;
   team1players: any[] = [];
   team2players: any[] = [];
+  matchPlayersInfo: MatchPlayer[] = [];
 
   showModal: boolean = false;
   selectedPlayer: any = null;
@@ -65,6 +67,17 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (error) => console.error('Error fetching team players:', error)
+    });
+  }
+
+  getMatchPlayersInfo(): void {
+    this.apiService.getMatchPlayersInfo(this.matchId).subscribe({
+      next: (data) => {
+        this.matchPlayersInfo = data;
+        console.log('Match players info:', data);
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error('Error fetching match players info:', error)
     });
   }
 
@@ -112,6 +125,7 @@ export class UpdateMatchComponent implements OnInit, OnDestroy {
             this.team1id = data.matchteams[0].id;
             this.team2id = data.matchteams[1].id;
             this.getTeamPlayers(data.matchteams[0].team.id, data.matchteams[1].team.id);
+            this.getMatchPlayersInfo();
           },
           error: (error) => console.error('Error fetching match details:', error)
         });
