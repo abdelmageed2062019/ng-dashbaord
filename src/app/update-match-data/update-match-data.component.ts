@@ -3,7 +3,7 @@ import { CommonModule, UpperCasePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../service/api.service';
 import { interval, Subscription } from 'rxjs';
-import { MatchPlayer, MatchTeam, MatchClock, ClockInitializationRequest, TimeoutRequest, ClockOperation } from '../models';
+import { MatchPlayer, MatchTeam, MatchClock, ClockInitializationRequest, TimeoutRequest, ClockOperation, Player } from '../models';
 
 @Component({
   selector: 'app-update-match-data',
@@ -298,7 +298,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Quick action to increment a statistic
    */
   incrementPlayerStat(player: any, statType: string, increment: number = 1): void {
-    const currentValue = this.getPlayerStatValue(player.id, statType);
+    // Get player ID from either player object or direct ID
+    const playerId = typeof player === 'object' ? player.id : player;
+    const currentValue = this.getPlayerStatValue(playerId, statType);
+    if(statType === 'exclusions') {
+      //increment current fouls +1 
+      this.updatePlayerStat(player, "fouls", currentValue + 1);
+    }
     this.updatePlayerStat(player, statType, currentValue + increment);
   }
 
@@ -306,7 +312,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Quick action to decrement a statistic
    */
   decrementPlayerStat(player: any, statType: string, decrement: number = 1): void {
-    const currentValue = this.getPlayerStatValue(player.id, statType);
+    // Get player ID from either player object or direct ID
+    const playerId = typeof player === 'object' ? player.id : player;
+    const currentValue = this.getPlayerStatValue(playerId, statType);
     const newValue = Math.max(0, currentValue - decrement); // Prevent negative values
     this.updatePlayerStat(player, statType, newValue);
   }
@@ -352,12 +360,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Basketball quick actions
    */
   basketballQuickAction(player: any, action: string): void {
+    const playerId = typeof player === 'object' ? player.id : player;
     switch (action) {
       case 'make_2pt':
         this.batchUpdatePlayerStats(player, {
-          points: this.getPlayerStatValue(player.id, 'points') + 2,
-          field_goals_made: this.getPlayerStatValue(player.id, 'field_goals_made') + 1,
-          field_goals_attempted: this.getPlayerStatValue(player.id, 'field_goals_attempted') + 1
+          points: this.getPlayerStatValue(playerId, 'points') + 2,
+          field_goals_made: this.getPlayerStatValue(playerId, 'field_goals_made') + 1,
+          field_goals_attempted: this.getPlayerStatValue(playerId, 'field_goals_attempted') + 1
         });
         break;
       case 'miss_2pt':
@@ -365,24 +374,24 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         break;
       case 'make_3pt':
         this.batchUpdatePlayerStats(player, {
-          points: this.getPlayerStatValue(player.id, 'points') + 3,
-          field_goals_made: this.getPlayerStatValue(player.id, 'field_goals_made') + 1,
-          field_goals_attempted: this.getPlayerStatValue(player.id, 'field_goals_attempted') + 1,
-          three_pointers_made: this.getPlayerStatValue(player.id, 'three_pointers_made') + 1,
-          three_pointers_attempted: this.getPlayerStatValue(player.id, 'three_pointers_attempted') + 1
+          points: this.getPlayerStatValue(playerId, 'points') + 3,
+          field_goals_made: this.getPlayerStatValue(playerId, 'field_goals_made') + 1,
+          field_goals_attempted: this.getPlayerStatValue(playerId, 'field_goals_attempted') + 1,
+          three_pointers_made: this.getPlayerStatValue(playerId, 'three_pointers_made') + 1,
+          three_pointers_attempted: this.getPlayerStatValue(playerId, 'three_pointers_attempted') + 1
         });
         break;
       case 'miss_3pt':
         this.batchUpdatePlayerStats(player, {
-          field_goals_attempted: this.getPlayerStatValue(player.id, 'field_goals_attempted') + 1,
-          three_pointers_attempted: this.getPlayerStatValue(player.id, 'three_pointers_attempted') + 1
+          field_goals_attempted: this.getPlayerStatValue(playerId, 'field_goals_attempted') + 1,
+          three_pointers_attempted: this.getPlayerStatValue(playerId, 'three_pointers_attempted') + 1
         });
         break;
       case 'make_ft':
         this.batchUpdatePlayerStats(player, {
-          points: this.getPlayerStatValue(player.id, 'points') + 1,
-          free_throws_made: this.getPlayerStatValue(player.id, 'free_throws_made') + 1,
-          free_throws_attempted: this.getPlayerStatValue(player.id, 'free_throws_attempted') + 1
+          points: this.getPlayerStatValue(playerId, 'points') + 1,
+          free_throws_made: this.getPlayerStatValue(playerId, 'free_throws_made') + 1,
+          free_throws_attempted: this.getPlayerStatValue(playerId, 'free_throws_attempted') + 1
         });
         break;
       case 'miss_ft':
@@ -468,15 +477,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         this.incrementPlayerStat(player, 'exclusions');
         break;
       case 'penalty_goal':
+        const playerId1 = typeof player === 'object' ? player.id : player;
         this.batchUpdatePlayerStats(player, {
-          goals: this.getPlayerStatValue(player.id, 'goals') + 1,
-          penalty_goals: this.getPlayerStatValue(player.id, 'penalty_goals') + 1
+          goals: this.getPlayerStatValue(playerId1, 'goals') + 1,
+          penalty_goals: this.getPlayerStatValue(playerId1, 'penalty_goals') + 1
         });
         break;
       case 'power_play_goal':
+        const playerId2 = typeof player === 'object' ? player.id : player;
         this.batchUpdatePlayerStats(player, {
-          goals: this.getPlayerStatValue(player.id, 'goals') + 1,
-          power_play_goals: this.getPlayerStatValue(player.id, 'power_play_goals') + 1
+          goals: this.getPlayerStatValue(playerId2, 'goals') + 1,
+          power_play_goals: this.getPlayerStatValue(playerId2, 'power_play_goals') + 1
         });
         break;
       case 'shot_attempted':
@@ -510,11 +521,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    */
   getPlayerTeam(player: any): any {
     // Find team from matchPlayers
-    const matchPlayer = this.matchPlayers.find(mp => mp.player.id === player.id);
+    const matchPlayer = this.matchPlayers.find(mp => {
+      const playerObj = typeof mp.player === 'object' ? mp.player : null;
+      const playerId = typeof mp.player === 'object' ? mp.player.id : mp.player;
+      return playerId === player.id;
+    });
+    
     if (matchPlayer) {
       // Find the corresponding match team
-      const matchTeam = this.matchTeams.find(mt => mt.team.id === matchPlayer.player.team);
-      return matchTeam?.team || matchPlayer.player.team_obj;
+      const playerTeamId = typeof matchPlayer.player === 'object' ? matchPlayer.player.team : matchPlayer.team;
+      const matchTeam = this.matchTeams.find(mt => mt.team.id === playerTeamId);
+      return matchTeam?.team || (typeof matchPlayer.player === 'object' ? matchPlayer.player.team_obj : null);
     }
     
     // Fallback to player's team property
@@ -522,10 +539,105 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get players for a specific team
+   * Get player object from match player (handles both ID and object cases)
    */
+  getPlayerObject(matchPlayer: MatchPlayer): Player | null {
+    if (typeof matchPlayer.player === 'object') {
+      return matchPlayer.player;
+    }
+    // If player is just an ID, try to find the full player object from matchPlayers
+    // or return null and handle in template
+    return null;
+  }
+
+  /**
+   * Check if player object is available
+   */
+  hasPlayerObject(matchPlayer: MatchPlayer): boolean {
+    return typeof matchPlayer.player === 'object';
+  }
   getTeamPlayers(teamId: number): MatchPlayer[] {
-    return this.matchPlayers.filter(mp => mp.player.team === teamId);
+    const teamPlayers = this.matchPlayers.filter(mp => {
+      // Handle both cases: player as object or as ID
+      const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
+      return playerTeamId === teamId;
+    });
+    return teamPlayers.map(matchPlayer => this.getPlayerWithCurrentStats(matchPlayer));
+  }
+
+  /**
+   * Get player with current statistics merged
+   */
+  getPlayerWithCurrentStats(matchPlayer: MatchPlayer): MatchPlayer {
+    // Get player ID whether player is an object or just an ID
+    const playerId = typeof matchPlayer.player === 'object' ? matchPlayer.player.id : matchPlayer.player;
+    const currentStats = this.getPlayerCurrentStats(playerId);
+    
+    if (currentStats) {
+      // Merge current statistics with match player data
+      return {
+        ...matchPlayer,
+        // Core stats
+        points: currentStats.points || 0,
+        assists: currentStats.assists || 0,
+        rebounds: currentStats.rebounds || 0,
+        goals: currentStats.goals || 0,
+        penalties_shots: currentStats.penalties_shots || 0,
+        penalties_score: currentStats.penalties_score || 0,
+        red_cards: currentStats.red_cards || 0,
+        yellow_cards: currentStats.yellow_cards || 0,
+        fouls: currentStats.fouls || 0,
+        steals: currentStats.steals || 0,
+        blocks: currentStats.blocks || 0,
+        tackles: currentStats.tackles || 0,
+        shots: currentStats.shots || 0,
+        shots_on_target: currentStats.shots_on_target || 0,
+        offsides: currentStats.offsides || 0,
+        corners: currentStats.corners || 0,
+        saves: currentStats.saves || 0,
+        passes: currentStats.passes || 0,
+        // Basketball specific
+        two_pointers_made: currentStats.two_pointers_made || 0,
+        two_pointers_attempted: currentStats.two_pointers_attempted || 0,
+        three_pointers_made: currentStats.three_pointers_made || 0,
+        three_pointers_attempted: currentStats.three_pointers_attempted || 0,
+        one_pointers_made: currentStats.one_pointers_made || 0,
+        one_pointers_attempted: currentStats.one_pointers_attempted || 0,
+        offensive_rebounds: currentStats.offensive_rebounds || 0,
+        defensive_rebounds: currentStats.defensive_rebounds || 0,
+        turnovers: currentStats.turnovers || 0,
+        personal_fouls: currentStats.personal_fouls || 0,
+        minutes_played: currentStats.minutes_played || 0,
+        // Water polo specific
+        exclusions: currentStats.exclusions || 0,
+        penalty_goals: currentStats.penalty_goals || 0,
+        power_play_goals: currentStats.power_play_goals || 0,
+        shots_attempted: currentStats.shots_attempted || 0,
+        shot_accuracy: currentStats.shot_accuracy || 0,
+        exclusion_time: currentStats.exclusion_time || 0,
+        major_fouls: currentStats.major_fouls || 0,
+        minor_fouls: currentStats.minor_fouls || 0,
+        swimming_distance: currentStats.swimming_distance || 0,
+        // Gymnastics specific
+        difficulty_score: currentStats.difficulty_score || 0,
+        execution_score: currentStats.execution_score || 0,
+        total_score: currentStats.total_score || 0,
+        deductions: currentStats.deductions || 0,
+        fall_count: currentStats.fall_count || 0,
+        routine_completion: currentStats.routine_completion || false,
+        artistic_score: currentStats.artistic_score || 0,
+        technical_score: currentStats.technical_score || 0,
+        landing_quality: currentStats.landing_quality || '',
+        apparatus_performed: currentStats.apparatus_performed || '',
+        routine_duration: currentStats.routine_duration || 0,
+        apparatus_scores: currentStats.apparatus_scores || {},
+        // Percentages
+        two_point_percentage: currentStats.two_point_percentage,
+        three_point_percentage: currentStats.three_point_percentage,
+        one_point_percentage: currentStats.one_point_percentage,
+      };
+    }
+    return matchPlayer;
   }
 
   /**

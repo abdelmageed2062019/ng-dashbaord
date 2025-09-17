@@ -318,6 +318,63 @@
   gap: 8px;
 }
 
+/* Stat Controls */
+.stat-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stat-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-btn:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.stat-btn.increment {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
+}
+
+.stat-btn.increment:hover {
+  background-color: #c3e6cb;
+  border-color: #b8dacc;
+}
+
+.stat-btn.decrement {
+  background-color: #f8d7da;
+  border-color: #f1aeb5;
+  color: #721c24;
+}
+
+.stat-btn.decrement:hover {
+  background-color: #f1aeb5;
+  border-color: #e2a5ab;
+}
+
+.stat-value {
+  min-width: 30px;
+  text-align: center;
+  font-weight: 600;
+  color: #495057;
+}
+
 /* Quick Actions */
 .quick-actions {
   margin-top: 15px;

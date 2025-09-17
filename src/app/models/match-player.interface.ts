@@ -140,58 +140,78 @@ export interface Player {
 
 export interface MatchPlayer {
   id: number;
-  player: Player;
-  is_winner: boolean | null;
-  score: number | null;
-  predictions_total: number | null;
+  player_details?: Player; // For API responses that include full player details
+  is_winner?: boolean | null;
+  score?: number | null;
+  predictions_total?: number | null;
+  // Core stats
+  points: number;
+  assists: number;
+  rebounds: number;
+  goals: number;
+  penalties_shots: number;
+  penalties_score: number;
   red_cards: number;
   yellow_cards: number;
-  goals: number;
-  points: number;
   fouls: number;
-  minutes_played: number;
+  steals: number;
+  blocks: number;
+  tackles: number;
+  shots: number;
+  shots_on_target: number;
+  offsides: number;
+  corners: number;
+  saves: number;
+  passes: number;
+  // Basketball specific
   two_pointers_made: number;
   two_pointers_attempted: number;
   three_pointers_made: number;
   three_pointers_attempted: number;
   one_pointers_made: number;
   one_pointers_attempted: number;
-  rebounds: number;
   offensive_rebounds: number;
   defensive_rebounds: number;
-  assists: number;
-  steals: number;
-  blocks: number;
   turnovers: number;
   personal_fouls: number;
-  two_point_percentage: number | null;
-  three_point_percentage: number | null;
-  one_point_percentage: number | null;
-  saves: number;
+  minutes_played: number;
+  // Water polo specific
   exclusions: number;
   penalty_goals: number;
   power_play_goals: number;
   shots_attempted: number;
-  shots_on_target: number;
-  shot_accuracy: number | null;
+  shot_accuracy: number;
   exclusion_time: number;
   major_fouls: number;
   minor_fouls: number;
-  swimming_distance: number | null;
-  difficulty_score: number | null;
-  execution_score: number | null;
-  total_score: number | null;
-  deductions: number | null;
+  swimming_distance: number;
+  // Gymnastics specific
+  difficulty_score: number;
+  execution_score: number;
+  total_score: number;
+  deductions: number;
   fall_count: number;
-  routine_completion: number | null;
-  artistic_score: number | null;
-  technical_score: number | null;
-  landing_quality: number | null;
-  apparatus_performed: string | null;
+  routine_completion: boolean;
+  artistic_score: number;
+  technical_score: number;
+  landing_quality: string;
+  apparatus_performed: string;
   routine_duration: number;
   apparatus_scores: Record<string, any>;
-  previous_stats: Record<string, any>;
-  created_at: string | null;
-  updated_at: string | null;
+  // Match relations
   match: number;
+  team: number;
+  player: Player | number; // Can be either full Player object or just ID
+  // Metadata
+  created_at?: string | null;
+  updated_at?: string | null;
+  previous_stats?: Record<string, any>;
+  two_point_percentage?: number | null;
+  three_point_percentage?: number | null;
+  one_point_percentage?: number | null;
+}
+
+// Extended interface for display with player details
+export interface MatchPlayerWithDetails extends MatchPlayer {
+  player_details?: Player;
 }
