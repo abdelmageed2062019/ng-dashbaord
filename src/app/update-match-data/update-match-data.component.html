@@ -482,30 +482,9 @@
             </button>
           </div>
 
-          <div class="control-group" *ngIf="currentSportType === 'FB'">
-            <label>Football Controls</label>
-            <button (click)="addInjuryTime(180)" 
-                    class="action-btn warning" 
-                    [disabled]="loading">
-              Add 3 Min Injury Time
-            </button>
-            <button (click)="addInjuryTime(300)" 
-                    class="action-btn warning" 
-                    [disabled]="loading">
-              Add 5 Min Injury Time
-            </button>
-          </div>
+          
 
-          <div class="control-group" *ngIf="currentSportType === 'WP'">
-            <label>Water Polo Controls</label>
-            <div *ngIf="selectedPlayer" class="exclusion-controls">
-              <button (click)="startExclusionTimer(selectedPlayer.id, selectedPlayer.team.id)" 
-                      class="action-btn foul" 
-                      [disabled]="loading">
-                Start Exclusion ({{ selectedPlayer.name }})
-              </button>
-            </div>
-          </div>
+          
         </div>
 
         <!-- Active Timers Display -->

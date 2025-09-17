@@ -1039,46 +1039,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Start exclusion timer (Water Polo only)
-   */
-  startExclusionTimer(playerId: number, teamId: number, duration: string = "00:02:00"): void {
-    if (!this.matchId || this.currentSportType !== 'WP') return;
-
-    this.apiService.startExclusionTimer(this.matchId, playerId, teamId, duration).subscribe({
-      next: (response: MatchClock) => {
-        this.liveClock = response;
-        this.successMessage = 'Exclusion timer started';
-        this.clearMessages();
-      },
-      error: (error: any) => {
-        console.error('Error starting exclusion timer:', error);
-        this.error = 'Failed to start exclusion timer';
-        this.clearMessages();
-      }
-    });
-  }
-
-  /**
-   * Add injury time (Football only)
-   */
-  addInjuryTime(duration: number): void {
-    if (!this.matchId || this.currentSportType !== 'FB') return;
-
-    this.apiService.addInjuryTime(this.matchId, duration).subscribe({
-      next: (response: MatchClock) => {
-        this.liveClock = response;
-        this.successMessage = `Added ${duration} seconds injury time`;
-        this.clearMessages();
-      },
-      error: (error: any) => {
-        console.error('Error adding injury time:', error);
-        this.error = 'Failed to add injury time';
-        this.clearMessages();
-      }
-    });
-  }
-
+  
   /**
    * Get team name by ID
    */

@@ -157,21 +157,6 @@ export class ApiService {
   stopRoutineTimer(matchId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/matches/${matchId}/clock/stop_routine/`, {}, { headers: this.getHeaders() });
   }
-
-  startExclusionTimer(matchId: number, playerId: number, teamId: number, duration?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/matches/${matchId}/clock/start_exclusion/`, { 
-      player_id: playerId, 
-      team_id: teamId,
-      duration: duration || "00:02:00"
-    }, { headers: this.getHeaders() });
-  }
-
-  addInjuryTime(matchId: number, duration: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}/matches/${matchId}/clock/add_injury_time/`, { 
-      duration 
-    }, { headers: this.getHeaders() });
-  }
-
   // Missing methods to fix compilation errors
   GetSports(): Observable<any> {
     return this.http.get(`${this.apiUrl}/sports/`, { headers: this.getHeaders() });
