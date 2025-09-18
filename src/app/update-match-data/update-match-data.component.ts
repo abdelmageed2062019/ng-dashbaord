@@ -283,6 +283,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         
         // Refresh live scoring data
         this.loadLiveScoring();
+        this.loadMatchTeams();
       },
       error: (error: any) => {
         console.error('Error updating player stats:', error);
@@ -346,6 +347,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         console.log('Player stats batch updated:', response);
         this.showSuccess(`Updated multiple stats for ${player.first_name} ${player.last_name}`);
         this.loadLiveScoring();
+        this.loadMatchTeams();
       },
       error: (error: any) => {
         console.error('Error batch updating player stats:', error);
