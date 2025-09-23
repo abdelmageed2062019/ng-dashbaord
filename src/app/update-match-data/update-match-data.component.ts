@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, UpperCasePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../service/api.service';
 import { interval, Subscription } from 'rxjs';
@@ -8,7 +9,7 @@ import { MatchPlayer, MatchTeam, MatchClock, ClockInitializationRequest, Timeout
 @Component({
   selector: 'app-update-match-data',
   standalone: true,
-  imports: [CommonModule, UpperCasePipe],
+  imports: [CommonModule, UpperCasePipe, FormsModule],
   templateUrl: './update-match-data.component.html',
   styleUrl: './update-match-data.component.css'
 })
@@ -1427,5 +1428,37 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     
     return actions;
   }
-
+  playerNameFilter: string = '';
+  filteredPlayers: MatchPlayer[] = [];
+  clearPlayerFilter(): void {
+    this.playerNameFilter = '';
+  }
+  onPlayerFilterChange(): void {
+    // Optional: Add debouncing for performance if needed
+    // For now, filtering happens immediately
+  }
+  getFilteredTeamPlayers(teamId: number): MatchPlayer[] {
+    const teamPlayers = this.getTeamPlayers(teamId);
+    
+    if (!this.playerNameFilter || this.playerNameFilter.trim() === '') {
+      return teamPlayers;
+    }
+    
+    const filterText = this.playerNameFilter.toLowerCase().trim();
+    
+    return teamPlayers.filter(matchPlayer => {
+      const player = this.getPlayerObject(matchPlayer);
+      if (!player) return false;
+      
+      const fullName = `${player.first_name || ''} ${player.last_name || ''}`.toLowerCase();
+      const firstName = (player.first_name || '').toLowerCase();
+      const lastName = (player.last_name || '').toLowerCase();
+      const uniform = (player.uniform || '').toString();
+      
+      return fullName.includes(filterText) || 
+             firstName.includes(filterText) || 
+             lastName.includes(filterText) ||
+             uniform.includes(filterText);
+    });
+  }
 }

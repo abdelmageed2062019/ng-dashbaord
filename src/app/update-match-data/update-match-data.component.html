@@ -87,12 +87,30 @@
     <!-- Player Management Section -->
     <div *ngIf="selectedTeam" class="player-management">
       <h3>{{ selectedTeam.team.name }} - Player Management</h3>
-      
+      <!-- Player Filter -->
+  <div class="player-filter">
+    <div class="filter-input-group">
+      <input 
+        type="text" 
+        [(ngModel)]="playerNameFilter" 
+        (input)="onPlayerFilterChange()"
+        placeholder="Search players by name..." 
+        class="filter-input form-control">
+      <div class="filter-results">
+        Showing {{ getFilteredTeamPlayers(selectedTeam.team.id).length }} of {{ getTeamPlayers(selectedTeam.team.id).length }} players
+      </div>
+    </div>
+    <button 
+      *ngIf="playerNameFilter" 
+      (click)="clearPlayerFilter()" 
+      class="clear-filter-btn">
+      Clear Filter
+    </button>
       <!-- Players Grid -->
       <div class="players-grid">
-        <div *ngFor="let matchPlayer of getTeamPlayers(selectedTeam.team.id)" 
-             class="player-card" 
-             [class.primary-player]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
+        <div *ngFor="let matchPlayer of getFilteredTeamPlayers(selectedTeam.team.id)" 
+         class="player-card" 
+         [class.primary-player]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
           
           <!-- Player Header -->
           <div class="player-header">
@@ -266,7 +284,7 @@
             <h5>Quick Actions</h5>
             
             <!-- Basketball Quick Actions -->
-            <div *ngIf="currentSportType === 'BB'" class="action-buttons">
+            <div *ngIf="currentSportType === 'BB'" class="action-buttons " >
               <div class="action-group">
                 <label>Scoring</label>
                 <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_2pt')" class="action-btn scoring">+2 PTS</button>
@@ -288,7 +306,7 @@
             </div>
 
             <!-- Football Quick Actions -->
-            <div *ngIf="currentSportType === 'FB'" class="action-buttons">
+            <div *ngIf="currentSportType === 'FB'" class="action-buttons d-none">
               <div class="action-group">
                 <label>Scoring</label>
                 <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'goal')" class="action-btn scoring">Goal</button>
@@ -344,7 +362,9 @@
       </div>
     </div>
 
-    <!-- Comprehensive Clock Management -->
+    
+  </div>
+  <!-- Comprehensive Clock Management -->
     <div class="clock-management-section">
       
       <!-- Clock Initialization (if not initialized) -->
@@ -436,7 +456,7 @@
           </div>
 
           <!-- Timeout Management -->
-          <div class="control-group" *ngIf="matchTeams.length > 0">
+          <div class="control-group" *ngIf="matchTeams.length > 0 && !isFootball() && !isGymnastics()">
             <label>Timeout Management</label>
             
             <div *ngIf="isTimeoutActive()" class="timeout-active">
@@ -545,5 +565,4 @@
         </div>
       </div>
     </div>
-  </div>
 </div>
