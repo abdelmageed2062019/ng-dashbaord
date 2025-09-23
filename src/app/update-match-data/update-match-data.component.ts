@@ -457,11 +457,38 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Gymnastics scoring update
    */
   gymnasticsScoreUpdate(player: any, scores: any): void {
-    const totalScore = (scores.difficulty_score || 0) + (scores.execution_score || 0) - (scores.deductions || 0);
+    const totalScore = (scores.difficulty_score || 0) + (scores.execution_score || 0) - (scores.deductions || 0) - ((scores.fall_count || 0) * 0.8);
     
-    this.batchUpdatePlayerStats(player, {
-      ...scores,
-      total_score: Math.max(0, totalScore)
+    // Use the specific gymnastics scoring API endpoint
+    const scoreData = {
+      match: this.matchId,
+      team: player.team || (this.matchTeams.length > 0 ? this.matchTeams[0].id : null),
+      player: player.id,
+      apparatus_performed: scores.apparatus_performed || this.getCurrentApparatus(),
+      difficulty_score: scores.difficulty_score || 0,
+      execution_score: scores.execution_score || 0,
+      total_score: Math.max(0, totalScore),
+      deductions: scores.deductions || 0,
+      fall_count: scores.fall_count || 0,
+      routine_completion: (scores.fall_count || 0) === 0,
+      landing_quality: scores.landing_quality || 'good',
+      routine_duration: scores.routine_duration || 60,
+      artistic_score: scores.artistic_score || scores.execution_score || 0,
+      technical_score: scores.technical_score || scores.difficulty_score || 0
+    };
+
+    this.apiService.updatePlayerScore(scoreData).subscribe({
+      next: (response) => {
+        this.successMessage = 'Gymnastics score updated successfully';
+        this.clearMessages();
+        // Refresh the match data
+        this.ngOnInit();
+      },
+      error: (error) => {
+        console.error('Error updating gymnastics score:', error);
+        this.error = 'Failed to update gymnastics score';
+        this.clearMessages();
+      }
     });
   }
 
@@ -1170,13 +1197,74 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
         this.incrementPlayerStat(player, 'fall_count');
         break;
       case 'start_routine':
-        // Start routine timer
-        console.log('Starting routine for:', player.first_name, player.last_name);
+        // Start routine timer with current apparatus
+        const apparatus = this.getCurrentApparatus();
+        this.startRoutineTimer(player.id, apparatus);
         break;
       case 'complete_routine':
         this.updatePlayerStat(player, 'routine_completion', 1);
+        // Stop routine timer when complete
+        this.stopRoutineTimer();
+        break;
+      case 'advance_rotation':
+        this.advanceApparatusRotation();
         break;
     }
+  }
+
+  /**
+   * Advance apparatus rotation
+   */
+  advanceApparatusRotation(): void {
+    if (!this.matchId) return;
+
+    const nextApparatus = this.getNextApparatus();
+    this.loading = true;
+    
+    this.apiService.advanceApparatusRotation(this.matchId, {
+      next_apparatus: nextApparatus,
+      rotation_duration: 90
+    }).subscribe({
+      next: (response) => {
+        this.liveClock = response;
+        this.successMessage = `Advanced to ${this.getApparatusDisplayName(nextApparatus)}`;
+        this.clearMessages();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error advancing rotation:', error);
+        this.error = 'Failed to advance apparatus rotation';
+        this.clearMessages();
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Get next apparatus in rotation
+   */
+  getNextApparatus(): string {
+    const apparatusOrder = ['floor_exercise', 'pommel_horse', 'still_rings', 'vault', 'parallel_bars', 'horizontal_bar'];
+    const currentRotation = this.liveClock?.current_rotation || 1;
+    const nextIndex = currentRotation % apparatusOrder.length;
+    return apparatusOrder[nextIndex];
+  }
+
+  /**
+   * Get apparatus display name
+   */
+  getApparatusDisplayName(apparatus: string): string {
+    const names: { [key: string]: string } = {
+      'floor_exercise': 'Floor Exercise',
+      'pommel_horse': 'Pommel Horse',
+      'still_rings': 'Still Rings',
+      'vault': 'Vault',
+      'parallel_bars': 'Parallel Bars',
+      'horizontal_bar': 'Horizontal Bar',
+      'balance_beam': 'Balance Beam',
+      'uneven_bars': 'Uneven Bars'
+    };
+    return names[apparatus] || apparatus;
   }
 
   /**

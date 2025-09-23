@@ -348,13 +348,21 @@
             <div *ngIf="currentSportType === 'GY'" class="action-buttons">
               <div class="action-group">
                 <label>Score Entry</label>
-                <button (click)="openScoreDialog(getPlayerObject(matchPlayer) || matchPlayer.player)" class="action-btn scoring">Enter Scores</button>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall')" class="action-btn danger">Fall</button>
+                <button (click)="openScoreDialog(getPlayerObject(matchPlayer) || matchPlayer.player)" class="action-btn scoring">📊 Enter Scores</button>
+                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall')" class="action-btn danger">💥 Fall</button>
               </div>
               <div class="action-group">
                 <label>Routine</label>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'start_routine')" class="action-btn">Start</button>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'complete_routine')" class="action-btn">Complete</button>
+                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'start_routine')" class="action-btn">🏁 Start</button>
+                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'complete_routine')" class="action-btn">✅ Complete</button>
+              </div>
+              <div class="action-group">
+                <label>Apparatus: {{ getApparatusDisplayName(getCurrentApparatus()) }}</label>
+                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'advance_rotation')" 
+                        class="action-btn" 
+                        [disabled]="loading">
+                  🔄 Next Apparatus
+                </button>
               </div>
             </div>
           </div>

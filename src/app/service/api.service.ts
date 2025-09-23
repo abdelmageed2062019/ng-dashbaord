@@ -157,6 +157,16 @@ export class ApiService {
   stopRoutineTimer(matchId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/matches/${matchId}/clock/stop_routine/`, {}, { headers: this.getHeaders() });
   }
+
+  // Gymnastics specific API methods based on documentation
+  advanceApparatusRotation(matchId: number, data: { next_apparatus: string, rotation_duration: number }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/matches/${matchId}/clock/advance_apparatus_rotation/`, data, { headers: this.getHeaders() });
+  }
+
+  updatePlayerScore(scoreData: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/player-stats/custom_update/`, scoreData, { headers: this.getHeaders() });
+  }
+
   // Missing methods to fix compilation errors
   GetSports(): Observable<any> {
     return this.http.get(`${this.apiUrl}/sports/`, { headers: this.getHeaders() });
