@@ -38,6 +38,19 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   successMessage: string | null = null;
   showScoring: boolean = true;
   showPlayerManagement: boolean = true;
+
+  // Water Polo Player Management
+  waterPoloMatchNumbers: any[] = [];
+  waterPoloNumberForm = {
+    player: null,
+    match_number: null,
+    team: null
+  };
+  rotationForm = {
+    current_player: null,
+    new_player: null
+  };
+  showWaterPoloPlayerManagement: boolean = false;
   
   // Sport-specific configurations
   sportConfigs = {
@@ -526,6 +539,156 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       case 'save':
         this.incrementPlayerStat(player, 'saves');
         break;
+    }
+  }
+
+  // ===== WATER POLO PLAYER MANAGEMENT =====
+
+  /**
+   * Load water polo match numbers
+   */
+  loadWaterPoloMatchNumbers(): void {
+    if (!this.matchId) return;
+
+    this.apiService.getWaterPoloMatchNumbers(this.matchId).subscribe({
+      next: (data: any[]) => {
+        this.waterPoloMatchNumbers = data;
+        console.log('Water polo match numbers loaded:', data);
+      },
+      error: (error: any) => {
+        console.error('Error loading water polo match numbers:', error);
+        this.error = 'Failed to load water polo match numbers';
+      }
+    });
+  }
+
+  /**
+   * Add new water polo player number
+   */
+  addWaterPoloPlayerNumber(): void {
+    if (!this.matchId || !this.waterPoloNumberForm.player || !this.waterPoloNumberForm.match_number || !this.waterPoloNumberForm.team) {
+      this.error = 'Please fill all required fields';
+      return;
+    }
+
+    const payload = {
+      match: this.matchId,
+      player: this.waterPoloNumberForm.player,
+      match_number: this.waterPoloNumberForm.match_number,
+      team: this.waterPoloNumberForm.team
+    };
+
+    this.apiService.addWaterPoloPlayerNumber(payload).subscribe({
+      next: (response: any) => {
+        this.successMessage = 'Player number added successfully';
+        this.clearMessages();
+        this.loadWaterPoloMatchNumbers(); // Reload the numbers
+        this.resetWaterPoloForm();
+      },
+      error: (error: any) => {
+        console.error('Error adding water polo player number:', error);
+        this.error = error.error?.detail || 'Failed to add player number';
+        this.clearMessages();
+      }
+    });
+  }
+
+  /**
+   * Rotate water polo player
+   */
+  rotateWaterPoloPlayer(): void {
+    if (!this.matchId || !this.rotationForm.current_player || !this.rotationForm.new_player) {
+      this.error = 'Please select both current and new players';
+      return;
+    }
+
+    const payload = {
+      match_id: this.matchId,
+      current_player_id: this.rotationForm.current_player,
+      new_player_id: this.rotationForm.new_player
+    };
+
+    this.apiService.rotateWaterPoloPlayer(payload).subscribe({
+      next: (response: any) => {
+        this.successMessage = 'Player rotation completed successfully';
+        this.clearMessages();
+        this.loadWaterPoloMatchNumbers(); // Reload the numbers
+        this.resetRotationForm();
+      },
+      error: (error: any) => {
+        console.error('Error rotating water polo player:', error);
+        this.error = error.error?.detail || 'Failed to rotate player';
+        this.clearMessages();
+      }
+    });
+  }
+
+  /**
+   * Reset water polo number form
+   */
+  resetWaterPoloForm(): void {
+    this.waterPoloNumberForm = {
+      player: null,
+      match_number: null,
+      team: null
+    };
+  }
+
+  /**
+   * Reset rotation form
+   */
+  resetRotationForm(): void {
+    this.rotationForm = {
+      current_player: null,
+      new_player: null
+    };
+  }
+
+  /**
+   * Get available players for selected team
+   */
+  getAvailablePlayersForTeam(teamId: number | null): any[] {
+    if (!teamId) return [];
+    
+    return this.matchPlayers
+      .filter(mp => {
+        const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
+        console.log('this.matchPlayers', this.matchPlayers);
+        console.log('playerTeamId', playerTeamId);
+        return playerTeamId === teamId;
+      })
+      .map(mp => typeof mp.player === 'object' ? mp.player : mp);
+  }
+
+  /**
+   * Get players currently in the match for water polo
+   */
+  getCurrentWaterPoloPlayers(): any[] {
+    return this.waterPoloMatchNumbers.map(wpn => wpn.player);
+  }
+
+  /**
+   * Check if player is currently in the match
+   */
+  isPlayerInMatch(playerId: number): boolean {
+    return this.waterPoloMatchNumbers.some(wpn => wpn.player.id === playerId);
+  }
+
+  /**
+   * Get player's current match number
+   */
+  getPlayerMatchNumber(playerId: number): number | null {
+    const matchNumber = this.waterPoloMatchNumbers.find(wpn => wpn.player.id === playerId);
+    return matchNumber ? matchNumber.match_number : null;
+  }
+
+  /**
+   * Toggle water polo player management panel
+   */
+  toggleWaterPoloPlayerManagement(): void {
+    this.showWaterPoloPlayerManagement = !this.showWaterPoloPlayerManagement;
+    if (this.showWaterPoloPlayerManagement && this.currentSportType === 'WP') {
+      this.loadWaterPoloMatchNumbers();
     }
   }
 
@@ -1274,6 +1437,11 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     if (this.matchTeams.length > 0) {
       this.currentSportType = this.matchTeams[0].team.sport_obj.sport_code;
       console.log('Current sport type:', this.currentSportType);
+      
+      // Load water polo specific data if it's a water polo match
+      if (this.currentSportType === 'WP') {
+        this.loadWaterPoloMatchNumbers();
+      }
     }
   }
 

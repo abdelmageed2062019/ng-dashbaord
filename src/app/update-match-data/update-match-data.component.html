@@ -371,6 +371,136 @@
     </div>
 
     
+    <!-- Water Polo Player Management -->
+    <div *ngIf="currentSportType === 'WP'" class="water-polo-management">
+      <h3>Water Polo Player Management</h3>
+      
+      <!-- Toggle Button -->
+      <button (click)="toggleWaterPoloPlayerManagement()" class="toggle-btn">
+        {{ showWaterPoloPlayerManagement ? 'Hide' : 'Show' }} Player Numbers
+      </button>
+
+      <div *ngIf="showWaterPoloPlayerManagement" class="wp-management-content">
+        
+        <!-- Current Match Numbers -->
+        <div class="current-match-numbers">
+          <h4>Current Players in Match</h4>
+          <div *ngIf="waterPoloMatchNumbers.length === 0" class="no-players">
+            No players assigned match numbers yet.
+          </div>
+          <div *ngIf="waterPoloMatchNumbers.length > 0" class="players-grid">
+            <div *ngFor="let wpNumber of waterPoloMatchNumbers" class="player-number-card">
+              <div class="player-info">
+                <div class="player-name">{{ wpNumber.player.first_name }} {{ wpNumber.player.last_name }}</div>
+                <div class="player-team">{{ wpNumber.team.name }}</div>
+                <div class="match-number">Match #{{ wpNumber.match_number }}</div>
+                <div class="rotation-status" [class.active]="wpNumber.is_rotation">
+                  {{ wpNumber.is_rotation ? 'Rotation Player' : 'Regular Player' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add New Player Number -->
+        <div class="add-player-section">
+          <h4>Add Player to Match</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Team:</label>
+              <select [(ngModel)]="waterPoloNumberForm.team" class="form-control">
+                <option value="">Select Team</option>
+                <option *ngFor="let team of matchTeams" [value]="team.team.id">
+                  {{ team.team.name }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Player:</label>
+              <select [(ngModel)]="waterPoloNumberForm.player" class="form-control" 
+                      [disabled]="!waterPoloNumberForm.team">
+                <option value="">Select Player</option>
+                <option *ngFor="let player of getAvailablePlayersForTeam(waterPoloNumberForm.team)" 
+                        [value]="player.id">
+                  {{ player.first_name }} {{ player.last_name }}
+                  <span *ngIf="isPlayerInMatch(player.id)"> (Already in match)</span>
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>Match Number (1-13):</label>
+              <input type="number" 
+                     [(ngModel)]="waterPoloNumberForm.match_number" 
+                     class="form-control"
+                     min="1" 
+                     max="13" 
+                     placeholder="Enter match number">
+            </div>
+            
+            <div class="form-actions">
+              <button (click)="addWaterPoloPlayerNumber()" 
+                      class="action-btn scoring"
+                      [disabled]="!waterPoloNumberForm.player || !waterPoloNumberForm.match_number || !waterPoloNumberForm.team">
+                Add Player Number
+              </button>
+              <button (click)="resetWaterPoloForm()" class="action-btn secondary">
+                Reset Form
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Player Rotation -->
+        <div class="rotation-section">
+          <h4>Player Rotation</h4>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Current Player (to be replaced):</label>
+              <select [(ngModel)]="rotationForm.current_player" class="form-control">
+                <option value="">Select Current Player</option>
+                <option *ngFor="let wpNumber of waterPoloMatchNumbers" [value]="wpNumber.player.id">
+                  {{ wpNumber.player.first_name }} {{ wpNumber.player.last_name }} 
+                  (Match #{{ wpNumber.match_number }})
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label>New Player:</label>
+              <select [(ngModel)]="rotationForm.new_player" class="form-control">
+                <option value="">Select New Player</option>
+                <!-- Show all team players, not just available ones, as rotation might be strategic -->
+                <ng-container *ngFor="let team of matchTeams">
+                  <optgroup [label]="team.team.name">
+                    <option *ngFor="let player of getAvailablePlayersForTeam(team.team.id)" 
+                            [value]="player.id"
+                            [disabled]="isPlayerInMatch(player.id)">
+                      {{ player.first_name }} {{ player.last_name }}
+                      <span *ngIf="isPlayerInMatch(player.id)"> (In match)</span>
+                    </option>
+                  </optgroup>
+                </ng-container>
+              </select>
+            </div>
+            
+            <div class="form-actions">
+              <button (click)="rotateWaterPoloPlayer()" 
+                      class="action-btn warning"
+                      [disabled]="!rotationForm.current_player || !rotationForm.new_player">
+                Rotate Player
+              </button>
+              <button (click)="resetRotationForm()" class="action-btn secondary">
+                Reset Form
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
   <!-- Comprehensive Clock Management -->
     <div class="clock-management-section">
