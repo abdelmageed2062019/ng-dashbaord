@@ -480,7 +480,7 @@
                     <option *ngFor="let player of getAvailablePlayersForTeam(team.team.id)" 
                             [value]="player.id"
                             [disabled]="isPlayerInMatch(player.id)">
-                      {{ player.first_name }} {{ player.last_name }}
+                      {{ player.player.first_name }} {{ player.player.last_name }}
                       <span *ngIf="isPlayerInMatch(player.id)"> (In match)</span>
                     </option>
                   </optgroup>

@@ -656,10 +656,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
       return playerTeamId === teamId;
     }));
-    return this.matchPlayers.filter(mp => {
-      const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
-      return playerTeamId === teamId;
-    });
+    return this.matchPlayers;
   }
 
   /**
