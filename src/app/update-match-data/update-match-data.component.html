@@ -371,7 +371,10 @@
     </div>
 
     
-    <!-- Water Polo Player Management -->
+    
+
+  </div>
+  <!-- Water Polo Player Management -->
     <div *ngIf="currentSportType === 'WP'" class="water-polo-management">
       <h3>Water Polo Player Management</h3>
       
@@ -423,7 +426,7 @@
                 <option value="">Select Player</option>
                 <option *ngFor="let player of getAvailablePlayersForTeam(waterPoloNumberForm.team)" 
                         [value]="player.id">
-                  {{ player.first_name }} {{ player.last_name }}
+                  {{ player.player.first_name }} {{ player.player.last_name }}
                   <span *ngIf="isPlayerInMatch(player.id)"> (Already in match)</span>
                 </option>
               </select>
@@ -500,8 +503,6 @@
 
       </div>
     </div>
-
-  </div>
   <!-- Comprehensive Clock Management -->
     <div class="clock-management-section">
       

@@ -249,7 +249,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       next: (liveData: any) => {
         this.liveScoring = liveData;
         this.matchStats = liveData.match_stats;
-        console.log('Live scoring data loaded:', liveData);
+        // console.log('Live scoring data loaded:', liveData);
         this.loading = false;
       },
       error: (error: any) => {
@@ -572,11 +572,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
 
     const payload = {
-      match: this.matchId,
-      player: this.waterPoloNumberForm.player,
+      match_id: this.matchId,
+      player_id: this.waterPoloNumberForm.player,
       match_number: this.waterPoloNumberForm.match_number,
-      team: this.waterPoloNumberForm.team
+      team_id: this.waterPoloNumberForm.team
     };
+    console.log('Adding water polo player number with payload:', payload);
 
     this.apiService.addWaterPoloPlayerNumber(payload).subscribe({
       next: (response: any) => {
@@ -648,16 +649,17 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Get available players for selected team
    */
   getAvailablePlayersForTeam(teamId: number | null): any[] {
-    if (!teamId) return [];
-    
-    return this.matchPlayers
-      .filter(mp => {
-        const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
-        console.log('this.matchPlayers', this.matchPlayers);
-        console.log('playerTeamId', playerTeamId);
-        return playerTeamId === teamId;
-      })
-      .map(mp => typeof mp.player === 'object' ? mp.player : mp);
+    if (!teamId) return [];  
+    console.log('Getting available players for team ID:', teamId);
+    console.log('All match players:', this.matchPlayers);
+    console.log('Filtered players:', this.matchPlayers.filter(mp => {
+      const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
+      return playerTeamId === teamId;
+    }));
+    return this.matchPlayers.filter(mp => {
+      const playerTeamId = typeof mp.player === 'object' ? mp.player.team : mp.team;
+      return playerTeamId === teamId;
+    });
   }
 
   /**
@@ -916,9 +918,9 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.getLiveClock(`/matches/${this.matchId}/clock/`).subscribe({
       next: (clockData: MatchClock) => {
         this.liveClock = clockData;
-        console.log('Live clock data:', clockData);
-        console.log('Timeout status in live clock:', clockData.timeout_status);
-        console.log('Has timeout in live clock:', clockData.timeout_status?.has_timeout);
+        // console.log('Live clock data:', clockData);
+        // console.log('Timeout status in live clock:', clockData.timeout_status);
+        // console.log('Has timeout in live clock:', clockData.timeout_status?.has_timeout);
       },
       error: (error: any) => {
         if (error.status === 404) {

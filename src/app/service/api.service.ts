@@ -8,10 +8,10 @@ import { MatchPlayer, MatchTeam } from '../models';
   providedIn: 'root'
 })
 export class ApiService {
-  // private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
-  // private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
-   private baseApiUrl = 'http://127.0.0.1:8000/apis/v1';
-   private apiUrl = 'http://127.0.0.1:8000/apis/v1/sports-app';
+  private baseApiUrl = 'https://admin.thebegames.com/apis/v1';
+  private apiUrl = 'https://admin.thebegames.com/apis/v1/sports-app';
+  //  private baseApiUrl = 'http://127.0.0.1:8000/apis/v1';
+  //  private apiUrl = 'http://127.0.0.1:8000/apis/v1/sports-app';
   private tokenEndpoint = `${this.baseApiUrl}/auth/login/`;
   private tokenSubject = new BehaviorSubject<string | null>(null);
   public token$ = this.tokenSubject.asObservable();
@@ -238,7 +238,7 @@ export class ApiService {
 
   // Player statistics CRUD
   getPlayerStatistics(matchId: number, playerId?: number): Observable<any> {
-    let httpParams = new HttpParams().append('match', matchId.toString());
+    let httpParams = new HttpParams().append('match', matchId);
     if (playerId) {
       httpParams = httpParams.append('player', playerId.toString());
     }
@@ -274,7 +274,7 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/waterpolo-match-numbers/by_match`, { params: httpParams, headers: this.getHeaders() });
   }
 
-  addWaterPoloPlayerNumber(data: { match: number, player: number, match_number: number, team: number }): Observable<any> {
+  addWaterPoloPlayerNumber(data: { match_id: number, player_id: number, match_number: number, team_id: number }): Observable<any> {
     return this.http.post(`${this.apiUrl}/waterpolo-match-numbers/add_player_number/`, data, { headers: this.getHeaders() });
   }
 
