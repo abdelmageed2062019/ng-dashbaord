@@ -425,9 +425,9 @@
                       [disabled]="!waterPoloNumberForm.team">
                 <option value="">Select Player</option>
                 <option *ngFor="let player of getAvailablePlayersForTeam(waterPoloNumberForm.team)" 
-                        [value]="player.id">
+                        [value]="player.player.id">
                   {{ player.player.first_name }} {{ player.player.last_name }}
-                  <span *ngIf="isPlayerInMatch(player.id)"> (Already in match)</span>
+                  <span *ngIf="isPlayerInMatch(player.player.id)"> (Already in match)</span>
                 </option>
               </select>
             </div>
