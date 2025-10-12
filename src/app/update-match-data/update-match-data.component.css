@@ -1109,3 +1109,274 @@
     align-items: stretch;
   }
 }
+
+/* ===== TABLE VIEW STYLES ===== */
+
+.view-toggle {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.toggle-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.players-table-container {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.players-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.players-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.players-table th {
+  padding: 15px 10px;
+  text-align: left;
+  font-weight: bold;
+  border: none;
+  white-space: nowrap;
+}
+
+.players-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.players-table tbody tr:hover {
+  background-color: #f8f9ff;
+}
+
+.players-table tbody tr.primary-player {
+  background-color: #fff3cd;
+}
+
+.players-table tbody tr.primary-player:hover {
+  background-color: #ffeaa7;
+}
+
+/* Player Info Cell */
+.player-info-cell {
+  min-width: 200px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-avatar-small {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #ddd;
+}
+
+.player-details {
+  flex: 1;
+}
+
+.player-name {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.player-uniform {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.player-position {
+  font-size: 0.85rem;
+  color: #666;
+  min-width: 80px;
+}
+
+.player-status-cell {
+  text-align: center;
+}
+
+.player-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  background-color: #e9ecef;
+  color: #6c757d;
+}
+
+.player-status-badge.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Stat Cell */
+.stat-cell {
+  text-align: center;
+  min-width: 80px;
+}
+
+.stat-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.stat-btn {
+  width: 25px;
+  height: 25px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.stat-btn.increment {
+  background-color: #28a745;
+  color: white;
+}
+
+.stat-btn.decrement {
+  background-color: #dc3545;
+  color: white;
+}
+
+.stat-btn:hover {
+  transform: scale(1.1);
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #333;
+  min-width: 30px;
+  text-align: center;
+}
+
+/* Actions Cell */
+.actions-cell {
+  min-width: 120px;
+}
+
+.quick-actions-table {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.action-buttons-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.action-row {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.action-btn-small {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  min-width: 35px;
+  text-align: center;
+}
+
+.action-btn-small.scoring {
+  background-color: #28a745;
+  color: white;
+}
+
+.action-btn-small.defense {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.action-btn-small.assist {
+  background-color: #6f42c1;
+  color: white;
+}
+
+.action-btn-small.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.action-btn-small.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.action-btn-small.foul {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.action-btn-small:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+  .players-table-container {
+    overflow-x: auto;
+  }
+  
+  .players-table {
+    min-width: 800px;
+  }
+  
+  .player-info-cell {
+    min-width: 150px;
+  }
+  
+  .stat-cell {
+    min-width: 70px;
+  }
+  
+  .actions-cell {
+    min-width: 100px;
+  }
+  
+  .action-btn-small {
+    min-width: 30px;
+    font-size: 0.65rem;
+    padding: 3px 4px;
+  }
+}

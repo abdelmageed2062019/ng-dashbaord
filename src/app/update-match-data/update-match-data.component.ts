@@ -38,6 +38,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   successMessage: string | null = null;
   showScoring: boolean = true;
   showPlayerManagement: boolean = true;
+  showTableView: boolean = true; // Default to table view
 
   // Water Polo Player Management
   waterPoloMatchNumbers: any[] = [];
@@ -689,6 +690,13 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     if (this.showWaterPoloPlayerManagement && this.currentSportType === 'WP') {
       this.loadWaterPoloMatchNumbers();
     }
+  }
+
+  /**
+   * Toggle between table view and card view for players
+   */
+  togglePlayerView(): void {
+    this.showTableView = !this.showTableView;
   }
 
   // ===== UTILITY METHODS =====
