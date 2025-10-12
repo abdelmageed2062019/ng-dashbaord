@@ -38,7 +38,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
   teams: any[] = [];
   playersData: { [teamId: number]: any[] } = {};
   selectedTeam: number | null = null;
-  showPlayerStats = false;
+  showPlayerStats = true;
   
   // New properties for advanced UI
   loading = false;
@@ -548,7 +548,12 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     { name: 'Wing Position', made: 0, attempted: 0 },
     { name: 'Penalty Shot', made: 0, attempted: 0 }
   ];
-  footballClock: any;
+  footballClock: any = {
+    isRunning: false,
+    current_period: 1,
+    display_time: '00:00',
+    clock_state: 'stopped'
+  };
 
 
   constructor(
@@ -601,10 +606,33 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     this.apiService.getMatchDetails(matchId).subscribe({
       next: (match) => {
         console.log('Loading match data', match);
+        console.log('Match teams data:', match.matchteams);
         this.match = match;
         this.teams = match.matchteams || [];
+        
+        // Debug logging for teams
+        if (!this.teams || this.teams.length === 0) {
+          console.warn('⚠️ No teams found in match.matchteams. Fetching teams separately...');
+          
+          // Fallback: Fetch teams separately if not included in match data
+          this.apiService.getMatchTeams(matchId).subscribe({
+            next: (teams) => {
+              console.log('Teams loaded separately:', teams);
+              this.teams = teams || [];
+              console.log(`✅ Loaded ${this.teams.length} teams via fallback`);
+              this.loadPlayersForAllTeams();
+            },
+            error: (error) => {
+              console.error('Error loading teams:', error);
+              this.teams = [];
+            }
+          });
+        } else {
+          console.log(`✅ Loaded ${this.teams.length} teams from match data`);
+          this.loadPlayersForAllTeams();
+        }
+        
         this.buildDynamicForm();
-        this.loadPlayersForAllTeams();
         
         // Check if this is a gymnastics match and load competition state
         if (this.isGymnastics()) {
@@ -5480,6 +5508,76 @@ console.log('🏆 Sending player update:', gymnasticsPlayerData);
     };
 
     this.updateBasketballPlayerScore(playerId, teamId, scoreData);
+  }
+
+  // ========================================
+  // FOOTBALL QUICK ACTION METHODS
+  // ========================================
+
+  addFootballGoal(playerId: number, teamId: number): void {
+    const statsData = { goals: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  addFootballAssist(playerId: number, teamId: number): void {
+    const statsData = { assists: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  addFootballYellowCard(playerId: number, teamId: number): void {
+    const statsData = { yellow_cards: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  addFootballRedCard(playerId: number, teamId: number): void {
+    const statsData = { red_cards: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  addFootballShot(playerId: number, teamId: number): void {
+    const statsData = { shots_on_target: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  addFootballSave(playerId: number, teamId: number): void {
+    const statsData = { saves: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
+  }
+
+  // ========================================
+  // GYMNASTICS QUICK ACTION METHODS
+  // ========================================
+
+  updateGymnasticsScore(playerId: number, teamId: number): void {
+    // Open modal or dialog to update gymnastics scores
+    const player = this.playersData[teamId]?.find(p => p.id === playerId);
+    if (player) {
+      this.updatePlayerStats(player, teamId);
+    }
+  }
+
+  viewGymnasticsDetails(playerId: number): void {
+    if (!this.selectedTeam) return;
+    const player = this.playersData[this.selectedTeam]?.find((p: any) => p.id === playerId);
+    if (player) {
+      Swal.fire({
+        title: `${player.first_name} ${player.last_name}`,
+        html: `
+          <div class="text-start">
+            <p><strong>Total Score:</strong> ${player.total_score || 0}</p>
+            <p><strong>Difficulty:</strong> ${player.difficulty_score || 0}</p>
+            <p><strong>Execution:</strong> ${player.execution_score || 0}</p>
+            <p><strong>Falls:</strong> ${player.fall_count || 0}</p>
+          </div>
+        `,
+        icon: 'info'
+      });
+    }
+  }
+
+  addGymnasticsFall(playerId: number, teamId: number): void {
+    const statsData = { fall_count: 1 };
+    this.updatePlayerStats({ id: playerId, ...statsData }, teamId);
   }
 
   // Update local player data

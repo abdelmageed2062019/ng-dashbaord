@@ -1010,25 +1010,25 @@
                           <div class="col-12">
                               <p>Match clock is initialized.</p>
                           </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'stopped'">
+                          <div class="col-12 mb-4" *ngIf="footballClock?.clock_state === 'stopped'">
                               <button class="btn btn-primary" (click)="startFootballClock()">Start Clock</button>
                           </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running'">
+                          <div class="col-12 mb-4" *ngIf="footballClock?.clock_state === 'running'">
                               <button class="btn btn-danger" (click)="pauseFootballClock()">Pause Clock</button>
                           </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'paused'">
+                          <div class="col-12 mb-4" *ngIf="footballClock?.clock_state === 'paused'">
                               <button class="btn btn-success" (click)="resumeFootballClock()">Resume Clock</button>
                           </div>
-                          <div class="col-12 mb-4" *ngIf="footballClock.clock_state === 'running' && footballClock.current_period === 2">
+                          <div class="col-12 mb-4" *ngIf="footballClock?.clock_state === 'running' && footballClock?.current_period === 2">
                               <button class="btn btn-danger" (click)="stopFootballClock()">Stop Clock</button>
                           </div>
                       </div>
                       <div class="row text-center">
                           <div class="col-12">
-                              <h3 [ngClass]="{'text-success': footballClock.isRunning, 'text-danger': !footballClock.isRunning}">
-                                  {{ liveScoreData?.clock.display_time || '00:00' }}
+                              <h3 [ngClass]="{'text-success': footballClock?.isRunning, 'text-danger': !footballClock?.isRunning}">
+                                  {{ liveScoreData?.clock?.display_time || footballClock?.display_time || '00:00' }}
                               </h3>
-                              <p>Current Period: {{ footballClock.current_period }} / 2</p>
+                              <p>Current Period: {{ footballClock?.current_period || 1 }} / 2</p>
                           </div>
                   </div>
               </div>
@@ -1543,452 +1543,159 @@
                   </div>
                 </div>
 
-                <!-- Players List -->
-                <div *ngIf="selectedTeam && playersData[selectedTeam]" class="row g-4">
-                  <div *ngFor="let player of playersData[selectedTeam]" class="col-md-4 col-xl-3">
-                    <div class="player-card">
-                      <div class="d-flex align-items-center mb-3">
-                        <img 
-                          [src]="player.avatar || 'assets/player.jpg'" 
-                          [alt]="player.first_name + ' ' + player.last_name"
-                          class="player-avatar me-3">
-                        <div class="flex-grow-1">
-                          <h6 class="player-name mb-1">{{ player.first_name }} {{ player.last_name }}</h6>
-                          <div class="player-position">
-                            #{{ player.uniform || player.displayid }} • {{ player.position || 'Player' }}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <!-- Player Stats Display -->
-                      <!-- <div class="player-stats"> -->
-                        <!-- Football Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Football' || sportConfig?.scoring_system === 'goals'" class="row g-2">
-                          
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Yellow</div>
-                              <div class="stat-value">{{ player.yellow_cards || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Red</div>
-                              <div class="stat-value">{{ player.red_cards || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
+                <!-- Players Table -->
+                <div *ngIf="selectedTeam && playersData[selectedTeam]" class="table-responsive">
+                  <table class="table table-hover align-middle table-sm">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width: 40px;"><small>#</small></th>
+                        <th style="width: 50px;"><small>Avatar</small></th>
+                        <th><small>Player Name</small></th>
+                        <th style="width: 100px;"><small>Position</small></th>
+                        <th><small>Quick Actions</small></th>
+                        <th style="width: 100px;"><small>Actions</small></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let player of playersData[selectedTeam]">
+                        <!-- Uniform Number -->
+                        <td class="text-center">
+                          <span class="badge bg-primary badge-sm">{{ player.uniform || player.displayid }}</span>
+                        </td>
                         
-                        <!-- Basketball Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Basketball' || sportConfig?.scoring_system === 'points'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Points</div>
-                              <div class="stat-value">{{ player.points || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Rebounds</div>
-                              <div class="stat-value">{{ player.rebounds || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Assists</div>
-                              <div class="stat-value">{{ player.assists || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Steals</div>
-                              <div class="stat-value">{{ player.steals || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
+                        <!-- Avatar -->
+                        <td>
+                          <img 
+                            [src]="player.avatar || 'assets/player.jpg'" 
+                            [alt]="player.first_name + ' ' + player.last_name"
+                            class="rounded-circle"
+                            style="width: 35px; height: 35px; object-fit: cover;">
+                        </td>
                         
-                        <!-- Water Polo Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Waterpolo'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Goals</div>
-                              <div class="stat-value">{{ player.goals || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Saves</div>
-                              <div class="stat-value">{{ player.saves || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Exclusions</div>
-                              <div class="stat-value">{{ player.exclusions || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
+                        <!-- Player Name -->
+                        <td>
+                          <small><strong>{{ player.first_name }} {{ player.last_name }}</strong></small>
+                        </td>
                         
-                        <!-- Gymnastics Stats -->
-                        <!-- <div *ngIf="sportConfig?.name === 'Gymnastics'" class="row g-2">
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Total</div>
-                              <div class="stat-value">{{ player.total_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Difficulty</div>
-                              <div class="stat-value">{{ player.difficulty_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Execution</div>
-                              <div class="stat-value">{{ player.execution_score || 0 }}</div>
-                            </div>
-                          </div>
-                          <div class="col-6">
-                            <div class="stat-item">
-                              <div class="stat-label">Falls</div>
-                              <div class="stat-value">{{ player.fall_count || 0 }}</div>
-                            </div>
-                          </div>
-                        </div> -->
-                      <!-- </div> -->
-                      
-                      <!-- Basketball Quick Actions -->
-                      <div *ngIf="isBasketball()" class="basketball-quick-actions mb-3">
-                        <div class="row g-1">
-                          <!-- Scoring Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-success btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'two_point')"
-                              title="2-Point Shot">
-                              <i class="fas fa-basketball-ball"></i> 2PT
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-warning btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'three_point')"
-                              title="3-Point Shot">
-                              <i class="fas fa-dot-circle"></i> 3PT
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-info btn-sm w-100" 
-                              (click)="addBasketballScore(player.id, selectedTeam, 'free_throw')"
-                              title="Free Throw">
-                              <i class="fas fa-circle"></i> FT
-                            </button>
-                          </div>
-                          
-                          <!-- Additional Stats Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-primary btn-sm w-100" 
-                              (click)="addBasketballAssist(player.id, selectedTeam)"
-                              title="Assist">
-                              <i class="fas fa-hands-helping"></i> AST
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-secondary btn-sm w-100" 
-                              (click)="addBasketballRebound(player.id, selectedTeam, 'defensive')"
-                              title="Defensive Rebound">
-                              <i class="fas fa-redo"></i> REB
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-dark btn-sm w-100" 
-                              (click)="addBasketballRebound(player.id, selectedTeam, 'offensive')"
-                              title="Offensive Rebound">
-                              <i class="fas fa-redo-alt"></i> O-REB
-                            </button>
-                          </div>
-                          
-                          <!-- Defensive Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-success btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'steals', 1)"
-                              title="Steal">
-                              <i class="fas fa-user-ninja"></i> STL
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-info btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'blocks', 1)"
-                              title="Block">
-                              <i class="fas fa-hand-paper"></i> BLK
-                            </button>
-                          </div>
-                          
-                          <!-- Negative Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-warning btn-sm w-100" 
-                              (click)="addBasketballFoul(player.id, selectedTeam, 'personal')"
-                              title="Personal Foul">
-                              <i class="fas fa-exclamation-triangle"></i> FOUL
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-danger btn-sm w-100" 
-                              (click)="addBasketballStat(player.id, selectedTeam, 'turnovers', 1)"
-                              title="Turnover">
-                              <i class="fas fa-exchange-alt"></i> TO
-                            </button>
-                          </div>
-                        </div>
+                        <!-- Position -->
+                        <td>
+                          <span class="badge bg-secondary badge-sm">{{ player.position || 'Player' }}</span>
+                        </td>
                         
-                        <!-- Player Current Stats Display -->
-                        <!-- <div class="mt-2 p-2 bg-light rounded">
-                          <div class="row g-1 text-center">
-                            <div class="col-3">
-                              <small class="text-muted d-block">PTS</small>
-                              <strong>{{ player.points || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">REB</small>
-                              <strong>{{ player.rebounds || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">AST</small>
-                              <strong>{{ player.assists || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">FLS</small>
-                              <strong>{{ player.fouls || 0 }}</strong>
-                            </div>
+                        <!-- Quick Actions Column -->
+                        <td style="white-space: nowrap;">
+                          <!-- Basketball Quick Actions -->
+                          <div *ngIf="isBasketball()" class="d-inline-flex gap-1">
+                            <button class="btn btn-success btn-sm px-1 py-0" (click)="addBasketballScore(player.id, selectedTeam, 'two_point')" title="2-Point Shot">
+                              <small>2PT</small>
+                            </button>
+                            <button class="btn btn-warning btn-sm px-1 py-0" (click)="addBasketballScore(player.id, selectedTeam, 'three_point')" title="3-Point Shot">
+                              <small>3PT</small>
+                            </button>
+                            <button class="btn btn-info btn-sm px-1 py-0" (click)="addBasketballScore(player.id, selectedTeam, 'free_throw')" title="Free Throw">
+                              <small>FT</small>
+                            </button>
+                            <button class="btn btn-primary btn-sm px-1 py-0" (click)="addBasketballAssist(player.id, selectedTeam)" title="Assist">
+                              <small>AST</small>
+                            </button>
+                            <button class="btn btn-secondary btn-sm px-1 py-0" (click)="addBasketballRebound(player.id, selectedTeam, 'defensive')" title="Rebound">
+                              <small>REB</small>
+                            </button>
+                            <button class="btn btn-outline-success btn-sm px-1 py-0" (click)="addBasketballStat(player.id, selectedTeam, 'steals', 1)" title="Steal">
+                              <small>STL</small>
+                            </button>
+                            <button class="btn btn-outline-info btn-sm px-1 py-0" (click)="addBasketballStat(player.id, selectedTeam, 'blocks', 1)" title="Block">
+                              <small>BLK</small>
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm px-1 py-0" (click)="addBasketballFoul(player.id, selectedTeam, 'personal')" title="Foul">
+                              <small>FL</small>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm px-1 py-0" (click)="addBasketballStat(player.id, selectedTeam, 'turnovers', 1)" title="Turnover">
+                              <small>TO</small>
+                            </button>
                           </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-4">
-                              <small class="text-muted d-block">FG</small>
-                              <strong>{{ (player.field_goals_made || 0) }}/{{ (player.field_goals_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">3PT</small>
-                              <strong>{{ (player.three_pointers_made || 0) }}/{{ (player.three_pointers_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">FT</small>
-                              <strong>{{ (player.free_throws_made || 0) }}/{{ (player.free_throws_attempted || 0) }}</strong>
-                            </div>
-                          </div>
-                        </div> -->
-                      </div>
 
-                      <!-- Water Polo Quick Actions -->
-                      <div *ngIf="isWaterPolo()" class="water-polo-quick-actions mb-3">
-                        <div class="row g-1">
-                          <!-- Primary Scoring Buttons -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-success btn-sm w-100" 
-                              (click)="addWaterPoloGoal(player.id, selectedTeam)"
-                              title="Goal Scored">
-                              <i class="fas fa-bullseye"></i> GOAL
+                          <!-- Water Polo Quick Actions -->
+                          <div *ngIf="isWaterPolo()" class="d-inline-flex gap-1">
+                            <button class="btn btn-success btn-sm px-1 py-0" (click)="addWaterPoloGoal(player.id, selectedTeam)" title="Goal Scored">
+                              <small>GL</small>
+                            </button>
+                            <button class="btn btn-warning btn-sm px-1 py-0" (click)="addWaterPoloShot(player.id, selectedTeam)" title="Shot Attempt">
+                              <small>SH</small>
+                            </button>
+                            <button class="btn btn-info btn-sm px-1 py-0" (click)="addWaterPoloAssist(player.id, selectedTeam)" title="Assist">
+                              <small>AS</small>
+                            </button>
+                            <button class="btn btn-primary btn-sm px-1 py-0" (click)="addWaterPoloSave(player.id, selectedTeam)" title="Save">
+                              <small>SV</small>
+                            </button>
+                            <button class="btn btn-secondary btn-sm px-1 py-0" (click)="addWaterPoloSteal(player.id, selectedTeam)" title="Steal">
+                              <small>ST</small>
+                            </button>
+                            <button class="btn btn-dark btn-sm px-1 py-0" (click)="addWaterPoloBlock(player.id, selectedTeam)" title="Block">
+                              <small>BL</small>
+                            </button>
+                            <button class="btn btn-outline-success btn-sm px-1 py-0" (click)="addWaterPoloManUpGoal(player.id, selectedTeam)" title="Man-Up Goal">
+                              <small>M+</small>
+                            </button>
+                            <button class="btn btn-outline-warning btn-sm px-1 py-0" (click)="addWaterPoloTurnover(player.id, selectedTeam)" title="Turnover">
+                              <small>TO</small>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm px-1 py-0" (click)="addWaterPoloEjection(player.id, selectedTeam, 'ordinary')" title="Ejection">
+                              <small>EJ</small>
+                            </button>
+                            <button class="btn btn-danger btn-sm px-1 py-0" (click)="addWaterPoloExclusion(player.id, selectedTeam)" title="Exclusion">
+                              <small>EX</small>
                             </button>
                           </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-warning btn-sm w-100" 
-                              (click)="addWaterPoloShot(player.id, selectedTeam)"
-                              title="Shot Attempt">
-                              <i class="fas fa-hockey-puck"></i> SHOT
+
+                          <!-- Football Quick Actions -->
+                          <div *ngIf="isFootballMatch()" class="d-inline-flex gap-1">
+                            <button class="btn btn-success btn-sm px-1 py-0" (click)="addFootballGoal(player.id, selectedTeam)" title="Goal">
+                              <small>GL</small>
+                            </button>
+                            <button class="btn btn-info btn-sm px-1 py-0" (click)="addFootballAssist(player.id, selectedTeam)" title="Assist">
+                              <small>AS</small>
+                            </button>
+                            <button class="btn btn-warning btn-sm px-1 py-0" (click)="addFootballYellowCard(player.id, selectedTeam)" title="Yellow Card">
+                              <small>YC</small>
+                            </button>
+                            <button class="btn btn-danger btn-sm px-1 py-0" (click)="addFootballRedCard(player.id, selectedTeam)" title="Red Card">
+                              <small>RC</small>
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm px-1 py-0" (click)="addFootballShot(player.id, selectedTeam)" title="Shot">
+                              <small>SH</small>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm px-1 py-0" (click)="addFootballSave(player.id, selectedTeam)" title="Save">
+                              <small>SV</small>
                             </button>
                           </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-info btn-sm w-100" 
-                              (click)="addWaterPoloAssist(player.id, selectedTeam)"
-                              title="Assist">
-                              <i class="fas fa-hands-helping"></i> AST
+
+                          <!-- Gymnastics Quick Actions -->
+                          <div *ngIf="isGymnasticsMatch()" class="d-inline-flex gap-1">
+                            <button class="btn btn-primary btn-sm px-1 py-0" (click)="updateGymnasticsScore(player.id, selectedTeam)" title="Update Score">
+                              <small>SC</small>
+                            </button>
+                            <button class="btn btn-info btn-sm px-1 py-0" (click)="viewGymnasticsDetails(player.id)" title="View Details">
+                              <small>VW</small>
+                            </button>
+                            <button class="btn btn-warning btn-sm px-1 py-0" (click)="addGymnasticsFall(player.id, selectedTeam)" title="Record Fall">
+                              <small>FL</small>
                             </button>
                           </div>
-                          
-                          <!-- Goalkeeper & Defensive Stats -->
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-primary btn-sm w-100" 
-                              (click)="addWaterPoloSave(player.id, selectedTeam)"
-                              title="Save (Goalkeeper)">
-                              <i class="fas fa-hand-paper"></i> SAVE
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-secondary btn-sm w-100" 
-                              (click)="addWaterPoloSteal(player.id, selectedTeam)"
-                              title="Steal">
-                              <i class="fas fa-user-ninja"></i> STEAL
-                            </button>
-                          </div>
-                          <div class="col-4">
-                            <button 
-                              class="btn btn-dark btn-sm w-100" 
-                              (click)="addWaterPoloBlock(player.id, selectedTeam)"
-                              title="Block">
-                              <i class="fas fa-shield-alt"></i> BLOCK
-                            </button>
-                          </div>
-                          
-                          <!-- Special Situations -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-success btn-sm w-100" 
-                              (click)="addWaterPoloManUpGoal(player.id, selectedTeam)"
-                              title="Man-Up Goal">
-                              <i class="fas fa-plus-circle"></i> MAN-UP
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-info btn-sm w-100" 
-                              (click)="addWaterPoloSprintWin(player.id, selectedTeam)"
-                              title="Sprint Win">
-                              <i class="fas fa-running"></i> SPRINT
-                            </button>
-                          </div>
-                          
-                          <!-- Negative Stats -->
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-warning btn-sm w-100" 
-                              (click)="addWaterPoloTurnover(player.id, selectedTeam)"
-                              title="Turnover">
-                              <i class="fas fa-exchange-alt"></i> TO
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-danger btn-sm w-100" 
-                              (click)="addWaterPoloEjection(player.id, selectedTeam, 'ordinary')"
-                              title="Ejection">
-                              <i class="fas fa-exclamation-triangle"></i> EJECT
-                            </button>
-                          </div>
-                          
-                          <!-- Exclusion Button -->
-                          <div class="col-12">
-                            <button 
-                              class="btn btn-danger btn-sm w-100" 
-                              (click)="addWaterPoloExclusion(player.id, selectedTeam)"
-                              title="Player Exclusion with Timer">
-                              <i class="fas fa-user-times"></i> EXCLUSION
-                            </button>
-                          </div>
-                        </div>
+                        </td>
                         
-                        <!-- Advanced Actions Row -->
-                        <div class="row g-1 mt-2">
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-primary btn-sm w-100" 
-                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, true)"
-                              title="Penalty Shot Scored">
-                              <i class="fas fa-target"></i> PEN+
-                            </button>
-                          </div>
-                          <div class="col-6">
-                            <button 
-                              class="btn btn-outline-secondary btn-sm w-100" 
-                              (click)="addWaterPoloPenaltyShot(player.id, selectedTeam, false)"
-                              title="Penalty Shot Missed">
-                              <i class="fas fa-times-circle"></i> PEN-
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- Player Current Stats Display -->
-                        <div class="mt-2 p-2 bg-light rounded water-polo-stats">
-                          <div class="row g-1 text-center">
-                            <div class="col-3">
-                              <small class="text-muted d-block">GOALS</small>
-                              <strong>{{ player.goals_scored || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">SHOTS</small>
-                              <strong>{{ player.shots_attempted || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">SAVES</small>
-                              <strong>{{ player.saves || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">AST</small>
-                              <strong>{{ player.assists || 0 }}</strong>
-                            </div>
-                          </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-3">
-                              <small class="text-muted d-block">STEALS</small>
-                              <strong>{{ player.steals || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">BLOCKS</small>
-                              <strong>{{ player.blocks || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">EJECT</small>
-                              <strong>{{ player.ejections || 0 }}</strong>
-                            </div>
-                            <div class="col-3">
-                              <small class="text-muted d-block">+/-</small>
-                              <strong [ngClass]="{
-                                'text-success': (player.plus_minus || 0) > 0,
-                                'text-danger': (player.plus_minus || 0) < 0,
-                                'text-muted': (player.plus_minus || 0) === 0
-                              }">{{ player.plus_minus || 0 }}</strong>
-                            </div>
-                          </div>
-                          <div class="row g-1 text-center mt-1">
-                            <div class="col-4">
-                              <small class="text-muted d-block">SPRINTS</small>
-                              <strong>{{ player.sprints_won || 0 }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">PEN</small>
-                              <strong>{{ (player.penalty_shots_scored || 0) }}/{{ (player.penalty_shots_attempted || 0) }}</strong>
-                            </div>
-                            <div class="col-4">
-                              <small class="text-muted d-block">TO</small>
-                              <strong>{{ player.turnovers || 0 }}</strong>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div class="mt-3">
-                        <button 
-                          class="btn btn-outline-primary w-100" 
-                          (click)="updatePlayerStats(player, selectedTeam)">
-                          <i class="fas fa-chart-line me-2"></i>Update Player Stats
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                        <!-- Update Button Column -->
+                        <td>
+                          <button 
+                            class="btn btn-outline-primary btn-sm w-100 px-1 py-0" 
+                            (click)="updatePlayerStats(player, selectedTeam)">
+                            <small><i class="fas fa-save"></i></small>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
                 
                 <!-- No Team Selected Message -->

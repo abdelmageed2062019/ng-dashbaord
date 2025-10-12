@@ -86,8 +86,12 @@ export class ApiService {
     return this.http.get(`${this.apiUrl}/matches/?sport=1&status=upcoming`, { headers: this.getHeaders() });
   }
 
-  getMatchDetails(matchId: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/matches/${matchId}/`, { headers: this.getHeaders() });
+  getMatchDetails(matchId: number, includeAll: boolean = true): Observable<any> {
+    let url = `${this.apiUrl}/matches/${matchId}/`;
+    if (includeAll) {
+      url += '?include_teams=true&include_players=true';
+    }
+    return this.http.get(url, { headers: this.getHeaders() });
   }
 
   updateMatch(matchId: number, matchDaata: any): Observable<any> {
@@ -178,10 +182,17 @@ export class ApiService {
     );
   }
 
-  getPlayers(teamId?: number): Observable<any> {
+  getPlayers(teamId?: number, includeAll: boolean = false): Observable<any> {
     let url = `${this.apiUrl}/players/`;
+    const params: string[] = [];
     if (teamId) {
-      url += `?team=${teamId}`;
+      params.push(`team=${teamId}`);
+    }
+    if (includeAll) {
+      params.push('include_all=true');
+    }
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
     }
     return this.http.get(url, { headers: this.getHeaders() });
   }
@@ -758,8 +769,8 @@ export class ApiService {
     return this.getSports();
   }
 
-  getplayerlist(teamId: number): Observable<any> {
-    return this.getPlayers(teamId);
+  getplayerlist(teamId: number, includeAll: boolean = true): Observable<any> {
+    return this.getPlayers(teamId, includeAll);
   }
 
   updateplayer(data: any): Observable<any> {
