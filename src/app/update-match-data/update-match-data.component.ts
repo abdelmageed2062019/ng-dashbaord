@@ -5,6 +5,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../service/api.service';
 import { interval, Subscription } from 'rxjs';
 import { MatchPlayer, MatchTeam, MatchClock, ClockInitializationRequest, TimeoutRequest, ClockOperation, Player } from '../models';
+import { MatDialog } from '@angular/material/dialog';
+import { ScoreDialogComponent } from '../score-dialog/score-dialog.component';
 
 @Component({
   selector: 'app-update-match-data',
@@ -102,7 +104,8 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -1353,9 +1356,42 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
    * Open score dialog for gymnastics
    */
   openScoreDialog(player: any): void {
-    // This would open a modal dialog for detailed score entry
-    console.log('Opening score dialog for:', player);
-    // Implementation would involve creating a modal component
+    const dialogRef = this.dialog.open(ScoreDialogComponent, {
+      width: '900px',
+      maxWidth: '95vw',
+      data: {
+        player: player,
+        difficulty_score: player.difficulty_score || 0,
+        execution_score: player.execution_score || 0,
+        total_score: player.total_score || 0,
+        fall_count: player.fall_count || 0,
+        deductions: player.deductions || 0,
+        landing_quality: player.landing_quality || 0,
+        artistic_score: player.artistic_score || 0,
+        technical_score: player.technical_score || 0,
+        currentApparatus: this.getCurrentApparatus()
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Update player stats with the entered scores
+        this.updatePlayerScores(player, result);
+      }
+    });
+  }
+
+  /**
+   * Update player scores from dialog result
+   */
+  private updatePlayerScores(player: any, scores: any): void {
+    // Update each score using the existing updatePlayerStat method
+    Object.keys(scores).forEach(stat => {
+      this.updatePlayerStat(player, stat, scores[stat]);
+    });
+    
+    this.successMessage = `Scores updated for ${player.first_name || 'Player'} ${player.last_name || ''}`;
+    setTimeout(() => this.successMessage = null, 3000);
   }
 
   /**
