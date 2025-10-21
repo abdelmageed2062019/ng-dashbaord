@@ -13,13 +13,16 @@
       <!-- Teams name and score and logo in one line center of card -->
       <div class="teams-info d-flex justify-content-center align-items-center">
         <div *ngFor="let team of matchData.matchteams" class="team d-flex align-items-center mx-2">
+          
           <img *ngIf="team.team.logo" [src]="team.team.logo" [alt]="team.team.name" class="team-logo me-2">
           <span class="team-name">{{ team.team.name }}</span>
-          <span class="team-score">{{ team.score }}</span>
+          <span class="team-score" *ngIf="!isBasketball()">{{ team.score }}</span>
+          <!-- team.points if match is basketball -->
+          <span class="team-score" *ngIf="isBasketball()">{{ team.points }}</span>
         </div>
       </div>
       <!-- add clock management buttons  according to match status -->
-      <div class="bg-transparent d-flex justify-content-center align-items-center p-0 mt-2 boreder-0">
+      <div class="bg-transparent d-flex justify-content-center align-items-center p-0 mt-2 boreder-0 me-2">
             <button *ngIf="isClockStopped()" 
                     (click)="startClock()" 
                     class="action-btn scoring" 
@@ -54,7 +57,33 @@
                     [disabled]="loading">
               Advance {{ liveClock?.period_type === 'quarter' ? 'Quarter' : 'Period' }}
             </button>
+            <!-- Timeout Management -->
+          <div class="" *ngIf="matchTeams.length > 0 && !isFootball() && !isGymnastics()">
+            <!-- <label>Timeout Management</label> -->
+            
+            <div *ngIf="isTimeoutActive()" class="timeout-active">
+              <p><strong>Timeout Active</strong> - {{ getTimeoutTeamName() }}</p>
+              <button (click)="endTimeout()" class="action-btn warning" [disabled]="loading">
+                End Timeout
+              </button>
+            </div>
+            <div *ngIf="!isTimeoutActive()" class="">
+              <div *ngFor="let team of matchTeams" class="d-inline-block me-2">
+                <!-- <span>{{ team.team.name }}: {{ getTeamTimeoutsRemaining(team.team.id) }} timeouts left</span> -->
+                <button (click)="callTimeout(team.team.id)" 
+                        class="action-btn assist" 
+                        [disabled]="loading || !canTeamCallTimeout(team.team.id)">
+                  Call Timeout for {{ team.team.name }}
+                </button>
+              </div>
+            </div>
+            
           </div>
+            <!-- Timeout Call Buttons -->
+             
+          </div>
+
+          
 
     </div>
   </div>
@@ -79,590 +108,231 @@
   <!-- Main Content -->
   <div *ngIf="!loading && matchData" class="main-content">
     
-    <!-- Teams Overview -->
-    <div class="teams-overview">
-      <h3>Teams</h3>
-      <div class="teams-grid">
-        <div *ngFor="let team of matchTeams" class="team-card">
-          <div class="team-header">
-            <img *ngIf="team.team.logo" [src]="team.team.logo" [alt]="team.team.name" class="team-logo">
-            <div class="team-info">
-              <h4>{{ team.team.name }}</h4>
-              <p class="sport-info">{{ team.team.sport_obj.name }}</p>
-            </div>
-            <div class="team-score" *ngIf="currentSportType==='FB'">
-
-              {{ team.score }}
-            </div>
-            <div class="team-score" *ngIf="currentSportType === 'BB'">
-
-              {{ team.points }}
-            </div>
-            <div class="team-score" *ngIf="currentSportType==='WB'">
-
-              {{ team.goals }}
-            </div>
-          </div>
-          
-          <!-- Team Stats Summary -->
-          <div class="team-stats-summary">
-            <div class="stat-item" *ngIf="currentSportType === 'BB'">
-              <span class="stat-label">Points:</span>
-              <span class="stat-value">{{ team.points }}</span>
-            </div>
-            <div class="stat-item" *ngIf="currentSportType === 'WP'">
-              <span class="stat-label">Goals:</span>
-              <span class="stat-value">{{ team.goals }}</span>
-            </div>
-            <div class="stat-item" *ngIf="currentSportType === 'FB'">
-              <span class="stat-label">Goals:</span>
-              <span class="stat-value">{{ team.score }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Fouls:</span>
-              <span class="stat-value">{{ team.fouls }}</span>
-            </div>
-          </div>
-
-          <button (click)="selectTeam(team)" class="select-team-btn">
-            Manage Players
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Player Management Section -->
-    <div *ngIf="selectedTeam" class="player-management">
-      <h3>{{ selectedTeam.team.name }} - Player Management</h3>
-      <!-- Player Filter -->
-  <div class="player-filter">
-    <div class="filter-input-group">
-      <input 
-        type="text" 
-        [(ngModel)]="playerNameFilter" 
-        (input)="onPlayerFilterChange()"
-        placeholder="Search players by name..." 
-        class="filter-input form-control">
-      <div class="filter-results">
-        Showing {{ getFilteredTeamPlayers(selectedTeam.team.id).length }} of {{ getTeamPlayers(selectedTeam.team.id).length }} players
-      </div>
-    </div>
-    <button 
-      *ngIf="playerNameFilter" 
-      (click)="clearPlayerFilter()" 
-      class="clear-filter-btn">
-      Clear Filter
-    </button>
-      <!-- View Toggle -->
-      <div class="view-toggle">
-        <button (click)="togglePlayerView()" class="toggle-btn">
-          {{ showTableView ? 'Card View' : 'Table View' }}
-        </button>
-      </div>
-
-      <!-- Table View -->
-      <div *ngIf="showTableView" class="players-table-container">
-        <table class="players-table">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th>Position</th>
-              <th>Status</th>
-              
-              <!-- Basketball Stats -->
-              <th *ngIf="currentSportType === 'BB'">Points</th>
-              <th *ngIf="currentSportType === 'BB'">Rebounds</th>
-              <th *ngIf="currentSportType === 'BB'">Assists</th>
-              <th *ngIf="currentSportType === 'BB'">Fouls</th>
-              
-              <!-- Football Stats -->
-              <th *ngIf="currentSportType === 'FB'">Goals</th>
-              <th *ngIf="currentSportType === 'FB'">Assists</th>
-              <th *ngIf="currentSportType === 'FB'">Yellow</th>
-              <th *ngIf="currentSportType === 'FB'">Red</th>
-              
-              <!-- Water Polo Stats -->
-              <th *ngIf="currentSportType === 'WP'">Goals</th>
-              <th *ngIf="currentSportType === 'WP'">Saves</th>
-              <th *ngIf="currentSportType === 'WP'">Exclusions</th>
-              <th *ngIf="currentSportType === 'WP'">Shots</th>
-              
-              <!-- Gymnastics Stats -->
-              <th *ngIf="currentSportType === 'GY'">Total Score</th>
-              <th *ngIf="currentSportType === 'GY'">Difficulty</th>
-              <th *ngIf="currentSportType === 'GY'">Execution</th>
-              <th *ngIf="currentSportType === 'GY'">Falls</th>
-              
-              <th>Quick Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let matchPlayer of getFilteredTeamPlayers(selectedTeam.team.id)" 
-                [class.primary-player]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
-              
-              <!-- Player Info -->
-              <td class="player-info-cell">
-                <div class="player-info">
-                  <img *ngIf="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.avatar" 
-                       [src]="getPlayerObject(matchPlayer)?.avatar" 
-                       [alt]="(getPlayerObject(matchPlayer)?.first_name || 'Player') + ' ' + (getPlayerObject(matchPlayer)?.last_name || '')" 
-                       class="player-avatar-small">
-                  <div class="player-details">
-                    <div class="player-name">{{ getPlayerObject(matchPlayer)?.first_name || 'Player' }} {{ getPlayerObject(matchPlayer)?.last_name || matchPlayer.id }}</div>
-                    <div class="player-uniform">#{{ getPlayerObject(matchPlayer)?.uniform || 'N/A' }}</div>
-                  </div>
+    <!-- Unified Player Table for Both Teams -->
+    <div class="players-table-container">
+      <table class="players-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Team</th>
+            <th>Position</th>
+            <th>Status</th>
+            <!-- Basketball Stats -->
+            <th *ngIf="currentSportType === 'BB'">Points</th>
+            <th *ngIf="currentSportType === 'BB'">Rebounds</th>
+            <th *ngIf="currentSportType === 'BB'">Assists</th>
+            <th *ngIf="currentSportType === 'BB'">Fouls</th>
+            <!-- Football Stats -->
+            <th *ngIf="currentSportType === 'FB'">Goals</th>
+            <th *ngIf="currentSportType === 'FB'">Assists</th>
+            <th *ngIf="currentSportType === 'FB'">Yellow</th>
+            <th *ngIf="currentSportType === 'FB'">Red</th>
+            <!-- Water Polo Stats -->
+            <th *ngIf="currentSportType === 'WP'">Goals</th>
+            <th *ngIf="currentSportType === 'WP'">Saves</th>
+            <th *ngIf="currentSportType === 'WP'">Exclusions</th>
+            <th *ngIf="currentSportType === 'WP'">Shots</th>
+            <!-- Gymnastics Stats -->
+            <th *ngIf="currentSportType === 'GY'">Total Score</th>
+            <th *ngIf="currentSportType === 'GY'">Difficulty</th>
+            <th *ngIf="currentSportType === 'GY'">Execution</th>
+            <th *ngIf="currentSportType === 'GY'">Falls</th>
+            <th>Quick Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entry of getAllPlayersWithTeam(); let i = index"
+              [ngClass]="{'team-a-row': entry.team.id === matchTeams[0]?.team?.id, 'team-b-row': entry.team.id === matchTeams[1]?.team?.id, 'primary-player': hasPlayerObject(entry.player) && getPlayerObject(entry.player)?.is_primary}">
+            <!-- Player Info -->
+            <td class="player-info-cell">
+              <div class="player-info">
+                <img *ngIf="hasPlayerObject(entry.player) && getPlayerObject(entry.player)?.avatar" 
+                     [src]="getPlayerObject(entry.player)?.avatar" 
+                     [alt]="(getPlayerObject(entry.player)?.first_name || 'Player') + ' ' + (getPlayerObject(entry.player)?.last_name || '')" 
+                     class="player-avatar-small">
+                <div class="player-details">
+                  <div class="player-name">{{ getPlayerObject(entry.player)?.first_name || 'Player' }} {{ getPlayerObject(entry.player)?.last_name || entry.player.id }}</div>
+                  <!-- <div class="player-uniform">#{{ getPlayerObject(entry.player)?.uniform || 'N/A' }}</div> -->
                 </div>
-              </td>
-              
-              <td class="player-position">{{ getPlayerObject(matchPlayer)?.position || 'Unknown' }}</td>
-              
-              <td class="player-status-cell">
-                <span class="player-status-badge" [class.active]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
-                  {{ (hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary) ? 'Starter' : 'Bench' }}
-                </span>
-              </td>
-              
-              <!-- Basketball Stats -->
-              <td *ngIf="currentSportType === 'BB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'points')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.points }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'points')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'BB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebounds')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.rebounds }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebounds')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'BB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.assists }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'BB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'personal_fouls')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.personal_fouls }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'personal_fouls')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              
-              <!-- Football Stats -->
-              <td *ngIf="currentSportType === 'FB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.goals }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'FB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.assists }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'FB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_cards')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.yellow_cards }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_cards')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'FB'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_cards')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.red_cards }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_cards')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              
-              <!-- Water Polo Stats -->
-              <td *ngIf="currentSportType === 'WP'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.goals }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'WP'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'saves')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.saves }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'saves')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'WP'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusions')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.exclusions }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusions')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'WP'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'shots_attempted')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.shots_attempted }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'shots_attempted')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              
-              <!-- Gymnastics Stats -->
-              <td *ngIf="currentSportType === 'GY'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'total_score', 0.1)" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.total_score | number:'1.2-2' }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'total_score', 0.1)" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'GY'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'difficulty_score', 0.1)" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.difficulty_score | number:'1.2-2' }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'difficulty_score', 0.1)" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'GY'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'execution_score', 0.1)" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.execution_score | number:'1.2-2' }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'execution_score', 0.1)" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              <td *ngIf="currentSportType === 'GY'" class="stat-cell">
-                <div class="stat-control">
-                  <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall_count')" class="stat-btn decrement">-</button>
-                  <span class="stat-value">{{ matchPlayer.fall_count }}</span>
-                  <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall_count')" class="stat-btn increment">+</button>
-                </div>
-              </td>
-              
-              <!-- Quick Actions -->
-              <td class="actions-cell">
-                <div class="quick-actions-table">
-                  <!-- Basketball Actions -->
-                  <div *ngIf="currentSportType === 'BB'" class="action-buttons-compact">
-                    <div class="action-row">
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_2pt')" class="action-btn-small scoring">+2</button>
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_3pt')" class="action-btn-small scoring">+3</button>
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_ft')" class="action-btn-small scoring">+1</button>
-                    </div>
-                    <div class="action-row">
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebound')" class="action-btn-small defense">Reb</button>
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'assist')" class="action-btn-small assist">Ast</button>
-                      <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'foul')" class="action-btn-small foul">Foul</button>
-                    </div>
-                  </div>
-                  
-                  <!-- Football Actions -->
-                  <div *ngIf="currentSportType === 'FB'" class="action-buttons-compact">
-                    <div class="action-row">
-                      <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'goal')" class="action-btn-small scoring">Goal</button>
-                      <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'assist')" class="action-btn-small assist">Ast</button>
-                    </div>
-                    <div class="action-row">
-                      <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_card')" class="action-btn-small warning">Y</button>
-                      <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_card')" class="action-btn-small danger">R</button>
-                    </div>
-                  </div>
-                  
-                  <!-- Water Polo Actions -->
-                  <div *ngIf="currentSportType === 'WP'" class="action-buttons-compact">
-                    <div class="action-row">
-                      <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'goal')" class="action-btn-small scoring">Goal</button>
-                      <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'penalty_goal')" class="action-btn-small scoring">Pen</button>
-                    </div>
-                    <div class="action-row">
-                      <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'save')" class="action-btn-small defense">Save</button>
-                      <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusion')" class="action-btn-small warning">Excl</button>
-                    </div>
-                  </div>
-                  
-                  <!-- Gymnastics Actions -->
-                  <div *ngIf="currentSportType === 'GY'" class="action-buttons-compact">
-                    <div class="action-row">
-                      <button (click)="openScoreDialog(getPlayerObject(matchPlayer) || matchPlayer.player)" class="action-btn-small scoring">📊</button>
-                      <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall')" class="action-btn-small danger">💥</button>
-                    </div>
-                    <div class="action-row">
-                      <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'start_routine')" class="action-btn-small">🏁</button>
-                      <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'complete_routine')" class="action-btn-small">✅</button>
-                    </div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Card View (Original) -->
-      <div *ngIf="!showTableView" class="players-grid">
-        <div *ngFor="let matchPlayer of getFilteredTeamPlayers(selectedTeam.team.id)" 
-         class="player-card" 
-         [class.primary-player]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
-          
-          <!-- Player Header -->
-          <div class="player-header">
-            <div class="player-info">
-              <img *ngIf="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.avatar" 
-                   [src]="getPlayerObject(matchPlayer)?.avatar" 
-                   [alt]="(getPlayerObject(matchPlayer)?.first_name || 'Player') + ' ' + (getPlayerObject(matchPlayer)?.last_name || '')" 
-                   class="player-avatar">
-              <div class="player-details">
-                <h4>{{ getPlayerObject(matchPlayer)?.first_name || 'Player' }} {{ getPlayerObject(matchPlayer)?.last_name || matchPlayer.id }}</h4>
-                <p class="player-position">{{ getPlayerObject(matchPlayer)?.position || 'Unknown' }} | #{{ getPlayerObject(matchPlayer)?.uniform || 'N/A' }}</p>
               </div>
-            </div>
-            <div class="player-status" [class.active]="hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary">
-              {{ (hasPlayerObject(matchPlayer) && getPlayerObject(matchPlayer)?.is_primary) ? 'Starter' : 'Bench' }}
-            </div>
-          </div>
-
-          <!-- Player Current Stats -->
-          <div class="player-current-stats">
-            <h5>Current Match Stats</h5>
-            <div class="stats-row">
-              <!-- Basketball Stats -->
-              <div *ngIf="currentSportType === 'BB'" class="stats-grid">
-                <div class="stat-item">
-                  <span class="stat-label">Points</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'points')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.points }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'points')" class="stat-btn increment">+</button>
+            </td>
+            <td>{{ entry.team.name }}</td>
+            <td class="player-position">{{ getPlayerObject(entry.player)?.position || 'Unknown' }}</td>
+            <td class="player-status-cell">
+              <span class="player-status-badge" [class.active]="hasPlayerObject(entry.player) && getPlayerObject(entry.player)?.is_primary">
+                {{ (hasPlayerObject(entry.player) && getPlayerObject(entry.player)?.is_primary) ? 'Starter' : 'Bench' }}
+              </span>
+            </td>
+            <!-- Basketball Stats -->
+            <td *ngIf="currentSportType === 'BB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'points')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.points }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'points')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'BB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'rebounds')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.rebounds }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'rebounds')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'BB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'assists')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.assists }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'assists')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'BB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'personal_fouls')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.personal_fouls }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'personal_fouls')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <!-- Football Stats -->
+            <td *ngIf="currentSportType === 'FB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'goals')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.goals }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'goals')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'FB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'assists')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.assists }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'assists')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'FB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'yellow_cards')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.yellow_cards }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'yellow_cards')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'FB'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'red_cards')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.red_cards }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'red_cards')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <!-- Water Polo Stats -->
+            <td *ngIf="currentSportType === 'WP'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'goals')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.goals }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'goals')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'WP'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'saves')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.saves }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'saves')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'WP'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'exclusions')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.exclusions }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'exclusions')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'WP'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'shots_attempted')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.shots_attempted }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'shots_attempted')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <!-- Gymnastics Stats -->
+            <td *ngIf="currentSportType === 'GY'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'total_score', 0.1)" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.total_score | number:'1.2-2' }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'total_score', 0.1)" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'GY'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'difficulty_score', 0.1)" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.difficulty_score | number:'1.2-2' }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'difficulty_score', 0.1)" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'GY'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'execution_score', 0.1)" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.execution_score | number:'1.2-2' }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'execution_score', 0.1)" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <td *ngIf="currentSportType === 'GY'" class="stat-cell">
+              <div class="stat-control">
+                <button (click)="decrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'fall_count')" class="stat-btn decrement">-</button>
+                <span class="stat-value">{{ entry.player.fall_count }}</span>
+                <button (click)="incrementPlayerStat(getPlayerObject(entry.player) || entry.player, 'fall_count')" class="stat-btn increment">+</button>
+              </div>
+            </td>
+            <!-- Quick Actions -->
+            <td class="actions-cell">
+              <div class="quick-actions-table">
+                <!-- Basketball Actions -->
+                <div *ngIf="currentSportType === 'BB'" class="action-buttons-compact">
+                  <div class="action-row">
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'make_2pt')" class="action-btn-small scoring">+2</button>
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'make_3pt')" class="action-btn-small scoring">+3</button>
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'make_ft')" class="action-btn-small scoring">+1</button>
+                  </div>
+                  <!-- <div class="action-row">
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'rebound')" class="action-btn-small defense">Reb</button>
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'assist')" class="action-btn-small assist">Ast</button>
+                    <button (click)="basketballQuickAction(getPlayerObject(entry.player) || entry.player, 'foul')" class="action-btn-small foul">Foul</button>
+                  </div> -->
+                </div>
+                <!-- Football Actions -->
+                <!-- <div *ngIf="currentSportType === 'FB'" class="action-buttons-compact">
+                  <div class="action-row">
+                    <button (click)="footballQuickAction(getPlayerObject(entry.player) || entry.player, 'goal')" class="action-btn-small scoring">Goal</button>
+                    <button (click)="footballQuickAction(getPlayerObject(entry.player) || entry.player, 'assist')" class="action-btn-small assist">Ast</button>
+                  </div>
+                  <div class="action-row">
+                    <button (click)="footballQuickAction(getPlayerObject(entry.player) || entry.player, 'yellow_card')" class="action-btn-small warning">Y</button>
+                    <button (click)="footballQuickAction(getPlayerObject(entry.player) || entry.player, 'red_card')" class="action-btn-small danger">R</button>
+                  </div>
+                </div> -->
+                <!-- Water Polo Actions -->
+                <div *ngIf="currentSportType === 'WP'" class="action-buttons-compact">
+                  <div class="action-row">
+                    <button (click)="waterPoloQuickAction(getPlayerObject(entry.player) || entry.player, 'goal')" class="action-btn-small scoring">Goal</button>
+                    <button (click)="waterPoloQuickAction(getPlayerObject(entry.player) || entry.player, 'penalty_goal')" class="action-btn-small scoring">Pen</button>
+                  </div>
+                  <div class="action-row">
+                    <button (click)="waterPoloQuickAction(getPlayerObject(entry.player) || entry.player, 'save')" class="action-btn-small defense">Save</button>
+                    <button (click)="waterPoloQuickAction(getPlayerObject(entry.player) || entry.player, 'exclusion')" class="action-btn-small warning">Excl</button>
                   </div>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Rebounds</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebounds')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.rebounds }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebounds')" class="stat-btn increment">+</button>
+                <!-- Gymnastics Actions -->
+                <div *ngIf="currentSportType === 'GY'" class="action-buttons-compact">
+                  <div class="action-row">
+                    <button (click)="openScoreDialog(getPlayerObject(entry.player) || entry.player)" class="action-btn-small scoring">📊</button>
+                    <button (click)="gymnasticsQuickAction(getPlayerObject(entry.player) || entry.player, 'fall')" class="action-btn-small danger">💥</button>
                   </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Assists</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.assists }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Fouls</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'personal_fouls')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.personal_fouls }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'personal_fouls')" class="stat-btn increment">+</button>
+                  <div class="action-row">
+                    <button (click)="gymnasticsQuickAction(getPlayerObject(entry.player) || entry.player, 'start_routine')" class="action-btn-small">🏁</button>
+                    <button (click)="gymnasticsQuickAction(getPlayerObject(entry.player) || entry.player, 'complete_routine')" class="action-btn-small">✅</button>
                   </div>
                 </div>
               </div>
-
-              <!-- Football Stats -->
-              <div *ngIf="currentSportType === 'FB'" class="stats-grid">
-                <div class="stat-item">
-                  <span class="stat-label">Goals</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.goals }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Assists</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.assists }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'assists')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Yellow</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_cards')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.yellow_cards }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_cards')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Red</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_cards')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.red_cards }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_cards')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Water Polo Stats -->
-              <div *ngIf="currentSportType === 'WP'" class="stats-grid">
-                <div class="stat-item">
-                  <span class="stat-label">Goals</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.goals }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'goals')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Saves</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'saves')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.saves }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'saves')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Exclusions</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusions')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.exclusions }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusions')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Shots</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'shots_attempted')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.shots_attempted }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'shots_attempted')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Gymnastics Stats -->
-              <div *ngIf="currentSportType === 'GY'" class="stats-grid">
-                <div class="stat-item">
-                  <span class="stat-label">Total Score</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'total_score', 0.1)" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.total_score | number:'1.2-2' }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'total_score', 0.1)" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Difficulty</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'difficulty_score', 0.1)" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.difficulty_score | number:'1.2-2' }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'difficulty_score', 0.1)" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Execution</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'execution_score', 0.1)" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.execution_score | number:'1.2-2' }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'execution_score', 0.1)" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Falls</span>
-                  <div class="stat-control">
-                    <button (click)="decrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall_count')" class="stat-btn decrement">-</button>
-                    <span class="stat-value">{{ matchPlayer.fall_count }}</span>
-                    <button (click)="incrementPlayerStat(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall_count')" class="stat-btn increment">+</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Action Buttons -->
-          <div class="quick-actions">
-            <h5>Quick Actions</h5>
-            
-            <!-- Basketball Quick Actions -->
-            <div *ngIf="currentSportType === 'BB'" class="action-buttons " >
-              <div class="action-group">
-                <label>Scoring</label>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_2pt')" class="action-btn scoring">+2 PTS</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_3pt')" class="action-btn scoring">+3 PTS</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'make_ft')" class="action-btn scoring">+1 FT</button>
-              </div>
-              <div class="action-group">
-                <label>Defense</label>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'rebound')" class="action-btn defense">Rebound</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'steal')" class="action-btn defense">Steal</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'block')" class="action-btn defense">Block</button>
-              </div>
-              <div class="action-group">
-                <label>Other</label>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'turnover')" class="action-btn turnover">Turnover</button>
-                <button (click)="basketballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'foul')" class="action-btn foul">Foul</button>
-              </div>
-            </div>
-
-            <!-- Football Quick Actions -->
-            <div *ngIf="currentSportType === 'FB'" class="action-buttons d-none">
-              <div class="action-group">
-                <label>Scoring</label>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'goal')" class="action-btn scoring">Goal</button>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
-              </div>
-              <div class="action-group">
-                <label>Cards</label>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'yellow_card')" class="action-btn warning">Yellow</button>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'red_card')" class="action-btn danger">Red</button>
-              </div>
-              <div class="action-group">
-                <label>Other</label>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'shot_on_target')" class="action-btn">Shot</button>
-                <button (click)="footballQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'foul')" class="action-btn foul">Foul</button>
-              </div>
-            </div>
-
-            <!-- Water Polo Quick Actions -->
-            <div *ngIf="currentSportType === 'WP'" class="action-buttons">
-              <div class="action-group">
-                <label>Scoring</label>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'goal')" class="action-btn scoring">Goal</button>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'penalty_goal')" class="action-btn scoring">Penalty Goal</button>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'assist')" class="action-btn assist">Assist</button>
-              </div>
-              <div class="action-group">
-                <label>Defense</label>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'save')" class="action-btn defense">Save</button>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'steal')" class="action-btn defense">Steal</button>
-              </div>
-              <div class="action-group">
-                <label>Fouls</label>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'exclusion')" class="action-btn warning">Exclusion</button>
-                <button (click)="waterPoloQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'major_foul')" class="action-btn foul">Major Foul</button>
-              </div>
-            </div>
-
-            <!-- Gymnastics Quick Actions -->
-            <div *ngIf="currentSportType === 'GY'" class="action-buttons">
-              <div class="action-group">
-                <label>Score Entry</label>
-                <button (click)="openScoreDialog(getPlayerObject(matchPlayer) || matchPlayer.player)" class="action-btn scoring">📊 Enter Scores</button>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'fall')" class="action-btn danger">💥 Fall</button>
-              </div>
-              <div class="action-group">
-                <label>Routine</label>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'start_routine')" class="action-btn">🏁 Start</button>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'complete_routine')" class="action-btn">✅ Complete</button>
-              </div>
-              <div class="action-group">
-                <label>Apparatus: {{ getApparatusDisplayName(getCurrentApparatus()) }}</label>
-                <button (click)="gymnasticsQuickAction(getPlayerObject(matchPlayer) || matchPlayer.player, 'advance_rotation')" 
-                        class="action-btn" 
-                        [disabled]="loading">
-                  🔄 Next Apparatus
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     
@@ -831,9 +501,9 @@
           </div>
           
           <!-- Sport-specific timers -->
-          <div *ngIf="getShotClockDisplay()" class="shot-clock">
+          <!-- <div *ngIf="getShotClockDisplay()" class="shot-clock">
             Shot Clock: {{ getShotClockDisplay() }}
-          </div>
+          </div> -->
           
           <div *ngIf="getRoutineTimerDisplay()" class="routine-timer">
             Routine Timer: {{ getRoutineTimerDisplay() }}
@@ -852,38 +522,17 @@
           
           
 
-          <!-- Timeout Management -->
-          <div class="control-group" *ngIf="matchTeams.length > 0 && !isFootball() && !isGymnastics()">
-            <label>Timeout Management</label>
-            
-            <div *ngIf="isTimeoutActive()" class="timeout-active">
-              <p><strong>Timeout Active</strong> - {{ getTimeoutTeamName() }}</p>
-              <button (click)="endTimeout()" class="action-btn warning" [disabled]="loading">
-                End Timeout
-              </button>
-            </div>
-            
-            <div *ngIf="!isTimeoutActive()" class="timeout-controls">
-              <div *ngFor="let team of matchTeams" class="team-timeout">
-                <span>{{ team.team.name }}: {{ getTeamTimeoutsRemaining(team.team.id) }} timeouts left</span>
-                <button (click)="callTimeout(team.team.id)" 
-                        class="action-btn assist" 
-                        [disabled]="loading || !canTeamCallTimeout(team.team.id)">
-                  Call Timeout
-                </button>
-              </div>
-            </div>
-          </div>
+          
 
           <!-- Sport-Specific Controls -->
-          <div class="control-group" *ngIf="currentSportType === 'BB'">
+          <!-- <div class="control-group" *ngIf="currentSportType === 'BB'">
             <label>Basketball Controls</label>
             <button (click)="resetShotClock()" 
                     class="action-btn assist" 
                     [disabled]="loading || !isClockRunning()">
               Reset Shot Clock
             </button>
-          </div>
+          </div> -->
 
           <div class="control-group" *ngIf="currentSportType === 'GY'">
             <label>Gymnastics Controls</label>
@@ -916,7 +565,7 @@
         </div>
 
         <!-- Clock Status Information -->
-        <div class="clock-status-info">
+        <!-- <div class="clock-status-info">
           <div class="status-grid">
             <div class="status-item">
               <span class="status-label">Total Elapsed:</span>
@@ -935,12 +584,12 @@
               <span class="status-value">{{ liveClock?.is_official_time ? 'Yes' : 'No' }}</span>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
 
     <!-- Match Statistics Summary -->
-    <div class="match-summary">
+    <!-- <div class="match-summary">
       <h3>Match Summary</h3>
       <div *ngIf="liveScoring" class="summary-stats">
         <div class="total-stats">
@@ -961,5 +610,5 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 </div>

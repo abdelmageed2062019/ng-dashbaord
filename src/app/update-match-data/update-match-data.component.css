@@ -1,4 +1,11 @@
-﻿.match-data-container {
+﻿/* Team row background colors for unified player table */
+.team-a-row {
+  background-color: #f0f0f0; /* Gray for Team 1 */
+}
+.team-b-row {
+  background-color: #e3f0ff; /* Light blue for Team 2 */
+}
+.match-data-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
@@ -1166,7 +1173,7 @@
   vertical-align: middle;
 }
 
-.players-table tbody tr:hover {
+/* .players-table tbody tr:hover {
   background-color: #f8f9ff;
 }
 
@@ -1176,7 +1183,7 @@
 
 .players-table tbody tr.primary-player:hover {
   background-color: #ffeaa7;
-}
+} */
 
 /* Player Info Cell */
 .player-info-cell {
