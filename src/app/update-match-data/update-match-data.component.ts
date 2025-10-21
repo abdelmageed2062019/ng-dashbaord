@@ -105,6 +105,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     /**
      * Get all players for both teams, each with a reference to their team
      */
+    
     getAllPlayersWithTeam(): { player: any, team: any }[] {
       if (!this.matchTeams || this.matchTeams.length === 0) return [];
       let allPlayers: { player: any, team: any }[] = [];
@@ -312,15 +313,14 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         console.log('Player stats updated:', response);
         this.showSuccess(`Updated ${statType} for ${player.first_name} ${player.last_name}`);
-        
-        // Refresh live scoring data
+        // Refresh all relevant data
+        this.loadMatchPlayers();
         this.loadLiveScoring();
         this.loadMatchTeams();
       },
       error: (error: any) => {
         console.error('Error updating player stats:', error);
         this.showError('Failed to update player statistics');
-        
         // Revert optimistic update
         this.loadPlayerStatistics();
       }
@@ -378,6 +378,7 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
       next: (response: any) => {
         console.log('Player stats batch updated:', response);
         this.showSuccess(`Updated multiple stats for ${player.first_name} ${player.last_name}`);
+        this.loadMatchPlayers();
         this.loadLiveScoring();
         this.loadMatchTeams();
       },
