@@ -102,6 +102,20 @@ export class UpdateMatchDataComponent implements OnInit, OnDestroy {
     }
   };
 
+    /**
+     * Get all players for both teams, each with a reference to their team
+     */
+    getAllPlayersWithTeam(): { player: any, team: any }[] {
+      if (!this.matchTeams || this.matchTeams.length === 0) return [];
+      let allPlayers: { player: any, team: any }[] = [];
+      for (const team of this.matchTeams) {
+        const players = this.getTeamPlayers(team.team.id);
+        for (const p of players) {
+          allPlayers.push({ player: p, team: team.team });
+        }
+      }
+      return allPlayers;
+    }
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,

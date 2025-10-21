@@ -2,13 +2,60 @@
 <div class="match-data-container">
   <!-- Header Section -->
   <div class="match-header">
-    <h1>Match Data Management</h1>
+    <!-- <h1>Match Data Management</h1> -->
     <div class="match-info" *ngIf="matchData">
-      <h2>{{ matchData.league?.name || 'Unknown League' }}</h2>
-      <p>{{ matchData.match_date | date:'medium' }}</p>
-      <div class="match-status" [class]="matchData.status">
+      <!-- <h2>{{ matchData.league?.name || 'Unknown League' }}</h2> -->
+      <p>{{ matchData.match_date | date:'medium' }}
+        <span class="match-status" [class]="matchData.status">
         {{ matchData.status | uppercase }}
+      </span>
+      </p>
+      <!-- Teams name and score and logo in one line center of card -->
+      <div class="teams-info d-flex justify-content-center align-items-center">
+        <div *ngFor="let team of matchData.matchteams" class="team d-flex align-items-center mx-2">
+          <img *ngIf="team.team.logo" [src]="team.team.logo" [alt]="team.team.name" class="team-logo me-2">
+          <span class="team-name">{{ team.team.name }}</span>
+          <span class="team-score">{{ team.score }}</span>
+        </div>
       </div>
+      <!-- add clock management buttons  according to match status -->
+      <div class="bg-transparent d-flex justify-content-center align-items-center p-0 mt-2 boreder-0">
+            <button *ngIf="isClockStopped()" 
+                    (click)="startClock()" 
+                    class="action-btn scoring" 
+                    [disabled]="loading">
+              Start Clock
+            </button>
+            
+            <button *ngIf="isClockRunning()" 
+                    (click)="pauseClock()" 
+                    class="action-btn warning" 
+                    [disabled]="loading">
+              Pause Clock
+            </button>
+            
+            <button *ngIf="isClockPaused()" 
+                    (click)="resumeClock()" 
+                    class="action-btn scoring" 
+                    [disabled]="loading">
+              Resume Clock
+            </button>
+            
+            <button *ngIf="!isClockStopped()" 
+                    (click)="stopClock()" 
+                    class="action-btn danger" 
+                    [disabled]="loading">
+              Stop Clock
+            </button>
+            
+            <button *ngIf="!isMatchFinished()" 
+                    (click)="advancePeriod()" 
+                    class="action-btn defense" 
+                    [disabled]="loading">
+              Advance {{ liveClock?.period_type === 'quarter' ? 'Quarter' : 'Period' }}
+            </button>
+          </div>
+
     </div>
   </div>
 
@@ -797,50 +844,13 @@
         <div class="clock-controls">
           
           <!-- Debug Button -->
-          <div class="control-group">
+          <!-- <div class="control-group">
             <button (click)="debugTimeoutStatus()" class="action-btn" style="background: #6c757d;">
               Debug Timeout Status
             </button>
-          </div>
+          </div> -->
           
-          <div class="control-group">
-            <label>Basic Controls</label>
-            
-            <button *ngIf="isClockStopped()" 
-                    (click)="startClock()" 
-                    class="action-btn scoring" 
-                    [disabled]="loading">
-              Start Clock
-            </button>
-            
-            <button *ngIf="isClockRunning()" 
-                    (click)="pauseClock()" 
-                    class="action-btn warning" 
-                    [disabled]="loading">
-              Pause Clock
-            </button>
-            
-            <button *ngIf="isClockPaused()" 
-                    (click)="resumeClock()" 
-                    class="action-btn scoring" 
-                    [disabled]="loading">
-              Resume Clock
-            </button>
-            
-            <button *ngIf="!isClockStopped()" 
-                    (click)="stopClock()" 
-                    class="action-btn danger" 
-                    [disabled]="loading">
-              Stop Clock
-            </button>
-            
-            <button *ngIf="!isMatchFinished()" 
-                    (click)="advancePeriod()" 
-                    class="action-btn defense" 
-                    [disabled]="loading">
-              Advance {{ liveClock?.period_type === 'quarter' ? 'Quarter' : 'Period' }}
-            </button>
-          </div>
+          
 
           <!-- Timeout Management -->
           <div class="control-group" *ngIf="matchTeams.length > 0 && !isFootball() && !isGymnastics()">

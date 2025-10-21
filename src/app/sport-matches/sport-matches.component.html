@@ -26,13 +26,15 @@
     </div>
     <div class="card-body">
       <div class="row g-3">
-        <div class="col-md-3">
-          <label class="form-label fw-bold">Status</label>
-          <select class="form-select" [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
-            <option *ngFor="let status of statusOptions" [value]="status.value">
-              {{ status.label }}
-            </option>
-          </select>
+        <!-- Status Tabs -->
+        <div class="col-12 mb-3">
+          <ul class="nav nav-tabs">
+            <li class="nav-item" *ngFor="let status of statusOptions">
+              <a class="nav-link" [class.active]="selectedStatus === status.value" (click)="onStatusTabClick(status.value)">
+                {{ status.label }}
+              </a>
+            </li>
+          </ul>
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Team</label>
@@ -70,7 +72,7 @@
 
   <!-- Matches Grid -->
   <div class="row" *ngIf="!loading && !error">
-    <div class="col-lg-6 col-xl-6 mb-4" *ngFor="let match of filteredMatches">
+    <div class="col-lg-4 col-xl-4 mb-4" *ngFor="let match of filteredMatches">
       <div class="card h-100 match-card shadow-sm" (click)="onMatchClick(match)">
         <!-- Match Header -->
         <div class="card-header d-flex justify-content-between align-items-center">

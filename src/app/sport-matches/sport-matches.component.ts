@@ -38,6 +38,11 @@ export class SportMatchesComponent implements OnInit {
 
   constructor(private route: ActivatedRoute, private apiService: ApiService, private router: Router) {}
 
+  onStatusTabClick(status: string): void {
+    this.selectedStatus = status;
+    this.applyFilters();
+  }
+
   onMatchClick(match: any) {
     this.router.navigate(['/update-match-data', match.id], { 
       state: { 
